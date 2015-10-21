@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_decode_integer_array.vhd
 --!     @brief   MessagePack Object decode to integer array
 --!     @version 0.1.0
---!     @date    2015/10/19
+--!     @date    2015/10/22
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -45,8 +45,9 @@ entity  MsgPack_Object_Decode_Integer_Array is
     generic (
         CODE_WIDTH      :  positive := 1;
         ARRAY_DEPTH     :  integer  := 8;
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
         CHECK_RANGE     :  boolean  := TRUE ;
         ENABLE64        :  boolean  := TRUE
     );
@@ -65,14 +66,16 @@ entity  MsgPack_Object_Decode_Integer_Array is
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+        I_SHIFT         : out std_logic_vector( CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_WIDTH-1 downto 0);
-        SIGN            : out std_logic;
-        ADDR            : out std_logic_vector(ARRAY_DEPTH-1 downto 0);
-        WE              : out std_logic
+        O_VALUE         : out std_logic_vector( VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_ADDR          : out std_logic_vector(ARRAY_DEPTH-1 downto 0);
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
 end  MsgPack_Object_Decode_Integer_Array;
 -----------------------------------------------------------------------------------
@@ -89,12 +92,15 @@ architecture RTL of MsgPack_Object_Decode_Integer_Array is
     signal    value_valid       :  std_logic;
     signal    value_error       :  std_logic;
     signal    value_done        :  std_logic;
+    signal    value_last        :  std_logic;
+    signal    value_code        :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
     signal    value_shift       :  std_logic_vector(CODE_WIDTH -1 downto 0);
-    signal    value_din         :  std_logic_vector(VALUE_WIDTH-1 downto 0);
+    signal    value_din         :  std_logic_vector(VALUE_BITS -1 downto 0);
     signal    value_set         :  std_logic;
     signal    array_addr        :  std_logic_vector(ARRAY_WIDTH-1 downto 0);
     signal    array_we          :  std_logic;
     signal    array_start       :  std_logic;
+    signal    outlet_valid      :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
@@ -117,6 +123,8 @@ begin
             ARRAY_SIZE      => open                , -- Out :
             VALUE_START     => open                , -- Out :
             VALUE_VALID     => value_valid         , -- Out :
+            VALUE_CODE      => value_code          , -- Out :
+            VALUE_LAST      => value_last          , -- Out :
             VALUE_ERROR     => value_error         , -- In  :
             VALUE_DONE      => value_done          , -- In  :
             VALUE_SHIFT     => value_shift           -- In  :
@@ -127,50 +135,45 @@ begin
     DECODE_VALUE: MsgPack_Object_Decode_Integer      -- 
         generic map (                                -- 
             CODE_WIDTH      => CODE_WIDTH          , --
-            VALUE_WIDTH     => VALUE_WIDTH         , --
+            VALUE_BITS      => VALUE_BITS          , --
             VALUE_SIGN      => VALUE_SIGN          , --
+            QUEUE_SIZE      => QUEUE_SIZE          , --
             CHECK_RANGE     => CHECK_RANGE         , --
             ENABLE64        => ENABLE64              --
         )                                            -- 
         port map (                                   -- 
-            CLK             => CLK                 , -- : In  :
-            RST             => RST                 , -- : In  :
-            CLR             => CLR                 , -- : In  :
-            I_CODE          => I_CODE              , -- : In  :
-            I_LAST          => I_LAST              , -- : In  :
-            I_VALID         => value_valid         , -- : In  :
-            I_ERROR         => value_error         , -- : Out :
-            I_DONE          => value_done          , -- : Out :
-            I_SHIFT         => value_shift         , -- : Out :
-            VALUE           => value_din           , -- : Out :
-            WE              => value_set             -- : Out :
+            CLK             => CLK                 , -- In  :
+            RST             => RST                 , -- In  :
+            CLR             => CLR                 , -- In  :
+            I_CODE          => value_code          , -- In  :
+            I_LAST          => value_last          , -- In  :
+            I_VALID         => value_valid         , -- In  :
+            I_ERROR         => value_error         , -- Out :
+            I_DONE          => value_done          , -- Out :
+            I_SHIFT         => value_shift         , -- Out :
+            O_VALUE         => O_VALUE             , -- Out :
+            O_SIGN          => O_SIGN              , -- Out :
+            O_LAST          => O_LAST              , -- Out :
+            O_VALID         => outlet_valid        , -- Out :
+            O_READY         => O_READY               -- In  :
         );                                           --
+    O_VALID <= outlet_valid;                         -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     process (CLK, RST) begin
         if (RST = '1') then
-                VALUE      <= (others => '0');
                 array_addr <= (others => '0');
-                array_we   <= '0';
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
-                VALUE      <= (others => '0');
                 array_addr <= (others => '0');
-                array_we   <= '0';
             else
-                if (value_set = '1') then
-                    VALUE <= value_din;
-                end if;
-                array_we <= value_set;
                 if    (array_start = '1') then
                     array_addr <= (others => '0');
-                elsif (array_we    = '1') then
+                elsif (outlet_valid = '1' and O_READY = '1') then
                     array_addr <= std_logic_vector(unsigned(array_addr) + 1);
                 end if;
             end if;
         end if;
     end process;
-    WE   <= array_we;
-    ADDR <= array_addr;
 end RTL;

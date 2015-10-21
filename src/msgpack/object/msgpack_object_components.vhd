@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.1.0                                                           --
---!     @date    2015/10/21                                                      --
+--!     @date    2015/10/22                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -337,10 +337,11 @@ component MsgPack_Object_Decode_Integer
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
         CHECK_RANGE     :  boolean  := TRUE ;
-        ENABLE64        :  boolean  := TRUE
+        ENABLE64        :  boolean  := TRUE 
     );
     port (
     -------------------------------------------------------------------------------
@@ -359,11 +360,13 @@ component MsgPack_Object_Decode_Integer
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Integer Value Output
+    -- Integer Value Output Interface
     -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_WIDTH-1 downto 0);
-        SIGN            : out std_logic;
-        WE              : out std_logic
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
 end component;
 -----------------------------------------------------------------------------------
@@ -376,8 +379,9 @@ component MsgPack_Object_Decode_Integer_Array
     generic (
         CODE_WIDTH      :  positive := 1;
         ARRAY_DEPTH     :  integer  := 8;
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
         CHECK_RANGE     :  boolean  := TRUE ;
         ENABLE64        :  boolean  := TRUE
     );
@@ -396,14 +400,16 @@ component MsgPack_Object_Decode_Integer_Array
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+        I_SHIFT         : out std_logic_vector( CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_WIDTH-1 downto 0);
-        SIGN            : out std_logic;
-        ADDR            : out std_logic_vector(ARRAY_DEPTH-1 downto 0);
-        WE              : out std_logic
+        O_VALUE         : out std_logic_vector( VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_ADDR          : out std_logic_vector(ARRAY_DEPTH-1 downto 0);
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
 end component;
 -----------------------------------------------------------------------------------

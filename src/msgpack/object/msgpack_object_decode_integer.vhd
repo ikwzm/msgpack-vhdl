@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_decode_integer.vhd
 --!     @brief   MessagePack Object decode to integer
 --!     @version 0.1.0
---!     @date    2015/10/19
+--!     @date    2015/10/22
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -44,10 +44,11 @@ entity  MsgPack_Object_Decode_Integer is
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
         CHECK_RANGE     :  boolean  := TRUE ;
-        ENABLE64        :  boolean  := TRUE
+        ENABLE64        :  boolean  := TRUE 
     );
     port (
     -------------------------------------------------------------------------------
@@ -66,11 +67,13 @@ entity  MsgPack_Object_Decode_Integer is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Integer Value Output
+    -- Integer Value Output Interface
     -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_WIDTH-1 downto 0);
-        SIGN            : out std_logic;
-        WE              : out std_logic
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
 end  MsgPack_Object_Decode_Integer;
 -----------------------------------------------------------------------------------
@@ -81,10 +84,13 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
+use     MsgPack.PipeWork_Components.QUEUE_REGISTER;
 architecture RTL of MsgPack_Object_Decode_Integer is
+    signal   ii_sign     :  std_logic;
     signal   ii_value    :  std_logic_vector(63 downto 0);
     signal   ii_valid    :  std_logic_vector( 1 downto 0);
     signal   ii_shift    :  std_logic_vector( 1 downto 0);
+    signal   ii_ready    :  std_logic;
     signal   done        :  boolean;
     signal   type_error  :  boolean;
     signal   range_error :  boolean;
@@ -101,8 +107,8 @@ begin
         ---------------------------------------------------------------------------
         --
         ---------------------------------------------------------------------------
-        process (I_VALID, I_CODE, curr_state) begin
-            if (I_VALID = '1' and I_CODE(0).valid = '1') then
+        process (I_VALID, I_CODE, curr_state, ii_ready) begin
+            if (I_VALID = '1' and I_CODE(0).valid = '1' and ii_ready = '1') then
                 if     (ENABLE64   = TRUE) and
                        (curr_state = INT64_STATE) then
                     if (I_CODE(0).complete = '1') and
@@ -218,8 +224,8 @@ begin
                 end if;
             end if;
         end process;
-        SIGN <= '1' when (curr_state = IDLE_STATE and I_CODE(0).class = MsgPack_Object.CLASS_INT) or
-                         (curr_state = INT64_STATE) else '0';
+        ii_sign <= '1' when (curr_state = IDLE_STATE and I_CODE(0).class = MsgPack_Object.CLASS_INT) or
+                            (curr_state = INT64_STATE) else '0';
     end generate;
     -------------------------------------------------------------------------------
     --
@@ -292,22 +298,22 @@ begin
                 ii_value(63 downto 32) <= (63 downto 32 => '0');
             end if;
         end process;
-        SIGN <= '1' when (I_CODE(0).class = MsgPack_Object.CLASS_INT) else '0';
+        ii_sign <= '1' when (I_CODE(0).class = MsgPack_Object.CLASS_INT) else '0';
     end generate;
     -------------------------------------------------------------------------------
     -- range_error
     -------------------------------------------------------------------------------
     process (ii_value, ii_valid) begin
         range_error <= FALSE;
-        if (CHECK_RANGE = TRUE and VALUE'high < 63 and ii_valid(0) = '1') then
+        if (CHECK_RANGE = TRUE and VALUE_BITS < 64 and ii_valid(0) = '1') then
             if (VALUE_SIGN) then
-                for i in 63 downto VALUE'high+1 loop
-                    if (ii_value(i) /= ii_value(VALUE'high)) then
+                for i in 63 downto VALUE_BITS loop
+                    if (ii_value(i) /= ii_value(VALUE_BITS-1)) then
                         range_error <= TRUE;
                     end if;
                 end loop;
             else
-                for i in 63 downto VALUE'high+1 loop
+                for i in 63 downto VALUE_BITS loop
                     if (ii_value(i) /= '0') then
                         range_error <= TRUE;
                     end if;
@@ -315,16 +321,6 @@ begin
             end if;
         end if;
     end process;
-    -------------------------------------------------------------------------------
-    -- VALUE
-    -------------------------------------------------------------------------------
-    VALUE <= ii_value(VALUE'range);
-    -------------------------------------------------------------------------------
-    -- WE
-    -------------------------------------------------------------------------------
-    WE      <= '1' when (type_error  = FALSE) and
-                        (range_error = FALSE) and
-                        (ii_valid(0) = '1'  ) else '0';
     -------------------------------------------------------------------------------
     -- I_ERROR/I_DONE
     -------------------------------------------------------------------------------
@@ -347,5 +343,53 @@ begin
             end loop;
         end if;
     end process;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    OUTLET: block
+        constant  SIGN_POS  :  integer := VALUE_BITS + 0;
+        constant  LAST_POS  :  integer := VALUE_BITS + 1;
+        constant  DATA_BITS :  integer := VALUE_BITS + 2;
+        signal    ii_data   :  std_logic_vector(DATA_BITS-1 downto 0);
+        signal    oo_data   :  std_logic_vector(DATA_BITS-1 downto 0);
+        signal    qq_valid  :  std_logic;
+    begin
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        ii_data(VALUE_BITS-1 downto 0) <= ii_value(VALUE_BITS-1 downto 0);
+        ii_data(SIGN_POS             ) <= ii_sign;
+        ii_data(LAST_POS             ) <= I_LAST;
+        qq_valid <= '1' when (type_error  = FALSE) and
+                             (range_error = FALSE) and
+                             (ii_valid(0) = '1'  ) else '0';
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        QUEUE: QUEUE_REGISTER                -- 
+            generic map (                    -- 
+                QUEUE_SIZE  => QUEUE_SIZE  , -- 
+                DATA_BITS   => DATA_BITS   , -- 
+                LOWPOWER    => 0             -- 
+            )                                -- 
+            port map (                       -- 
+                CLK         => CLK         , -- In  :
+                RST         => RST         , -- In  :
+                CLR         => CLR         , -- In  :
+                I_DATA      => ii_data     , -- In  :
+                I_VAL       => qq_valid    , -- In  :
+                I_RDY       => ii_ready    , -- Out :
+                O_DATA      => open        , -- Out :
+                O_VAL       => open        , -- Out :
+                Q_DATA      => oo_data     , -- Out :
+                Q_VAL(0)    => O_VALID     , -- Out :
+                Q_RDY       => O_READY       -- In  :
+            );                               --
+        ---------------------------------------------------------------------------
+        --
+        ---------------------------------------------------------------------------
+        O_VALUE <= oo_data(VALUE_BITS-1 downto 0);
+        O_SIGN  <= oo_data(SIGN_POS);
+        O_LAST  <= oo_data(LAST_POS);
+    end block;
 end RTL;
-

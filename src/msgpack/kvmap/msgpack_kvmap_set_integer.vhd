@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_set_integer.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Value Module :
 --!     @version 0.1.0
---!     @date    2015/10/19
+--!     @date    2015/10/22
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,8 +46,9 @@ entity  MsgPack_KVMap_Set_Integer is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
         CHECK_RANGE     :  boolean  := TRUE ;
         ENABLE64        :  boolean  := TRUE
     );
@@ -76,11 +77,13 @@ entity  MsgPack_KVMap_Set_Integer is
         MATCH_NOT       : out std_logic;
         MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- 
+    -- Value Output Interface
     -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_WIDTH-1 downto 0);
-        SIGN            : out std_logic;
-        WE              : out std_logic
+        O_VALUE         : out std_logic_vector( VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
 end  MsgPack_KVMap_Set_Integer;
 -----------------------------------------------------------------------------------
@@ -94,7 +97,7 @@ use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_KVMap_Set_Integer is
-    signal    value_din         :  std_logic_vector(VALUE_WIDTH-1 downto 0);
+    signal    value_din         :  std_logic_vector(VALUE_BITS-1 downto 0);
     signal    value_signed      :  std_logic;
     signal    value_load        :  std_logic;
 begin
@@ -123,45 +126,25 @@ begin
     DECODE: MsgPack_Object_Decode_Integer        -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            VALUE_WIDTH     => VALUE_WIDTH     , --
+            VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
             CHECK_RANGE     => CHECK_RANGE     , --
             ENABLE64        => ENABLE64          --
         )                                        -- 
         port map (                               -- 
-            CLK             => CLK             , -- : In  :
-            RST             => RST             , -- : In  :
-            CLR             => CLR             , -- : In  :
-            I_CODE          => I_CODE          , -- : In  :
-            I_LAST          => I_LAST          , -- : In  :
-            I_VALID         => I_VALID         , -- : In  :
-            I_ERROR         => I_ERROR         , -- : Out :
-            I_DONE          => I_DONE          , -- : Out :
-            I_SHIFT         => I_SHIFT         , -- : Out :
-            VALUE           => value_din       , -- : Out :
-            SIGN            => value_signed    , -- : Out :
-            WE              => value_load        -- : Out :
+            CLK             => CLK             , -- In  :
+            RST             => RST             , -- In  :
+            CLR             => CLR             , -- In  :
+            I_CODE          => I_CODE          , -- In  :
+            I_LAST          => I_LAST          , -- In  :
+            I_VALID         => I_VALID         , -- In  :
+            I_ERROR         => I_ERROR         , -- Out :
+            I_DONE          => I_DONE          , -- Out :
+            I_SHIFT         => I_SHIFT         , -- Out :
+            O_VALUE         => O_VALUE         , -- Out :
+            O_SIGN          => O_SIGN          , -- Out :
+            O_LAST          => O_LAST          , -- Out :
+            O_VALID         => O_VALID         , -- Out :
+            O_READY         => O_READY           -- In  :
         );                                       --
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    process (CLK, RST) begin
-        if (RST = '1') then
-                VALUE <= (others => '0');
-                SIGN  <= '0';
-                WE    <= '0';
-        elsif (CLK'event and CLK = '1') then
-            if (CLR = '1') then
-                VALUE <= (others => '0');
-                SIGN  <= '0';
-                WE    <= '0';
-            elsif (value_load = '1') then
-                VALUE <= value_din;
-                SIGN  <= value_signed;
-                WE    <= '1';
-            else
-                WE    <= '0';
-            end if;
-        end if;
-    end process;
 end RTL;
