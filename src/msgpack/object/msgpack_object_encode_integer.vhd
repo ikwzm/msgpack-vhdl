@@ -43,9 +43,10 @@ entity  MsgPack_Object_Encode_Integer is
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        CODE_WIDTH      : positive := 1;
-        VALUE_WIDTH     : integer range 1 to 64;
-        VALUE_SIGN      : boolean  := FALSE
+        CODE_WIDTH      :  positive := 1;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0
     );
     port (
     -------------------------------------------------------------------------------
@@ -70,7 +71,9 @@ entity  MsgPack_Object_Encode_Integer is
     -------------------------------------------------------------------------------
     -- Integer Value Input
     -------------------------------------------------------------------------------
-        VALUE           : in  std_logic_vector(VALUE_WIDTH-1 downto 0)
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic
     );
 end MsgPack_Object_Encode_Integer;
 -----------------------------------------------------------------------------------
@@ -81,125 +84,105 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Code_Reducer;
 architecture RTL of MsgPack_Object_Encode_Integer is
     function  max(A,B:integer) return integer is begin
         if (A>B) then return A;
         else          return B;
         end if;
     end function;
-    constant  VALUE_CODE_WIDTH  :  integer := max(2, CODE_WIDTH);
-    signal    value_code        :  MsgPack_Object.Code_Vector(VALUE_CODE_WIDTH-1 downto 0);
+    constant  CODE_DATA_BITS    :  integer := MsgPack_Object.CODE_DATA_BITS;
+    constant  I_WIDTH           :  integer := (VALUE_BITS+CODE_DATA_BITS-1)/CODE_DATA_BITS;
+    signal    i_code            :  MsgPack_Object.Code_Vector(I_WIDTH-1 downto 0);
+    constant  o_shift           :  std_logic_vector(CODE_WIDTH-1 downto 0) := (others => '1');
+    constant  I_QUEUE_SIZE      :  integer := max(QUEUE_SIZE, max(CODE_WIDTH, I_WIDTH));
+    signal    queue_busy        :  std_logic;
+    signal    i_enable          :  std_logic;
+    signal    q_ready           :  std_logic;
+    type      STATE_TYPE        is (IDLE_STATE, RUN_STATE);
+    signal    curr_state        :  STATE_TYPE;
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     S_INT: if (VALUE_SIGN = TRUE ) generate
-        value_code <= MsgPack_Object.New_Code_Vector_Integer(VALUE_CODE_WIDTH,   signed(VALUE));
+        i_code <= MsgPack_Object.New_Code_Vector_Integer(I_WIDTH,   signed(I_VALUE));
     end generate;
     U_INT: if (VALUE_SIGN = FALSE) generate
-        value_code <= MsgPack_Object.New_Code_Vector_Integer(VALUE_CODE_WIDTH, unsigned(VALUE));
+        i_code <= MsgPack_Object.New_Code_Vector_Integer(I_WIDTH, unsigned(I_VALUE));
     end generate;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ONE_VEC: if (CODE_WIDTH >= 2 or VALUE_WIDTH <= MsgPack_Object.CODE_DATA_BITS) generate
-        type      STATE_TYPE    is (IDLE_STATE, RUN_STATE);
-        signal    curr_state    :  STATE_TYPE;
-    begin
-        process(CLK, RST) begin
-            if (RST = '1') then
-                    O_CODE     <= (others => MsgPack_Object.CODE_NULL);
-                    curr_state <= IDLE_STATE;
-            elsif (CLK'event and CLK = '1') then
-                if (CLR = '1') then
-                    O_CODE     <= (others => MsgPack_Object.CODE_NULL);
-                    curr_state <= IDLE_STATE;
-                else
-                    case curr_state is
-                        when IDLE_STATE =>
-                            if (START = '1') then
-                                curr_state <= RUN_STATE;
-                            else
-                                curr_state <= IDLE_STATE;
-                            end if;
-                        when RUN_STATE  =>
-                            if (O_READY = '1') then
-                                curr_state <= IDLE_STATE;
-                            else
-                                curr_state <= RUN_STATE;
-                            end if;
-                        when others =>
-                                curr_state <= IDLE_STATE;
-                    end case;
-                    if (curr_state = IDLE_STATE and START = '1') then
-                        O_CODE <= value_code(CODE_WIDTH-1 downto 0);
-                    end if;
-                end if;
-            end if;
-        end process;
-        BUSY    <= '1' when (curr_state = RUN_STATE) else '0';
-        O_VALID <= '1' when (curr_state = RUN_STATE) else '0';
-        O_LAST  <= '1' when (curr_state = RUN_STATE) else '0';
-        O_ERROR <= '0';
-    end generate;
+    QUEUE: MsgPack_Object_Code_Reducer              -- 
+        generic map (                               -- 
+            I_WIDTH         => I_WIDTH            , -- 
+            O_WIDTH         => CODE_WIDTH         , --
+            O_VALID_SIZE    => CODE_WIDTH         , -- 
+            QUEUE_SIZE      => I_QUEUE_SIZE         --
+        )                                           -- 
+        port map (                                  -- 
+        ---------------------------------------------------------------------------
+        -- Clock and Reset Signals
+        ---------------------------------------------------------------------------
+            CLK             => CLK                , -- In  :
+            RST             => RST                , -- In  :
+            CLR             => CLR                , -- In  :
+        ---------------------------------------------------------------------------
+        -- Control and Status Signals
+        ---------------------------------------------------------------------------
+            DONE            => '0'                , -- In  :
+            BUSY            => queue_busy         , -- Out :
+        ---------------------------------------------------------------------------
+        -- Object Code Input Interface
+        ---------------------------------------------------------------------------
+            I_ENABLE        => i_enable           , -- In  :
+            I_CODE          => i_code             , -- In  :
+            I_DONE          => '1'                , -- In  :
+            I_VALID         => I_VALID            , -- In  :
+            I_READY         => q_ready            , -- Out :
+        ---------------------------------------------------------------------------
+        -- Object Code Output Interface
+        ---------------------------------------------------------------------------
+            O_ENABLE        => '1'                , -- In  :
+            O_CODE          => O_CODE             , -- Out :
+            O_DONE          => O_LAST             , -- Out :
+            O_VALID         => O_VALID            , -- Out :
+            O_READY         => O_READY            , -- In  :
+            O_SHIFT         => o_shift              -- In  :
+    );                                              -- 
+    O_ERROR  <= '0';
+    I_READY  <= q_ready;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    TWO_VEC: if (CODE_WIDTH < 2 and VALUE_WIDTH > MsgPack_Object.CODE_DATA_BITS) generate
-        signal    lower_code    :  MsgPack_Object.Code_Vector(0 downto 0);
-        type      STATE_TYPE    is (IDLE_STATE, RUN0_STATE, RUN1_STATE);
-        signal    curr_state    :  STATE_TYPE;
-    begin
-        process(CLK, RST) begin
-            if (RST = '1') then
-                    O_CODE     <= (others => MsgPack_Object.CODE_NULL);
-                    lower_code <= (others => MsgPack_Object.CODE_NULL);
-                    curr_state <= IDLE_STATE;
-            elsif (CLK'event and CLK = '1') then
-                if (CLR = '1') then
-                    O_CODE     <= (others => MsgPack_Object.CODE_NULL);
-                    lower_code <= (others => MsgPack_Object.CODE_NULL);
-                    curr_state <= IDLE_STATE;
-                else
-                    case curr_state is
-                        when IDLE_STATE =>
-                            if (START = '1') then
-                                if (value_code(0).complete = '0') then
-                                    O_CODE     <= value_code(0 downto 0);
-                                    lower_code <= value_code(1 downto 1);
-                                    curr_state <= RUN0_STATE;
-                                else
-                                    O_CODE     <= value_code(0 downto 0);
-                                    lower_code <= value_code(1 downto 1);
-                                    curr_state <= RUN1_STATE;
-                                end if;
-                            else
-                                curr_state <= IDLE_STATE;
-                            end if;
-                        when RUN0_STATE  =>
-                            if (O_READY = '1') then
-                                O_CODE     <= lower_code;
-                                curr_state <= RUN1_STATE;
-                            else
-                                curr_state <= RUN0_STATE;
-                            end if;
-                        when RUN1_STATE  =>
-                            if (O_READY = '1') then
-                                curr_state <= IDLE_STATE;
-                            else
-                                curr_state <= RUN1_STATE;
-                            end if;
-                        when others =>
-                                curr_state <= IDLE_STATE;
-                    end case;
-                end if;
+    i_enable <= '1' when (curr_state = IDLE_STATE and START = '1') or
+                         (curr_state = RUN_STATE                 ) else '0';
+    process (CLK, RST) begin
+        if (RST = '1') then
+                curr_state <= IDLE_STATE;
+        elsif (CLK'event and CLK = '1') then
+            if (CLR = '1') then
+                curr_state <= IDLE_STATE;
+            else
+                case curr_state is
+                    when IDLE_STATE =>
+                        if (START = '1') then
+                            curr_state <= RUN_STATE;
+                        else
+                            curr_state <= IDLE_STATE;
+                        end if;
+                    when RUN_STATE  =>
+                        if (I_VALID = '1' and q_ready = '1') then
+                            curr_state <= IDLE_STATE;
+                        else
+                            curr_state <= RUN_STATE;
+                        end if;
+                    when others => 
+                            curr_state <= IDLE_STATE;
+                end case;
             end if;
-        end process;
-        BUSY    <= '1' when (curr_state = RUN0_STATE) or
-                            (curr_state = RUN1_STATE) else '0';
-        O_VALID <= '1' when (curr_state = RUN0_STATE) or
-                            (curr_state = RUN1_STATE) else '0';
-        O_LAST  <= '1' when (curr_state = RUN1_STATE) else '0';
-        O_ERROR <= '0';
-    end generate;
+        end if;
+    end process;
+    BUSY <= '1' when (curr_state = RUN_STATE or queue_busy = '1') else '0';
 end RTL;

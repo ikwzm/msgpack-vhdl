@@ -43,11 +43,11 @@ entity  MsgPack_KVMap_Get_Integer is
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        KEY             : STRING;
-        CODE_WIDTH      : positive := 1;
-        MATCH_PHASE     : positive := 8;
-        VALUE_WIDTH     : integer range 1 to 64;
-        VALUE_SIGN      : boolean  := FALSE
+        KEY             :  STRING;
+        CODE_WIDTH      :  positive := 1;
+        MATCH_PHASE     :  positive := 8;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE
     );
     port (
     -------------------------------------------------------------------------------
@@ -80,7 +80,9 @@ entity  MsgPack_KVMap_Get_Integer is
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-        VALUE           : in  std_logic_vector(VALUE_WIDTH-1 downto 0)
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic
     );
 end  MsgPack_KVMap_Get_Integer;
 -----------------------------------------------------------------------------------
@@ -94,8 +96,6 @@ use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_KVMap_Get_Integer is
-    signal    value_din         :  std_logic_vector(VALUE_WIDTH-1 downto 0);
-    signal    value_load        :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
@@ -122,8 +122,9 @@ begin
     ENCODE: MsgPack_Object_Encode_Integer        -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            VALUE_WIDTH     => VALUE_WIDTH     , --
-            VALUE_SIGN      => VALUE_SIGN        --
+            VALUE_BITS      => VALUE_BITS      , --
+            VALUE_SIGN      => VALUE_SIGN      , --
+            QUEUE_SIZE      => 0                 --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
@@ -136,6 +137,8 @@ begin
             O_ERROR         => O_ERROR         , -- Out :
             O_VALID         => O_VALID         , -- Out :
             O_READY         => O_READY         , -- In  :
-            VALUE           => VALUE             -- In  :
+            I_VALUE         => I_VALUE         , -- In  :
+            I_VALID         => I_VALID         , -- In  :
+            I_READY         => I_READY           -- Out :
         );                                       --
 end RTL;

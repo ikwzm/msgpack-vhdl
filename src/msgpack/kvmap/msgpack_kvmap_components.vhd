@@ -296,11 +296,11 @@ component MsgPack_KVMap_Get_Integer
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        KEY             : STRING;
-        CODE_WIDTH      : positive := 1;
-        MATCH_PHASE     : positive := 8;
-        VALUE_WIDTH     : integer range 1 to 64;
-        VALUE_SIGN      : boolean  := FALSE
+        KEY             :  STRING;
+        CODE_WIDTH      :  positive := 1;
+        MATCH_PHASE     :  positive := 8;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE
     );
     port (
     -------------------------------------------------------------------------------
@@ -333,7 +333,9 @@ component MsgPack_KVMap_Get_Integer
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-        VALUE           : in  std_logic_vector(VALUE_WIDTH-1 downto 0)
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic
     );
 end component;
 -----------------------------------------------------------------------------------

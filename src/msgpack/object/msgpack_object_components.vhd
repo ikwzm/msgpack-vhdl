@@ -470,9 +470,10 @@ component MsgPack_Object_Encode_Integer
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        CODE_WIDTH      : positive := 1;
-        VALUE_WIDTH     : integer range 1 to 64;
-        VALUE_SIGN      : boolean  := FALSE
+        CODE_WIDTH      :  positive := 1;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0
     );
     port (
     -------------------------------------------------------------------------------
@@ -497,7 +498,9 @@ component MsgPack_Object_Encode_Integer
     -------------------------------------------------------------------------------
     -- Integer Value Input
     -------------------------------------------------------------------------------
-        VALUE           : in  std_logic_vector(VALUE_WIDTH-1 downto 0)
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic
     );
 end component;
 -----------------------------------------------------------------------------------
