@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.1.0                                                           --
---!     @date    2015/10/21                                                      --
+--!     @date    2015/10/22                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -262,6 +262,7 @@ component MsgPack_Object_Decode_Array
     -------------------------------------------------------------------------------
         ARRAY_START     : out std_logic;
         ARRAY_SIZE      : out std_logic_vector(31 downto 0);
+        ARRAY_LAST      : out std_logic;
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -305,6 +306,7 @@ component MsgPack_Object_Decode_Map
     -------------------------------------------------------------------------------
         MAP_START       : out std_logic;
         MAP_SIZE        : out std_logic_vector(31 downto 0);
+        MAP_LAST        : out std_logic;
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -337,10 +339,11 @@ component MsgPack_Object_Decode_Integer
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
         CHECK_RANGE     :  boolean  := TRUE ;
-        ENABLE64        :  boolean  := TRUE
+        ENABLE64        :  boolean  := TRUE 
     );
     port (
     -------------------------------------------------------------------------------
@@ -359,11 +362,13 @@ component MsgPack_Object_Decode_Integer
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Integer Value Output
+    -- Integer Value Output Interface
     -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_WIDTH-1 downto 0);
-        SIGN            : out std_logic;
-        WE              : out std_logic
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
 end component;
 -----------------------------------------------------------------------------------
@@ -375,9 +380,10 @@ component MsgPack_Object_Decode_Integer_Array
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        ARRAY_DEPTH     :  integer  := 8;
-        VALUE_WIDTH     :  integer range 1 to 64;
+        ADDR_BITS       :  integer  := 8;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
         CHECK_RANGE     :  boolean  := TRUE ;
         ENABLE64        :  boolean  := TRUE
     );
@@ -400,10 +406,52 @@ component MsgPack_Object_Decode_Integer_Array
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_WIDTH-1 downto 0);
-        SIGN            : out std_logic;
-        ADDR            : out std_logic_vector(ARRAY_DEPTH-1 downto 0);
-        WE              : out std_logic
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Encode_Array                                           --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Encode_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+        ARRAY_START     : in  std_logic;
+        ARRAY_SIZE      : in  std_logic_vector(31 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Object Encode Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_ERROR         : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Array Object Encode Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
 end component;
 -----------------------------------------------------------------------------------
@@ -462,9 +510,10 @@ component MsgPack_Object_Encode_Integer
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        CODE_WIDTH      : positive := 1;
-        VALUE_WIDTH     : integer range 1 to 64;
-        VALUE_SIGN      : boolean  := FALSE
+        CODE_WIDTH      :  positive := 1;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0
     );
     port (
     -------------------------------------------------------------------------------
@@ -489,7 +538,53 @@ component MsgPack_Object_Encode_Integer
     -------------------------------------------------------------------------------
     -- Integer Value Input
     -------------------------------------------------------------------------------
-        VALUE           : in  std_logic_vector(VALUE_WIDTH-1 downto 0)
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Encode_Integer_Array                                   --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Encode_Integer_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        ADDR_BITS       :  integer  := 8;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+        ARRAY_START     : in  std_logic;
+        ARRAY_SIZE      : in  std_logic_vector(31 downto 0);
+        BUSY            : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Integer Value Input Interface
+    -------------------------------------------------------------------------------
+        I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Array Object Encode Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
 end component;
 -----------------------------------------------------------------------------------

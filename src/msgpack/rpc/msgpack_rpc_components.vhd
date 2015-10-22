@@ -2,7 +2,7 @@
 --!     @file    rpc/msgpack_rpc_components.vhd                                  --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.1.0                                                           --
---!     @date    2015/10/21                                                      --
+--!     @date    2015/10/22                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -318,7 +318,7 @@ component MsgPack_RPC_Method_Set_Param_Integer
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         CHECK_RANGE     :  boolean  := TRUE ;
         ENABLE64        :  boolean  := TRUE
@@ -342,12 +342,12 @@ component MsgPack_RPC_Method_Set_Param_Integer
     -------------------------------------------------------------------------------
     -- Default Value Input Interface
     -------------------------------------------------------------------------------
-        DEFAULT_VALUE   : in  std_logic_vector(VALUE_WIDTH-1 downto 0);
+        DEFAULT_VALUE   : in  std_logic_vector(VALUE_BITS-1 downto 0);
         DEFAULT_WE      : in  std_logic;
     -------------------------------------------------------------------------------
     -- Parameter Value Output Interface
     -------------------------------------------------------------------------------
-        PARAM_VALUE     : out std_logic_vector(VALUE_WIDTH-1 downto 0);
+        PARAM_VALUE     : out std_logic_vector(VALUE_BITS-1 downto 0);
         PARAM_WE        : out std_logic
     );
 end component;

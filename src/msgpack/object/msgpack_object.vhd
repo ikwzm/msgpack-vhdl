@@ -804,7 +804,7 @@ package body MsgPack_Object is
                 end if;
             end if;
         else
-            if (DATA(DATA'high) = '1') then
+            if (i_data(i_data'high) = '1') then
                 return New_Code_Vector_Signed  (LENGTH, i_data);
             else
                 return New_Code_Vector_Unsigned(LENGTH, i_data);
