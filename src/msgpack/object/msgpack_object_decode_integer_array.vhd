@@ -44,7 +44,7 @@ entity  MsgPack_Object_Decode_Integer_Array is
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        ARRAY_DEPTH     :  integer  := 8;
+        ADDR_BITS       :  integer  := 8;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -66,14 +66,14 @@ entity  MsgPack_Object_Decode_Integer_Array is
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector( CODE_WIDTH-1 downto 0);
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
-        O_VALUE         : out std_logic_vector( VALUE_BITS-1 downto 0);
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
-        O_ADDR          : out std_logic_vector(ARRAY_DEPTH-1 downto 0);
+        O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         O_VALID         : out std_logic;
         O_READY         : in  std_logic
     );
@@ -94,11 +94,8 @@ architecture RTL of MsgPack_Object_Decode_Integer_Array is
     signal    value_done        :  std_logic;
     signal    value_last        :  std_logic;
     signal    value_code        :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    value_shift       :  std_logic_vector(CODE_WIDTH -1 downto 0);
-    signal    value_din         :  std_logic_vector(VALUE_BITS -1 downto 0);
-    signal    value_set         :  std_logic;
-    signal    array_addr        :  std_logic_vector(ARRAY_WIDTH-1 downto 0);
-    signal    array_we          :  std_logic;
+    signal    value_shift       :  std_logic_vector(CODE_WIDTH-1 downto 0);
+    signal    array_addr        :  std_logic_vector( ADDR_BITS-1 downto 0);
     signal    array_start       :  std_logic;
     signal    outlet_valid      :  std_logic;
 begin
@@ -157,7 +154,8 @@ begin
             O_VALID         => outlet_valid        , -- Out :
             O_READY         => O_READY               -- In  :
         );                                           --
-    O_VALID <= outlet_valid;                         -- 
+    O_VALID <= outlet_valid;                         --
+    O_ADDR  <= array_addr;                           -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

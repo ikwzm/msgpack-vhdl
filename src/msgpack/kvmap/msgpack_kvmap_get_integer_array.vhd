@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_set_integer.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Value Module :
+--!     @file    msgpack_kvmap_get_integer_array.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Get Integer Array Module :
 --!     @version 0.1.0
---!     @date    2015/10/22
+--!     @date    2015/10/19
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Set_Integer is
+entity  MsgPack_KVMap_Get_Integer_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -46,11 +46,9 @@ entity  MsgPack_KVMap_Set_Integer is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
+        ADDR_BITS       :  integer  := 8;
         VALUE_BITS      :  integer range 1 to 64;
-        VALUE_SIGN      :  boolean  := FALSE;
-        QUEUE_SIZE      :  integer  := 0;
-        CHECK_RANGE     :  boolean  := TRUE ;
-        ENABLE64        :  boolean  := TRUE
+        VALUE_SIGN      :  boolean  := FALSE
     );
     port (
     -------------------------------------------------------------------------------
@@ -60,14 +58,19 @@ entity  MsgPack_KVMap_Set_Integer is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- MessagePack Object Code Input Interface
+    -- Control and Status Signals 
     -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_ERROR         : out std_logic;
-        I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+        START           : in  std_logic := '1';
+        SIZE            : in  std_logic_vector(31 downto 0);
+        BUSY            : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
@@ -77,15 +80,14 @@ entity  MsgPack_KVMap_Set_Integer is
         MATCH_NOT       : out std_logic;
         MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Value Output Interface
+    -- Integer Value Input Interface
     -------------------------------------------------------------------------------
-        O_VALUE         : out std_logic_vector( VALUE_BITS-1 downto 0);
-        O_SIGN          : out std_logic;
-        O_LAST          : out std_logic;
-        O_VALID         : out std_logic;
-        O_READY         : in  std_logic
+        I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic
     );
-end  MsgPack_KVMap_Set_Integer;
+end  MsgPack_KVMap_Get_Integer_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -94,9 +96,9 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Array;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
-architecture RTL of MsgPack_KVMap_Set_Integer is
+architecture RTL of MsgPack_KVMap_Get_Integer_Array is
 begin
     -------------------------------------------------------------------------------
     --
@@ -120,27 +122,28 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE: MsgPack_Object_Decode_Integer        -- 
+    ENCODE: MsgPack_Object_Encode_Integer_Array  -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
+            ADDR_BITS       => ADDR_BITS       , -- 
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
-            CHECK_RANGE     => CHECK_RANGE     , --
-            ENABLE64        => ENABLE64          --
+            QUEUE_SIZE      => 0                 -- 
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            I_CODE          => I_CODE          , -- In  :
-            I_LAST          => I_LAST          , -- In  :
+            ARRAY_START     => START           , -- In  :
+            ARRAY_SIZE      => SIZE            , -- In  :
+            BUSY            => BUSY            , -- In  :
+            I_ADDR          => I_ADDR          , -- Out :
+            I_VALUE         => I_VALUE         , -- In  :
             I_VALID         => I_VALID         , -- In  :
-            I_ERROR         => I_ERROR         , -- Out :
-            I_DONE          => I_DONE          , -- Out :
-            I_SHIFT         => I_SHIFT         , -- Out :
-            O_VALUE         => O_VALUE         , -- Out :
-            O_SIGN          => O_SIGN          , -- Out :
+            I_READY         => I_READY         , -- Out :
+            O_CODE          => O_CODE          , -- Out :
             O_LAST          => O_LAST          , -- Out :
+            O_ERROR         => O_ERROR         , -- Out :
             O_VALID         => O_VALID         , -- Out :
             O_READY         => O_READY           -- In  :
         );                                       --

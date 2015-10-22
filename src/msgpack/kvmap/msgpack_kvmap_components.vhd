@@ -174,6 +174,59 @@ component MsgPack_KVMap_Set_Integer
     );
 end component;
 -----------------------------------------------------------------------------------
+--! @brief MsgPack_KVMap_Set_Integer_Array                                       --
+-----------------------------------------------------------------------------------
+component MsgPack_KVMap_Set_Integer_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        KEY             :  STRING;
+        CODE_WIDTH      :  positive := 1;
+        MATCH_PHASE     :  positive := 8;
+        ADDR_BITS       :  integer  := 8;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
+        CHECK_RANGE     :  boolean  := TRUE ;
+        ENABLE64        :  boolean  := TRUE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- MessagePack Key Match Interface
+    -------------------------------------------------------------------------------
+        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        MATCH_OK        : out std_logic;
+        MATCH_NOT       : out std_logic;
+        MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Integer Value Data and Address Output
+    -------------------------------------------------------------------------------
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
 --! @brief MsgPack_KVMap_Set_Value                                               --
 -----------------------------------------------------------------------------------
 component MsgPack_KVMap_Set_Value
@@ -333,6 +386,59 @@ component MsgPack_KVMap_Get_Integer
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_KVMap_Get_Integer_Array                                       --
+-----------------------------------------------------------------------------------
+component MsgPack_KVMap_Get_Integer_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        KEY             :  STRING;
+        CODE_WIDTH      :  positive := 1;
+        MATCH_PHASE     :  positive := 8;
+        ADDR_BITS       :  integer  := 8;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Control and Status Signals 
+    -------------------------------------------------------------------------------
+        START           : in  std_logic := '1';
+        SIZE            : in  std_logic_vector(31 downto 0);
+        BUSY            : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Key Match Interface
+    -------------------------------------------------------------------------------
+        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        MATCH_OK        : out std_logic;
+        MATCH_NOT       : out std_logic;
+        MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Integer Value Input Interface
+    -------------------------------------------------------------------------------
+        I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
         I_VALID         : in  std_logic;
         I_READY         : out std_logic

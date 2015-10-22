@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_set_integer.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Value Module :
+--!     @file    msgpack_kvmap_set_integer_array.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Array Module :
 --!     @version 0.1.0
 --!     @date    2015/10/22
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Set_Integer is
+entity  MsgPack_KVMap_Set_Integer_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -46,6 +46,7 @@ entity  MsgPack_KVMap_Set_Integer is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
+        ADDR_BITS       :  integer  := 8;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -77,15 +78,16 @@ entity  MsgPack_KVMap_Set_Integer is
         MATCH_NOT       : out std_logic;
         MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Value Output Interface
+    -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
-        O_VALUE         : out std_logic_vector( VALUE_BITS-1 downto 0);
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
+        O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         O_VALID         : out std_logic;
         O_READY         : in  std_logic
     );
-end  MsgPack_KVMap_Set_Integer;
+end  MsgPack_KVMap_Set_Integer_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -94,9 +96,9 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer_Array;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
-architecture RTL of MsgPack_KVMap_Set_Integer is
+architecture RTL of MsgPack_KVMap_Set_Integer_Array is
 begin
     -------------------------------------------------------------------------------
     --
@@ -120,9 +122,10 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE: MsgPack_Object_Decode_Integer        -- 
+    DECODE: MsgPack_Object_Decode_Integer_Array  -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
+            ADDR_BITS       => ADDR_BITS       , -- 
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
             CHECK_RANGE     => CHECK_RANGE     , --
@@ -139,6 +142,7 @@ begin
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
             O_VALUE         => O_VALUE         , -- Out :
+            O_ADDR          => O_ADDR          , -- Out :
             O_SIGN          => O_SIGN          , -- Out :
             O_LAST          => O_LAST          , -- Out :
             O_VALID         => O_VALID         , -- Out :
