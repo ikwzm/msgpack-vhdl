@@ -132,7 +132,7 @@ begin
             O_VAL_SIZE      => O_VALID_SIZE   , -- 
             O_SHIFT_MIN     => 0              , --
             O_SHIFT_MAX     => O_WIDTH-1      , --
-            I_JUSTIFIED     => 0              , -- 
+            I_JUSTIFIED     => 1              , -- 
             FLUSH_ENABLE    => 0                -- 
         )                                       -- 
         port map (                              --
