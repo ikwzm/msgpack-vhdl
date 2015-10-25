@@ -76,24 +76,24 @@ entity  MsgPack_RPC_Server_KVMap_Set_Value is
         PARAM_LAST      : in  std_logic;
         PARAM_SHIFT     : out MsgPack_RPC.Shift_Type;
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Key Match I/F
+    -- MessagePack-RPC Map Key Match I/F
     -------------------------------------------------------------------------------
-        KEY_MATCH_REQ   : out std_logic_vector       (MATCH_PHASE-1 downto 0);
-        KEY_MATCH_CODE  : out MsgPack_RPC.Code_Type;
-        KEY_MATCH_OK    : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        KEY_MATCH_NOT   : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        KEY_MATCH_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
+        MAP_MATCH_REQ   : out std_logic_vector       (MATCH_PHASE-1 downto 0);
+        MAP_MATCH_CODE  : out MsgPack_RPC.Code_Type;
+        MAP_MATCH_OK    : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_MATCH_NOT   : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_MATCH_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
     -------------------------------------------------------------------------------
-    -- MessagePack Value Set Request Interface
+    -- MessagePack-RPC Map Value Object Decode Output I/F
     -------------------------------------------------------------------------------
-        VALUE_VALID     : out std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_CODE      : out MsgPack_RPC.Code_Type;
-        VALUE_LAST      : out std_logic;
-        VALUE_ERROR     : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_DONE      : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_SHIFT     : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
+        MAP_VALUE_VALID : out std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_CODE  : out MsgPack_RPC.Code_Type;
+        MAP_VALUE_LAST  : out std_logic;
+        MAP_VALUE_ERROR : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_DONE  : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Method Return Interface
+    -- MessagePack-RPC Method Return I/F
     -------------------------------------------------------------------------------
         RES_ID          : out MsgPack_RPC.MsgID_Type;
         RES_CODE        : out MsgPack_RPC.Code_Type;
@@ -268,26 +268,26 @@ begin
             I_ERROR         => set_kvmap_error         , -- Out :
             I_DONE          => set_kvmap_done          , -- Out :
             I_SHIFT         => set_kvmap_shift         , -- Out :
-            MATCH_REQ       => KEY_MATCH_REQ           , -- Out :
-            MATCH_CODE      => KEY_MATCH_CODE          , -- Out :
-            MATCH_OK        => KEY_MATCH_OK            , -- In  :
-            MATCH_NOT       => KEY_MATCH_NOT           , -- In  :
+            MATCH_REQ       => MAP_MATCH_REQ           , -- Out :
+            MATCH_CODE      => MAP_MATCH_CODE          , -- Out :
+            MATCH_OK        => MAP_MATCH_OK            , -- In  :
+            MATCH_NOT       => MAP_MATCH_NOT           , -- In  :
             MATCH_SHIFT     => set_match_shift         , -- In  :
-            VALUE_VALID     => VALUE_VALID             , -- Out :
-            VALUE_CODE      => VALUE_CODE              , -- Out :
-            VALUE_LAST      => VALUE_LAST              , -- Out :
-            VALUE_ERROR     => VALUE_ERROR             , -- In  :
-            VALUE_DONE      => VALUE_DONE              , -- In  :
+            VALUE_VALID     => MAP_VALUE_VALID         , -- Out :
+            VALUE_CODE      => MAP_VALUE_CODE          , -- Out :
+            VALUE_LAST      => MAP_VALUE_LAST          , -- Out :
+            VALUE_ERROR     => MAP_VALUE_ERROR         , -- In  :
+            VALUE_DONE      => MAP_VALUE_DONE          , -- In  :
             VALUE_SHIFT     => set_value_shift           -- In  :
         );                                               --
-    process(KEY_MATCH_SHIFT) begin
+    process(MAP_MATCH_SHIFT) begin
         for i in 0 to STORE_SIZE-1 loop
-            set_match_shift(I_PARAM_WIDTH*(i+1)-1 downto I_PARAM_WIDTH*i) <= KEY_MATCH_SHIFT(i);
+            set_match_shift(I_PARAM_WIDTH*(i+1)-1 downto I_PARAM_WIDTH*i) <= MAP_MATCH_SHIFT(i);
         end loop;
     end process;
-    process(VALUE_SHIFT) begin
+    process(MAP_VALUE_SHIFT) begin
         for i in 0 to STORE_SIZE-1 loop
-            set_value_shift(I_PARAM_WIDTH*(i+1)-1 downto I_PARAM_WIDTH*i) <= VALUE_SHIFT(i);
+            set_value_shift(I_PARAM_WIDTH*(i+1)-1 downto I_PARAM_WIDTH*i) <= MAP_VALUE_SHIFT(i);
         end loop;
     end process;
     -------------------------------------------------------------------------------
@@ -365,8 +365,8 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    return_error <= '1' when (curr_state = RUN_STATE and unpack_error = '1') else '0';
-    return_start <= '1' when (curr_state = RUN_STATE and unpack_done  = '1') else '0';
+    return_start   <= '1' when (curr_state = RUN_STATE and unpack_done  = '1') else '0';
+    return_error   <= '1' when (curr_state = RUN_STATE and unpack_error = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

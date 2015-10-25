@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_set_integer_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Array Module :
 --!     @version 0.1.0
---!     @date    2015/10/22
+--!     @date    2015/10/25
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -80,12 +80,12 @@ entity  MsgPack_KVMap_Set_Integer_Array is
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
-        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
-        O_SIGN          : out std_logic;
-        O_LAST          : out std_logic;
-        O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
-        O_VALID         : out std_logic;
-        O_READY         : in  std_logic
+        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
+        SIGN            : out std_logic;
+        LAST            : out std_logic;
+        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
+        VALID           : out std_logic;
+        READY           : in  std_logic
     );
 end  MsgPack_KVMap_Set_Integer_Array;
 -----------------------------------------------------------------------------------
@@ -141,11 +141,11 @@ begin
             I_ERROR         => I_ERROR         , -- Out :
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
-            O_VALUE         => O_VALUE         , -- Out :
-            O_ADDR          => O_ADDR          , -- Out :
-            O_SIGN          => O_SIGN          , -- Out :
-            O_LAST          => O_LAST          , -- Out :
-            O_VALID         => O_VALID         , -- Out :
-            O_READY         => O_READY           -- In  :
+            O_VALUE         => VALUE           , -- Out :
+            O_ADDR          => ADDR            , -- Out :
+            O_SIGN          => SIGN            , -- Out :
+            O_LAST          => LAST            , -- Out :
+            O_VALID         => VALID           , -- Out :
+            O_READY         => READY             -- In  :
         );                                       --
 end RTL;

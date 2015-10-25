@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_get_integer_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Get Integer Array Module :
 --!     @version 0.1.0
---!     @date    2015/10/19
+--!     @date    2015/10/25
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -58,11 +58,14 @@ entity  MsgPack_KVMap_Get_Integer_Array is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Control and Status Signals 
+    -- Object Code Input Interface
     -------------------------------------------------------------------------------
-        START           : in  std_logic := '1';
-        SIZE            : in  std_logic_vector(31 downto 0);
-        BUSY            : out std_logic;
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -82,10 +85,10 @@ entity  MsgPack_KVMap_Get_Integer_Array is
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
-        I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
-        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
-        I_VALID         : in  std_logic;
-        I_READY         : out std_logic
+        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
+        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
     );
 end  MsgPack_KVMap_Get_Integer_Array;
 -----------------------------------------------------------------------------------
@@ -99,6 +102,10 @@ use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Array;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_KVMap_Get_Integer_Array is
+    signal    start    :  std_logic;
+    signal    busy     :  std_logic;
+    constant  size     :  std_logic_vector(31 downto 0)
+                       := std_logic_vector(to_unsigned(2**ADDR_BITS, 32));
 begin
     -------------------------------------------------------------------------------
     --
@@ -122,6 +129,29 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
+    process (I_VALID, I_CODE) begin
+        if (I_VALID = '1' and I_CODE(0).valid = '1') then
+            if    (I_CODE(0).class = MsgPack_Object.CLASS_NIL) then
+                start   <= '1';
+                I_ERROR <= '0';
+                I_DONE  <= '1';
+                I_SHIFT <= (0 => '1', others => '0');
+            else
+                start   <= '0';
+                I_ERROR <= '1';
+                I_DONE  <= '1';
+                I_SHIFT <= (others => '0');
+            end if;
+        else
+                start   <= '0';
+                I_ERROR <= '0';
+                I_DONE  <= '0';
+                I_SHIFT <= (others => '0');
+        end if;
+    end process;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
     ENCODE: MsgPack_Object_Encode_Integer_Array  -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
@@ -134,13 +164,13 @@ begin
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            ARRAY_START     => START           , -- In  :
-            ARRAY_SIZE      => SIZE            , -- In  :
-            BUSY            => BUSY            , -- In  :
-            I_ADDR          => I_ADDR          , -- Out :
-            I_VALUE         => I_VALUE         , -- In  :
-            I_VALID         => I_VALID         , -- In  :
-            I_READY         => I_READY         , -- Out :
+            ARRAY_START     => start           , -- In  :
+            ARRAY_SIZE      => size            , -- In  :
+            BUSY            => busy            , -- In  :
+            I_ADDR          => ADDR            , -- Out :
+            I_VALUE         => VALUE           , -- In  :
+            I_VALID         => VALID           , -- In  :
+            I_READY         => READY           , -- Out :
             O_CODE          => O_CODE          , -- Out :
             O_LAST          => O_LAST          , -- Out :
             O_ERROR         => O_ERROR         , -- Out :

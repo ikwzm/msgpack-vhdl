@@ -2,7 +2,7 @@
 --!     @file    kvmap/msgpack_kvmap_components.vhd                              --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.1.0                                                           --
---!     @date    2015/10/22                                                      --
+--!     @date    2015/10/25                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -123,6 +123,81 @@ component MsgPack_KVMap_Key_Match_Aggregator
     );
 end component;
 -----------------------------------------------------------------------------------
+--! @brief MsgPack_KVMap_Dispatcher                                              --
+-----------------------------------------------------------------------------------
+component MsgPack_KVMap_Dispatcher
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        STORE_SIZE      :  positive := 8;
+        MATCH_PHASE     :  positive := 8
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Key Object Decode Input Interface
+    -------------------------------------------------------------------------------
+        I_KEY_CODE      : in  MsgPack_Object.Code_Vector( CODE_WIDTH-1 downto 0);
+        I_KEY_LAST      : in  std_logic;
+        I_KEY_VALID     : in  std_logic;
+        I_KEY_ERROR     : out std_logic;
+        I_KEY_DONE      : out std_logic;
+        I_KEY_SHIFT     : out std_logic_vector(           CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Object Decode Input Interface
+    -------------------------------------------------------------------------------
+        I_VAL_START     : in  std_logic;
+        I_VAL_ABORT     : in  std_logic;
+        I_VAL_CODE      : in  MsgPack_Object.Code_Vector( CODE_WIDTH-1 downto 0);
+        I_VAL_LAST      : in  std_logic;
+        I_VAL_VALID     : in  std_logic;
+        I_VAL_ERROR     : out std_logic;
+        I_VAL_DONE      : out std_logic;
+        I_VAL_SHIFT     : out std_logic_vector(           CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Key Object Encode Output Interface
+    -------------------------------------------------------------------------------
+        O_KEY_CODE      : out MsgPack_Object.Code_Vector( CODE_WIDTH-1 downto 0);
+        O_KEY_VALID     : out std_logic;
+        O_KEY_LAST      : out std_logic;
+        O_KEY_ERROR     : out std_logic;
+        O_KEY_READY     : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Key Object Compare Interface
+    -------------------------------------------------------------------------------
+        MATCH_REQ       : out std_logic_vector(          MATCH_PHASE-1 downto 0);
+        MATCH_CODE      : out MsgPack_Object.Code_Vector( CODE_WIDTH-1 downto 0);
+        MATCH_OK        : in  std_logic_vector(STORE_SIZE           -1 downto 0);
+        MATCH_NOT       : in  std_logic_vector(STORE_SIZE           -1 downto 0);
+        MATCH_SHIFT     : in  std_logic_vector(STORE_SIZE*CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Object Decode Output Interface
+    -------------------------------------------------------------------------------
+        VALUE_START     : out std_logic_vector(STORE_SIZE           -1 downto 0);
+        VALUE_VALID     : out std_logic_vector(STORE_SIZE           -1 downto 0);
+        VALUE_CODE      : out MsgPack_Object.Code_Vector( CODE_WIDTH-1 downto 0);
+        VALUE_LAST      : out std_logic;
+        VALUE_ERROR     : in  std_logic_vector(STORE_SIZE           -1 downto 0);
+        VALUE_DONE      : in  std_logic_vector(STORE_SIZE           -1 downto 0);
+        VALUE_SHIFT     : in  std_logic_vector(STORE_SIZE*CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Dispatch Control/Status Interface
+    -------------------------------------------------------------------------------
+        DISPATCH_SELECT : out std_logic_vector(STORE_SIZE           -1 downto 0);
+        DISPATCH_START  : out std_logic;
+        DISPATCH_ERROR  : out std_logic;
+        DISPATCH_ABORT  : out std_logic;
+        DISPATCH_BUSY   : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
 --! @brief MsgPack_KVMap_Set_Integer                                             --
 -----------------------------------------------------------------------------------
 component MsgPack_KVMap_Set_Integer
@@ -166,11 +241,11 @@ component MsgPack_KVMap_Set_Integer
     -------------------------------------------------------------------------------
     -- Value Output Interface
     -------------------------------------------------------------------------------
-        O_VALUE         : out std_logic_vector( VALUE_BITS-1 downto 0);
-        O_SIGN          : out std_logic;
-        O_LAST          : out std_logic;
-        O_VALID         : out std_logic;
-        O_READY         : in  std_logic
+        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
+        SIGN            : out std_logic;
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
     );
 end component;
 -----------------------------------------------------------------------------------
@@ -218,12 +293,12 @@ component MsgPack_KVMap_Set_Integer_Array
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
-        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
-        O_SIGN          : out std_logic;
-        O_LAST          : out std_logic;
-        O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
-        O_VALID         : out std_logic;
-        O_READY         : in  std_logic
+        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
+        SIGN            : out std_logic;
+        LAST            : out std_logic;
+        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
+        VALID           : out std_logic;
+        READY           : in  std_logic
     );
 end component;
 -----------------------------------------------------------------------------------
@@ -282,7 +357,7 @@ component MsgPack_KVMap_Set_Value
         MATCH_NOT       : in  std_logic_vector(STORE_SIZE           -1 downto 0);
         MATCH_SHIFT     : in  std_logic_vector(STORE_SIZE*CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Value Object Encode Input Interface
+    -- Value Object Decode Output Interface
     -------------------------------------------------------------------------------
         VALUE_START     : out std_logic_vector(STORE_SIZE           -1 downto 0);
         VALUE_VALID     : out std_logic_vector(STORE_SIZE           -1 downto 0);
@@ -363,10 +438,14 @@ component MsgPack_KVMap_Get_Integer
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Control and Status Signals 
+    -- Object Code Input Interface
     -------------------------------------------------------------------------------
-        START           : in  std_logic := '1';
-        BUSY            : out std_logic;
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -386,9 +465,9 @@ component MsgPack_KVMap_Get_Integer
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
-        I_VALID         : in  std_logic;
-        I_READY         : out std_logic
+        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
     );
 end component;
 -----------------------------------------------------------------------------------
@@ -414,11 +493,14 @@ component MsgPack_KVMap_Get_Integer_Array
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Control and Status Signals 
+    -- Object Code Input Interface
     -------------------------------------------------------------------------------
-        START           : in  std_logic := '1';
-        SIZE            : in  std_logic_vector(31 downto 0);
-        BUSY            : out std_logic;
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -438,10 +520,10 @@ component MsgPack_KVMap_Get_Integer_Array
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
-        I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
-        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
-        I_VALID         : in  std_logic;
-        I_READY         : out std_logic
+        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
+        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
     );
 end component;
 -----------------------------------------------------------------------------------
@@ -473,6 +555,17 @@ component MsgPack_KVMap_Get_Value
         I_KEY_DONE      : out std_logic;
         I_KEY_SHIFT     : out std_logic_vector(                     CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
+    -- Value Object Decode Input Interface
+    -------------------------------------------------------------------------------
+        I_VAL_START     : in  std_logic;
+        I_VAL_ABORT     : in  std_logic;
+        I_VAL_CODE      : in  MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
+        I_VAL_LAST      : in  std_logic;
+        I_VAL_VALID     : in  std_logic;
+        I_VAL_ERROR     : out std_logic;
+        I_VAL_DONE      : out std_logic;
+        I_VAL_SHIFT     : out std_logic_vector(                     CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
     -- Key Object Encode Output Interface
     -------------------------------------------------------------------------------
         O_KEY_CODE      : out MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
@@ -497,9 +590,18 @@ component MsgPack_KVMap_Get_Value
         MATCH_NOT       : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
         MATCH_SHIFT     : in  std_logic_vector(          STORE_SIZE*CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
+    -- Parameter Object Decode Output Interface
+    -------------------------------------------------------------------------------
+        PARAM_START     : out std_logic_vector(          STORE_SIZE           -1 downto 0);
+        PARAM_VALID     : out std_logic_vector(          STORE_SIZE           -1 downto 0);
+        PARAM_CODE      : out MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
+        PARAM_LAST      : out std_logic;
+        PARAM_ERROR     : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
+        PARAM_DONE      : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
+        PARAM_SHIFT     : in  std_logic_vector(          STORE_SIZE*CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
     -- Value Object Encode Input Interface
     -------------------------------------------------------------------------------
-        VALUE_START     : out std_logic_vector(          STORE_SIZE           -1 downto 0);
         VALUE_VALID     : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
         VALUE_CODE      : in  MsgPack_Object.Code_Vector(STORE_SIZE*CODE_WIDTH-1 downto 0);
         VALUE_LAST      : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
@@ -552,9 +654,18 @@ component MsgPack_KVMap_Get_Map_Value
         MATCH_NOT       : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
         MATCH_SHIFT     : in  std_logic_vector(          STORE_SIZE*CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
+    -- Parameter Object Decode Output Interface
+    -------------------------------------------------------------------------------
+        PARAM_START     : out std_logic_vector(          STORE_SIZE           -1 downto 0);
+        PARAM_VALID     : out std_logic_vector(          STORE_SIZE           -1 downto 0);
+        PARAM_CODE      : out MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
+        PARAM_LAST      : out std_logic;
+        PARAM_ERROR     : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
+        PARAM_DONE      : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
+        PARAM_SHIFT     : in  std_logic_vector(          STORE_SIZE*CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
     -- Value Object Encode Input Interface
     -------------------------------------------------------------------------------
-        VALUE_START     : out std_logic_vector(          STORE_SIZE           -1 downto 0);
         VALUE_VALID     : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
         VALUE_CODE      : in  MsgPack_Object.Code_Vector(STORE_SIZE*CODE_WIDTH-1 downto 0);
         VALUE_LAST      : in  std_logic_vector(          STORE_SIZE           -1 downto 0);

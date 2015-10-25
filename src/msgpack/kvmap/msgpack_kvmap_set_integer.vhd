@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_set_integer.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Value Module :
 --!     @version 0.1.0
---!     @date    2015/10/22
+--!     @date    2015/10/25
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -79,11 +79,11 @@ entity  MsgPack_KVMap_Set_Integer is
     -------------------------------------------------------------------------------
     -- Value Output Interface
     -------------------------------------------------------------------------------
-        O_VALUE         : out std_logic_vector( VALUE_BITS-1 downto 0);
-        O_SIGN          : out std_logic;
-        O_LAST          : out std_logic;
-        O_VALID         : out std_logic;
-        O_READY         : in  std_logic
+        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
+        SIGN            : out std_logic;
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
     );
 end  MsgPack_KVMap_Set_Integer;
 -----------------------------------------------------------------------------------
@@ -138,10 +138,10 @@ begin
             I_ERROR         => I_ERROR         , -- Out :
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
-            O_VALUE         => O_VALUE         , -- Out :
-            O_SIGN          => O_SIGN          , -- Out :
-            O_LAST          => O_LAST          , -- Out :
-            O_VALID         => O_VALID         , -- Out :
-            O_READY         => O_READY           -- In  :
+            O_VALUE         => VALUE           , -- Out :
+            O_SIGN          => SIGN            , -- Out :
+            O_LAST          => LAST            , -- Out :
+            O_VALID         => VALID           , -- Out :
+            O_READY         => READY             -- In  :
         );                                       --
 end RTL;
