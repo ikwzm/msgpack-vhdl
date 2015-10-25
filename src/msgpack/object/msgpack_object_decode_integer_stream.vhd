@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_set_integer.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Value Module :
+--!     @file    msgpack_object_decode_integer_stream.vhd
+--!     @brief   MessagePack Object decode to integer stream
 --!     @version 0.1.0
---!     @date    2015/10/25
+--!     @date    2015/10/22
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -38,14 +38,12 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Set_Integer is
+entity  MsgPack_Object_Decode_Integer_Stream is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
-        MATCH_PHASE     :  positive := 8;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -69,23 +67,16 @@ entity  MsgPack_KVMap_Set_Integer is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- MessagePack Key Match Interface
+    -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
-        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
-        MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        MATCH_OK        : out std_logic;
-        MATCH_NOT       : out std_logic;
-        MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    -- Value Output Interface
-    -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
-        SIGN            : out std_logic;
-        LAST            : out std_logic;
-        VALID           : out std_logic;
-        READY           : in  std_logic
+        O_START         : out std_logic;
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
-end  MsgPack_KVMap_Set_Integer;
+end  MsgPack_Object_Decode_Integer_Stream;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -94,54 +85,70 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Array;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
-architecture RTL of MsgPack_KVMap_Set_Integer is
+architecture RTL of MsgPack_Object_Decode_Integer_Stream is
+    signal    value_valid       :  std_logic;
+    signal    value_error       :  std_logic;
+    signal    value_done        :  std_logic;
+    signal    value_last        :  std_logic;
+    signal    value_code        :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+    signal    value_shift       :  std_logic_vector(CODE_WIDTH-1 downto 0);
+    signal    outlet_valid      :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    MATCH: MsgPack_KVMap_Key_Compare             -- 
-        generic map (                            -- 
-            CODE_WIDTH      => CODE_WIDTH      , -- 
-            I_MAX_PHASE     => MATCH_PHASE     , --
-            KEYWORD         => kEY               --
-        )                                        -- 
-        port map (                               -- 
-            CLK             => CLK             , -- 
-            RST             => RST             , -- 
-            CLR             => CLR             , -- 
-            I_CODE          => MATCH_CODE      , -- 
-            I_REQ_PHASE     => MATCH_REQ       , -- 
-            MATCH           => MATCH_OK        , -- 
-            MISMATCH        => MATCH_NOT       , -- 
-            SHIFT           => MATCH_SHIFT       -- 
-        );                                       -- 
+    DECODE_ARRAY:  MsgPack_Object_Decode_Array       -- 
+        generic map (                                -- 
+            CODE_WIDTH      => CODE_WIDTH            --
+        )                                            -- 
+        port map (                                   -- 
+            CLK             => CLK                 , -- In  :
+            RST             => RST                 , -- In  :
+            CLR             => CLR                 , -- In  :
+            I_CODE          => I_CODE              , -- In  :
+            I_LAST          => I_LAST              , -- In  :
+            I_VALID         => I_VALID             , -- In  :
+            I_ERROR         => I_ERROR             , -- Out :
+            I_DONE          => I_DONE              , -- Out :
+            I_SHIFT         => I_SHIFT             , -- Out :
+            ARRAY_START     => O_START             , -- Out :
+            ARRAY_SIZE      => open                , -- Out :
+            VALUE_START     => open                , -- Out :
+            VALUE_VALID     => value_valid         , -- Out :
+            VALUE_CODE      => value_code          , -- Out :
+            VALUE_LAST      => value_last          , -- Out :
+            VALUE_ERROR     => value_error         , -- In  :
+            VALUE_DONE      => value_done          , -- In  :
+            VALUE_SHIFT     => value_shift           -- In  :
+        );                                           -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE: MsgPack_Object_Decode_Integer        -- 
-        generic map (                            -- 
-            CODE_WIDTH      => CODE_WIDTH      , --
-            VALUE_BITS      => VALUE_BITS      , --
-            VALUE_SIGN      => VALUE_SIGN      , --
-            CHECK_RANGE     => CHECK_RANGE     , --
-            ENABLE64        => ENABLE64          --
-        )                                        -- 
-        port map (                               -- 
-            CLK             => CLK             , -- In  :
-            RST             => RST             , -- In  :
-            CLR             => CLR             , -- In  :
-            I_CODE          => I_CODE          , -- In  :
-            I_LAST          => I_LAST          , -- In  :
-            I_VALID         => I_VALID         , -- In  :
-            I_ERROR         => I_ERROR         , -- Out :
-            I_DONE          => I_DONE          , -- Out :
-            I_SHIFT         => I_SHIFT         , -- Out :
-            O_VALUE         => VALUE           , -- Out :
-            O_SIGN          => SIGN            , -- Out :
-            O_LAST          => LAST            , -- Out :
-            O_VALID         => VALID           , -- Out :
-            O_READY         => READY             -- In  :
-        );                                       --
+    DECODE_VALUE: MsgPack_Object_Decode_Integer      -- 
+        generic map (                                -- 
+            CODE_WIDTH      => CODE_WIDTH          , --
+            VALUE_BITS      => VALUE_BITS          , --
+            VALUE_SIGN      => VALUE_SIGN          , --
+            QUEUE_SIZE      => QUEUE_SIZE          , --
+            CHECK_RANGE     => CHECK_RANGE         , --
+            ENABLE64        => ENABLE64              --
+        )                                            -- 
+        port map (                                   -- 
+            CLK             => CLK                 , -- In  :
+            RST             => RST                 , -- In  :
+            CLR             => CLR                 , -- In  :
+            I_CODE          => value_code          , -- In  :
+            I_LAST          => value_last          , -- In  :
+            I_VALID         => value_valid         , -- In  :
+            I_ERROR         => value_error         , -- Out :
+            I_DONE          => value_done          , -- Out :
+            I_SHIFT         => value_shift         , -- Out :
+            O_VALUE         => O_VALUE             , -- Out :
+            O_SIGN          => O_SIGN              , -- Out :
+            O_LAST          => O_LAST              , -- Out :
+            O_VALID         => O_VALID             , -- Out :
+            O_READY         => O_READY               -- In  :
+        );                                           --
 end RTL;

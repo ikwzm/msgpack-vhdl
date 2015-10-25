@@ -43,7 +43,8 @@ entity  MsgPack_Object_Encode_Array is
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        CODE_WIDTH      :  positive := 1
+        CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  positive := 32
     );
     port (
     -------------------------------------------------------------------------------
@@ -55,8 +56,8 @@ entity  MsgPack_Object_Encode_Array is
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-        ARRAY_START     : in  std_logic;
-        ARRAY_SIZE      : in  std_logic_vector(31 downto 0);
+        START           : in  std_logic;
+        SIZE            : in  std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     -- Value Object Encode Input Interface
     -------------------------------------------------------------------------------
@@ -86,7 +87,7 @@ use     MsgPack.MsgPack_Object;
 architecture RTL of MsgPack_Object_Encode_Array is
     type      STATE_TYPE        is (IDLE_STATE, ARRAY_STATE, VALUE_STATE);
     signal    curr_state        :  STATE_TYPE;
-    signal    array_count       :  unsigned(31 downto 0);
+    signal    array_count       :  unsigned(SIZE_BITS-1 downto 0);
     signal    array_count_zero  :  boolean;
 begin
     -------------------------------------------------------------------------------
@@ -101,7 +102,7 @@ begin
             else
                 case curr_state is
                     when IDLE_STATE =>
-                        if (ARRAY_START = '1') then
+                        if (START = '1') then
                                 curr_state <= ARRAY_STATE;
                         else
                                 curr_state <= IDLE_STATE;
@@ -136,7 +137,7 @@ begin
     --
     -------------------------------------------------------------------------------
     process (CLK, RST)
-        variable next_count :  unsigned(31 downto 0);
+        variable next_count :  unsigned(SIZE'range);
     begin 
         if (RST = '1') then
                 array_count      <= (others => '0');
@@ -147,7 +148,7 @@ begin
                 array_count_zero <= TRUE;
             else
                 if (curr_state = IDLE_STATE) then
-                    next_count := unsigned(ARRAY_SIZE);
+                    next_count := unsigned(SIZE);
                 else
                     next_count := array_count;
                 end if;

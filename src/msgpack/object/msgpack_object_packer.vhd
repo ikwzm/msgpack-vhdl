@@ -772,7 +772,7 @@ begin
             O_VAL_SIZE      => O_BYTES+1          , -- 
             O_SHIFT_MIN     => O_BYTES            , -- SHIFT unused
             O_SHIFT_MAX     => O_BYTES            , -- SHIFT unused
-            I_JUSTIFIED     => 0                  , -- 
+            I_JUSTIFIED     => 1                  , -- 
             FLUSH_ENABLE    => 0                    -- 
         )                                           -- 
         port map (                                  -- 

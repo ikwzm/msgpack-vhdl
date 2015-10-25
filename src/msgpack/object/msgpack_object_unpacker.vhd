@@ -212,7 +212,7 @@ begin
             O_VAL_SIZE      => 1                  , -- 
             O_SHIFT_MIN     => intake_shift'low   , -- 
             O_SHIFT_MAX     => intake_shift'high  , -- 
-            I_JUSTIFIED     => 0                  , -- 
+            I_JUSTIFIED     => 1                  , -- 
             FLUSH_ENABLE    => 0                    -- 
         )                                           -- 
         port map (                                  -- 

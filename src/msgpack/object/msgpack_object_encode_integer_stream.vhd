@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_encode_integer_array.vhd
---!     @brief   MessagePack Object encode to integer array
+--!     @file    msgpack_object_encode_integer_stream.vhd
+--!     @brief   MessagePack Object encode to integer stream
 --!     @version 0.1.0
 --!     @date    2015/10/19
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,13 +38,13 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Encode_Integer_Array is
+entity  MsgPack_Object_Encode_Integer_Stream is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  positive := 32;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0
@@ -59,13 +59,12 @@ entity  MsgPack_Object_Encode_Integer_Array is
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-        ARRAY_START     : in  std_logic;
-        ARRAY_SIZE      : in  std_logic_vector(31 downto 0);
+        START           : in  std_logic;
+        SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
         BUSY            : out std_logic;
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
-        I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
         I_VALID         : in  std_logic;
         I_READY         : out std_logic;
@@ -78,7 +77,7 @@ entity  MsgPack_Object_Encode_Integer_Array is
         O_VALID         : out std_logic;
         O_READY         : in  std_logic
     );
-end MsgPack_Object_Encode_Integer_Array;
+end MsgPack_Object_Encode_Integer_Stream;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -89,7 +88,7 @@ library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Code_Reducer;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Array;
-architecture RTL of MsgPack_Object_Encode_Integer_Array is
+architecture RTL of MsgPack_Object_Encode_Integer_Stream is
     constant  CODE_DATA_BITS    :  integer := MsgPack_Object.CODE_DATA_BITS;
     constant  I_WIDTH           :  integer := (VALUE_BITS+CODE_DATA_BITS-1)/CODE_DATA_BITS;
     signal    i_code            :  MsgPack_Object.Code_Vector(I_WIDTH-1 downto 0);
@@ -105,9 +104,7 @@ architecture RTL of MsgPack_Object_Encode_Integer_Array is
     signal    q_ready           :  std_logic;
     type      STATE_TYPE        is (IDLE_STATE, START_STATE, RUN_STATE);
     signal    curr_state        :  STATE_TYPE;
-    signal    curr_count        :  unsigned(31 downto 0);
-    signal    curr_addr         :  unsigned(ADDR_BITS-1 downto 0);
-    signal    next_addr         :  unsigned(ADDR_BITS-1 downto 0);
+    signal    curr_count        :  unsigned(SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
@@ -185,14 +182,15 @@ begin
     -------------------------------------------------------------------------------
     ENCODE_ARRAY: MsgPack_Object_Encode_Array     -- 
         generic map (                             -- 
-             CODE_WIDTH      => CODE_WIDTH        --
+             CODE_WIDTH      => CODE_WIDTH      , --
+             SIZE_BITS       => SIZE_BITS         -- 
         )                                         -- 
         port map (                                -- 
              CLK             => CLK             , -- In  :
              RST             => RST             , -- In  :
              CLR             => CLR             , -- In  :
-             ARRAY_START     => ARRAY_START     , -- In  :
-             ARRAY_SIZE      => ARRAY_SIZE      , -- In  :
+             START           => START           , -- In  :
+             SIZE            => SIZE            , -- In  :
              I_CODE          => t_code          , -- In  :
              I_LAST          => t_last          , -- In  :
              I_ERROR         => t_error         , -- In  :
@@ -216,22 +214,19 @@ begin
         if (RST = '1') then
                 curr_state <= IDLE_STATE;
                 curr_count <= (others => '0');
-                curr_addr  <= (others => '0');
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
                 curr_state <= IDLE_STATE;
                 curr_count <= (others => '0');
-                curr_addr  <= (others => '0');
             else
                 case curr_state is
                     when IDLE_STATE =>
-                        if (ARRAY_START = '1') then
+                        if (START = '1') then
                             curr_state <= START_STATE;
                         else
                             curr_state <= IDLE_STATE;
                         end if;
-                        curr_count <= unsigned(ARRAY_SIZE);
-                        curr_addr  <= (others => '0');
+                        curr_count <= unsigned(SIZE);
                     when START_STATE =>
                         if (curr_count > 0) then
                             curr_state <= RUN_STATE;
@@ -247,26 +242,13 @@ begin
                         if (I_VALID = '1' and q_ready = '1') then
                             curr_count <= curr_count - 1;
                         end if;
-                        curr_addr  <= next_addr;
                     when others => 
                         curr_state <= IDLE_STATE;
                         curr_count <= (others => '0');
-                        curr_addr  <= (others => '0');
                 end case;
             end if;
         end if;
     end process;
     i_last <= '1' when (to_01(curr_count) <= 1) else '0';
     BUSY   <= '1' when (curr_state = RUN_STATE or queue_busy = '1') else '0';
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    I_ADDR <= std_logic_vector(next_addr);
-    process (curr_addr, I_VALID, q_ready) begin
-        if (I_VALID = '1' and q_ready = '1') then
-            next_addr <= curr_addr + 1;
-        else
-            next_addr <= curr_addr;
-        end if;
-    end process;
 end RTL;
