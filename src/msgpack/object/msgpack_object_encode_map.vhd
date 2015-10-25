@@ -43,7 +43,8 @@ entity  MsgPack_Object_Encode_Map is
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        CODE_WIDTH      :  positive := 1
+        CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  positive := 32
     );
     port (
     -------------------------------------------------------------------------------
@@ -55,8 +56,8 @@ entity  MsgPack_Object_Encode_Map is
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-        MAP_START       : in  std_logic;
-        MAP_SIZE        : in  std_logic_vector(31 downto 0);
+        START           : in  std_logic;
+        SIZE            : in  std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     -- Key Object Encode Input Interface
     -------------------------------------------------------------------------------
@@ -94,7 +95,7 @@ use     MsgPack.MsgPack_Object;
 architecture RTL of MsgPack_Object_Encode_Map is
     type      STATE_TYPE        is (IDLE_STATE, MAP_STATE, KEY_STATE, VAL_STATE);
     signal    curr_state        :  STATE_TYPE;
-    signal    map_count         :  unsigned(31 downto 0);
+    signal    map_count         :  unsigned(SIZE_BITS-1 downto 0);
     signal    map_count_zero    :  boolean;
 begin
     -------------------------------------------------------------------------------
@@ -109,7 +110,7 @@ begin
             else
                 case curr_state is
                     when IDLE_STATE =>
-                        if (MAP_START = '1') then
+                        if (START = '1') then
                                 curr_state <= MAP_STATE;
                         else
                                 curr_state <= IDLE_STATE;
@@ -150,7 +151,7 @@ begin
     --
     -------------------------------------------------------------------------------
     process (CLK, RST)
-        variable next_count :  unsigned(31 downto 0);
+        variable next_count :  unsigned(SIZE_BITS-1 downto 0);
     begin 
         if (RST = '1') then
                 map_count      <= (others => '0');
@@ -161,7 +162,7 @@ begin
                 map_count_zero <= TRUE;
             else
                 if (curr_state = IDLE_STATE) then
-                    next_count := unsigned(MAP_SIZE);
+                    next_count := unsigned(SIZE);
                 else
                     next_count := map_count;
                 end if;

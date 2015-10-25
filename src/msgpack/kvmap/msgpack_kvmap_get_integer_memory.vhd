@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_get_integer_array.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Get Integer Array Module :
+--!     @file    msgpack_kvmap_get_integer_memory.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Get Integer Memory Module :
 --!     @version 0.1.0
 --!     @date    2015/10/25
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Get_Integer_Array is
+entity  MsgPack_KVMap_Get_Integer_Memory is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -46,7 +46,8 @@ entity  MsgPack_KVMap_Get_Integer_Array is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
-        ADDR_BITS       :  integer  := 8;
+        ADDR_BITS       :  positive := 32;
+        SIZE_BITS       :  positive := 32;  
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE
     );
@@ -90,7 +91,7 @@ entity  MsgPack_KVMap_Get_Integer_Array is
         VALID           : in  std_logic;
         READY           : out std_logic
     );
-end  MsgPack_KVMap_Get_Integer_Array;
+end  MsgPack_KVMap_Get_Integer_Memory;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -99,13 +100,13 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Array;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Memory;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
-architecture RTL of MsgPack_KVMap_Get_Integer_Array is
+architecture RTL of MsgPack_KVMap_Get_Integer_Memory is
     signal    start    :  std_logic;
     signal    busy     :  std_logic;
-    constant  size     :  std_logic_vector(31 downto 0)
-                       := std_logic_vector(to_unsigned(2**ADDR_BITS, 32));
+    constant  size     :  std_logic_vector(SIZE_BITS-1 downto 0)
+                       := std_logic_vector(to_unsigned(2**ADDR_BITS, SIZE_BITS));
 begin
     -------------------------------------------------------------------------------
     --
@@ -152,10 +153,11 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ENCODE: MsgPack_Object_Encode_Integer_Array  -- 
+    ENCODE: MsgPack_Object_Encode_Integer_Memory -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            ADDR_BITS       => ADDR_BITS       , -- 
+            ADDR_BITS       => ADDR_BITS       , --
+            SIZE_BITS       => SIZE_BITS       , --
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
             QUEUE_SIZE      => 0                 -- 
@@ -164,8 +166,9 @@ begin
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            ARRAY_START     => start           , -- In  :
-            ARRAY_SIZE      => size            , -- In  :
+            START           => start           , -- In  :
+            ADDR            => std_logic_vector(to_unsigned(0, ADDR_BITS)), 
+            SIZE            => size            , -- In  :
             BUSY            => busy            , -- In  :
             I_ADDR          => ADDR            , -- Out :
             I_VALUE         => VALUE           , -- In  :

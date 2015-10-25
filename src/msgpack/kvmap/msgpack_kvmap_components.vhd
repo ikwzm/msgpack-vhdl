@@ -249,9 +249,9 @@ component MsgPack_KVMap_Set_Integer
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Set_Integer_Array                                       --
+--! @brief MsgPack_KVMap_Set_Integer_Memory                                      --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Set_Integer_Array
+component MsgPack_KVMap_Set_Integer_Memory
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -471,9 +471,9 @@ component MsgPack_KVMap_Get_Integer
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Get_Integer_Array                                       --
+--! @brief MsgPack_KVMap_Get_Integer_Memory                                      --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Get_Integer_Array
+component MsgPack_KVMap_Get_Integer_Memory
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -481,7 +481,8 @@ component MsgPack_KVMap_Get_Integer_Array
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
-        ADDR_BITS       :  integer  := 8;
+        ADDR_BITS       :  positive := 32;
+        SIZE_BITS       :  positive := 32;  
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE
     );

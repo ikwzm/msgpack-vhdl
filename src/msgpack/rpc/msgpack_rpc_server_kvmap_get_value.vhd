@@ -184,10 +184,11 @@ architecture RTL of MsgPack_RPC_Server_KVMap_Get_Value is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
+    constant  SIZE_BITS         :  integer := 32;
     type      STATE_TYPE       is (IDLE_STATE, RUN_STATE, SKIP_STATE, DONE_STATE);
     signal    curr_state        :  STATE_TYPE;
     signal    array_start       :  std_logic;
-    signal    array_size        :  std_logic_vector(31 downto 0);
+    signal    array_size        :  std_logic_vector(SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
@@ -340,14 +341,15 @@ begin
     -------------------------------------------------------------------------------
     ENCODE_ARRAY: MsgPack_Object_Encode_Array            -- 
         generic map (                                    -- 
-            CODE_WIDTH      => I_PARAM_WIDTH             --
+            CODE_WIDTH      => I_PARAM_WIDTH           , --
+            SIZE_BITS       => SIZE_BITS                 -- 
         )                                                -- 
         port map (                                       -- 
             CLK             => CLK                     , -- In  :
             RST             => RST                     , -- In  :
             CLR             => CLR                     , -- In  :
-            ARRAY_START     => array_start             , -- In  :
-            ARRAY_SIZE      => array_size              , -- In  :
+            START           => array_start             , -- In  :
+            SIZE            => array_size              , -- In  :
             I_CODE          => ret_value_code          , -- In  :
             I_LAST          => ret_value_last          , -- In  :
             I_ERROR         => ret_value_error         , -- In  :

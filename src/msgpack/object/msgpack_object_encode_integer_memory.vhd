@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_encode_array.vhd
---!     @brief   MessagePack Object encode to array
+--!     @file    msgpack_object_encode_integer_memory.vhd
+--!     @brief   MessagePack Object encode to integer memory
 --!     @version 0.1.0
---!     @date    2015/10/19
+--!     @date    2015/10/25
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -38,13 +38,17 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Encode_Array is
+entity  MsgPack_Object_Encode_Integer_Memory is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        SIZE_BITS       :  positive := 32
+        ADDR_BITS       :  positive := 32;
+        SIZE_BITS       :  positive := 32;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0
     );
     port (
     -------------------------------------------------------------------------------
@@ -57,13 +61,14 @@ entity  MsgPack_Object_Encode_Array is
     -- 
     -------------------------------------------------------------------------------
         START           : in  std_logic;
-        SIZE            : in  std_logic_vector(SIZE_BITS-1 downto 0);
+        ADDR            : in  std_logic_vector( ADDR_BITS-1 downto 0);
+        SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
+        BUSY            : out std_logic;
     -------------------------------------------------------------------------------
-    -- Value Object Encode Input Interface
+    -- Integer Value Input Interface
     -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_ERROR         : in  std_logic;
+        I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
         I_VALID         : in  std_logic;
         I_READY         : out std_logic;
     -------------------------------------------------------------------------------
@@ -75,7 +80,7 @@ entity  MsgPack_Object_Encode_Array is
         O_VALID         : out std_logic;
         O_READY         : in  std_logic
     );
-end MsgPack_Object_Encode_Array;
+end MsgPack_Object_Encode_Integer_Memory;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -84,95 +89,80 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-architecture RTL of MsgPack_Object_Encode_Array is
-    type      STATE_TYPE        is (IDLE_STATE, ARRAY_STATE, VALUE_STATE);
-    signal    curr_state        :  STATE_TYPE;
-    signal    array_count       :  unsigned(SIZE_BITS-1 downto 0);
-    signal    array_count_zero  :  boolean;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Stream;
+architecture RTL of MsgPack_Object_Encode_Integer_Memory is
+    signal    curr_addr         :  unsigned(ADDR_BITS-1 downto 0);
+    signal    next_addr         :  unsigned(ADDR_BITS-1 downto 0);
+    signal    intake_ready      :  std_logic;
 begin
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    STREAM: MsgPack_Object_Encode_Integer_Stream     -- 
+        ---------------------------------------------------------------------------
+        -- Generic Parameters
+        ---------------------------------------------------------------------------
+        generic map (                                -- 
+            CODE_WIDTH      => CODE_WIDTH          , --
+            SIZE_BITS       => SIZE_BITS           , --
+            VALUE_BITS      => VALUE_BITS          , --
+            VALUE_SIGN      => VALUE_SIGN          , --
+            QUEUE_SIZE      => QUEUE_SIZE            --
+        )                                            -- 
+        port map (                                   -- 
+        ---------------------------------------------------------------------------
+        -- Clock and Reset Signals
+        ---------------------------------------------------------------------------
+            CLK             => CLK                 , -- In  :
+            RST             => RST                 , -- In  :
+            CLR             => CLR                 , -- In  :
+        ---------------------------------------------------------------------------
+        -- 
+        ---------------------------------------------------------------------------
+            START           => START               , -- In  :
+            SIZE            => SIZE                , -- In  :
+            BUSY            => BUSY                , -- Out :
+        ---------------------------------------------------------------------------
+        -- Integer Value Input Interface
+        ---------------------------------------------------------------------------
+            I_VALUE         => I_VALUE             , -- In  :
+            I_VALID         => I_VALID             , -- In  :
+            I_READY         => intake_ready        , -- Out :
+        ---------------------------------------------------------------------------
+        -- Array Object Encode Output Interface
+        ---------------------------------------------------------------------------
+            O_CODE          => O_CODE              , -- Out :
+            O_LAST          => O_LAST              , -- Out :
+            O_ERROR         => O_ERROR             , -- Out :
+            O_VALID         => O_VALID             , -- Out :
+            O_READY         => O_READY               -- In  :
+        );                                           -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     process (CLK, RST) begin
         if (RST = '1') then
-                curr_state <= IDLE_STATE;
+                curr_addr <= (others => '0');
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
-                curr_state <= IDLE_STATE;
+                curr_addr <= (others => '0');
+            elsif (START = '1') then
+                curr_addr <= unsigned(ADDR);
             else
-                case curr_state is
-                    when IDLE_STATE =>
-                        if (START = '1') then
-                                curr_state <= ARRAY_STATE;
-                        else
-                                curr_state <= IDLE_STATE;
-                        end if;
-                    when ARRAY_STATE =>
-                        if (O_READY = '1') then
-                            if (array_count_zero) then
-                                curr_state <= IDLE_STATE;
-                            else
-                                curr_state <= VALUE_STATE;
-                            end if;
-                        else
-                                curr_state <= ARRAY_STATE;
-                        end if;
-                    when VALUE_STATE =>
-                        if (I_VALID = '1' and I_LAST = '1' and O_READY = '1') then
-                            if (array_count_zero) then
-                                curr_state <= IDLE_STATE;
-                            else
-                                curr_state <= VALUE_STATE;
-                            end if;
-                        else
-                                curr_state <= VALUE_STATE;
-                        end if;
-                    when others =>
-                                curr_state <= IDLE_STATE;
-                end case;
+                curr_addr <= next_addr;
             end if;
         end if;
     end process;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (CLK, RST)
-        variable next_count :  unsigned(SIZE'range);
-    begin 
-        if (RST = '1') then
-                array_count      <= (others => '0');
-                array_count_zero <= TRUE;
-        elsif (CLK'event and CLK = '1') then
-            if (CLR = '1') then
-                array_count      <= (others => '0');
-                array_count_zero <= TRUE;
-            else
-                if (curr_state = IDLE_STATE) then
-                    next_count := unsigned(SIZE);
-                else
-                    next_count := array_count;
-                end if;
-                if (curr_state = ARRAY_STATE and array_count_zero = FALSE and O_READY = '1') or
-                   (curr_state = VALUE_STATE and array_count_zero = FALSE and I_VALID = '1' and I_LAST = '1' and O_READY = '1') then
-                    next_count := next_count - 1;
-                end if;
-                array_count      <= next_count;
-                array_count_zero <= (next_count = 0);
-            end if;
+    I_READY <= intake_ready;
+    I_ADDR  <= std_logic_vector(next_addr);
+    process (curr_addr, I_VALID, intake_ready) begin
+        if (I_VALID = '1' and intake_ready = '1') then
+            next_addr <= curr_addr + 1;
+        else
+            next_addr <= curr_addr;
         end if;
     end process;
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    O_CODE  <= I_CODE  when (curr_state = VALUE_STATE) else
-               MsgPack_Object.New_Code_Vector_ArraySize(CODE_WIDTH, array_count);
-    O_VALID <= '1'     when (curr_state = ARRAY_STATE) else
-               I_VALID when (curr_state = VALUE_STATE) else '0';
-    O_LAST  <= '1'     when (curr_state = ARRAY_STATE and array_count_zero) or
-                            (curr_state = VALUE_STATE and array_count_zero and I_LAST = '1') else '0';
-    O_ERROR <= '0';
-    I_READY <= O_READY when (curr_state = VALUE_STATE) else '0';
 end RTL;
-
-
-        

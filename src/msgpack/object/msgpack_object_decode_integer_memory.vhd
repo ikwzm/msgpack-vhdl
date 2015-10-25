@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_decode_integer_array.vhd
---!     @brief   MessagePack Object decode to integer array
+--!     @file    msgpack_object_decode_integer_memory.vhd
+--!     @brief   MessagePack Object decode to integer memory
 --!     @version 0.1.0
 --!     @date    2015/10/22
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,13 +38,13 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Decode_Integer_Array is
+entity  MsgPack_Object_Decode_Integer_Memory is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        ADDR_BITS       :  integer  := 8;
+        ADDR_BITS       :  positive := 8;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -62,6 +62,7 @@ entity  MsgPack_Object_Decode_Integer_Array is
     -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_ADDR          : in  std_logic_vector( ADDR_BITS-1 downto 0);
         I_LAST          : in  std_logic;
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
@@ -70,14 +71,15 @@ entity  MsgPack_Object_Decode_Integer_Array is
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
+        O_START         : out std_logic;
         O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
-        O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         O_VALID         : out std_logic;
         O_READY         : in  std_logic
     );
-end  MsgPack_Object_Decode_Integer_Array;
+end  MsgPack_Object_Decode_Integer_Memory;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -86,91 +88,72 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Array;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
-architecture RTL of MsgPack_Object_Decode_Integer_Array is
-    signal    value_valid       :  std_logic;
-    signal    value_error       :  std_logic;
-    signal    value_done        :  std_logic;
-    signal    value_last        :  std_logic;
-    signal    value_code        :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    value_shift       :  std_logic_vector(CODE_WIDTH-1 downto 0);
-    signal    array_addr        :  std_logic_vector( ADDR_BITS-1 downto 0);
-    signal    array_start       :  std_logic;
-    signal    outlet_valid      :  std_logic;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer_Stream;
+architecture RTL of MsgPack_Object_Decode_Integer_Memory is
+    signal    start         :  std_logic;
+    signal    curr_addr     :  std_logic_vector(ADDR_BITS-1 downto 0);
+    signal    outlet_valid  :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE_ARRAY:  MsgPack_Object_Decode_Array       -- 
+    STREAM: MsgPack_Object_Decode_Integer_Stream
+        ---------------------------------------------------------------------------
+        -- Generic Parameters
+        ---------------------------------------------------------------------------
         generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH            --
+            CODE_WIDTH      => CODE_WIDTH          , -- 
+            VALUE_BITS      => VALUE_BITS          , -- 
+            VALUE_SIGN      => VALUE_SIGN          , -- 
+            QUEUE_SIZE      => QUEUE_SIZE          , -- 
+            CHECK_RANGE     => CHECK_RANGE         , -- 
+            ENABLE64        => ENABLE64              -- 
         )                                            -- 
         port map (                                   -- 
+        ---------------------------------------------------------------------------
+        -- Clock and Reset Signals
+        ---------------------------------------------------------------------------
             CLK             => CLK                 , -- In  :
             RST             => RST                 , -- In  :
             CLR             => CLR                 , -- In  :
+        ---------------------------------------------------------------------------
+        -- MessagePack Object Code Input Interface
+        ---------------------------------------------------------------------------
             I_CODE          => I_CODE              , -- In  :
             I_LAST          => I_LAST              , -- In  :
             I_VALID         => I_VALID             , -- In  :
             I_ERROR         => I_ERROR             , -- Out :
             I_DONE          => I_DONE              , -- Out :
             I_SHIFT         => I_SHIFT             , -- Out :
-            ARRAY_START     => array_start         , -- Out :
-            ARRAY_SIZE      => open                , -- Out :
-            VALUE_START     => open                , -- Out :
-            VALUE_VALID     => value_valid         , -- Out :
-            VALUE_CODE      => value_code          , -- Out :
-            VALUE_LAST      => value_last          , -- Out :
-            VALUE_ERROR     => value_error         , -- In  :
-            VALUE_DONE      => value_done          , -- In  :
-            VALUE_SHIFT     => value_shift           -- In  :
-        );                                           -- 
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    DECODE_VALUE: MsgPack_Object_Decode_Integer      -- 
-        generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH          , --
-            VALUE_BITS      => VALUE_BITS          , --
-            VALUE_SIGN      => VALUE_SIGN          , --
-            QUEUE_SIZE      => QUEUE_SIZE          , --
-            CHECK_RANGE     => CHECK_RANGE         , --
-            ENABLE64        => ENABLE64              --
-        )                                            -- 
-        port map (                                   -- 
-            CLK             => CLK                 , -- In  :
-            RST             => RST                 , -- In  :
-            CLR             => CLR                 , -- In  :
-            I_CODE          => value_code          , -- In  :
-            I_LAST          => value_last          , -- In  :
-            I_VALID         => value_valid         , -- In  :
-            I_ERROR         => value_error         , -- Out :
-            I_DONE          => value_done          , -- Out :
-            I_SHIFT         => value_shift         , -- Out :
+        ---------------------------------------------------------------------------
+        -- Integer Value Data and Address Output
+        ---------------------------------------------------------------------------
+            O_START         => start               , -- Out :
             O_VALUE         => O_VALUE             , -- Out :
             O_SIGN          => O_SIGN              , -- Out :
             O_LAST          => O_LAST              , -- Out :
             O_VALID         => outlet_valid        , -- Out :
             O_READY         => O_READY               -- In  :
-        );                                           --
-    O_VALID <= outlet_valid;                         --
-    O_ADDR  <= array_addr;                           -- 
+        );                                           -- 
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    O_START <= start;
+    O_VALID <= outlet_valid;
+    O_ADDR  <= curr_addr;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     process (CLK, RST) begin
         if (RST = '1') then
-                array_addr <= (others => '0');
+                curr_addr <= (others => '0');
         elsif (CLK'event and CLK = '1') then
-            if (CLR = '1') then
-                array_addr <= (others => '0');
-            else
-                if    (array_start = '1') then
-                    array_addr <= (others => '0');
-                elsif (outlet_valid = '1' and O_READY = '1') then
-                    array_addr <= std_logic_vector(unsigned(array_addr) + 1);
-                end if;
+            if    (CLR = '1') then
+                curr_addr <= (others => '0');
+            elsif (start = '1') then
+                curr_addr <= I_ADDR;
+            elsif (outlet_valid = '1' and O_READY = '1') then
+                curr_addr <= std_logic_vector(unsigned(curr_addr) + 1);
             end if;
         end if;
     end process;
