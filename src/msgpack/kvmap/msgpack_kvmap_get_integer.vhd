@@ -99,9 +99,11 @@ library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
+use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Decode_Get_Stream_Parameter;
 architecture RTL of MsgPack_KVMap_Get_Integer is
     signal    start    :  std_logic;
     signal    busy     :  std_logic;
+    signal    size     :  std_logic_vector(0 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
@@ -125,26 +127,26 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (I_VALID, I_CODE) begin
-        if (I_VALID = '1' and I_CODE(0).valid = '1') then
-            if    (I_CODE(0).class = MsgPack_Object.CLASS_NIL) then
-                start   <= '1';
-                I_ERROR <= '0';
-                I_DONE  <= '1';
-                I_SHIFT <= (0 => '1', others => '0');
-            else
-                start   <= '0';
-                I_ERROR <= '1';
-                I_DONE  <= '1';
-                I_SHIFT <= (others => '0');
-            end if;
-        else
-                start   <= '0';
-                I_ERROR <= '0';
-                I_DONE  <= '0';
-                I_SHIFT <= (others => '0');
-        end if;
-    end process;
+    PARAM: MsgPack_KVMap_Decode_Get_Stream_Parameter  --
+        generic map (                            -- 
+            CODE_WIDTH      => CODE_WIDTH      , --
+            SIZE_BITS       => 1               , --
+            SIZE_MAX        => 1                 --
+        )                                        -- 
+        port map (                               -- 
+            CLK             => CLK             , -- In  :
+            RST             => RST             , -- In  :
+            CLR             => CLR             , -- In  :
+            I_CODE          => I_CODE          , -- In  :
+            I_LAST          => I_LAST          , -- In  :
+            I_VALID         => I_VALID         , -- In  :
+            I_ERROR         => I_ERROR         , -- Out :
+            I_DONE          => I_DONE          , -- Out :
+            I_SHIFT         => I_SHIFT         , -- Out :
+            START           => start           , -- Out :
+            SIZE            => size            , -- Out :
+            BUSY            => busy              -- In  :
+        );                                       -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
