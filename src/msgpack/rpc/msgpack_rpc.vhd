@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc.vhd
 --!     @brief   MessagePack-RPC(Remote Procedure Call) Package :
---!     @version 0.1.0
---!     @date    2015/10/11
+--!     @version 0.2.0
+--!     @date    2015/11/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --

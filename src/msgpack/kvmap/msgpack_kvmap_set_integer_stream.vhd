@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_decode_get_stream_parameter.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) decode get stream parameter Module :
+--!     @file    msgpack_kvmap_set_integer_stream.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Stream Module :
 --!     @version 0.2.0
 --!     @date    2015/11/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,14 +38,19 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Decode_Get_Stream_Parameter is
+entity  MsgPack_KVMap_Set_Integer_Stream is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
+        KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
-        SIZE_BITS       :  positive := 32;  
-        SIZE_MAX        :  positive := 1
+        MATCH_PHASE     :  positive := 8;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
+        CHECK_RANGE     :  boolean  := TRUE ;
+        ENABLE64        :  boolean  := TRUE
     );
     port (
     -------------------------------------------------------------------------------
@@ -55,7 +60,7 @@ entity  MsgPack_KVMap_Decode_Get_Stream_Parameter is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Object Code Input Interface
+    -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         I_LAST          : in  std_logic;
@@ -64,13 +69,23 @@ entity  MsgPack_KVMap_Decode_Get_Stream_Parameter is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- 
+    -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
-        START           : out std_logic;
-        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
-        BUSY            : in  std_logic
+        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        MATCH_OK        : out std_logic;
+        MATCH_NOT       : out std_logic;
+        MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Integer Value Data and Address Output
+    -------------------------------------------------------------------------------
+        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
+        SIGN            : out std_logic;
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
     );
-end MsgPack_KVMap_Decode_Get_Stream_Parameter;
+end  MsgPack_KVMap_Set_Integer_Stream;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -79,72 +94,54 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
-architecture RTL of MsgPack_KVMap_Decode_Get_Stream_Parameter is
-    signal    integer_i_error   :  std_logic;
-    signal    integer_i_done    :  std_logic;
-    signal    integer_i_shift   :  std_logic_vector(CODE_WIDTH-1 downto 0);
-    signal    integer_valid     :  std_logic;
-    signal    integer_value     :  std_logic_vector( SIZE_BITS-1 downto 0);
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer_Stream;
+use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
+architecture RTL of MsgPack_KVMap_Set_Integer_Stream is
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE_INTEGER: MsgPack_Object_Decode_Integer    -- 
-        generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH          , --
-            VALUE_BITS      => SIZE_BITS           , --
-            VALUE_SIGN      => FALSE               , --
-            QUEUE_SIZE      => 0                   , -- Must 0 !
-            CHECK_RANGE     => FALSE               , --
-            ENABLE64        => FALSE                 --
-        )                                            -- 
-        port map (                                   -- 
-            CLK             => CLK                 , -- In  :
-            RST             => RST                 , -- In  :
-            CLR             => CLR                 , -- In  :
-            I_CODE          => I_CODE              , -- In  :
-            I_LAST          => I_LAST              , -- In  :
-            I_VALID         => I_VALID             , -- In  :
-            I_ERROR         => integer_i_error     , -- Out :
-            I_DONE          => integer_i_done      , -- Out :
-            I_SHIFT         => integer_i_shift     , -- Out :
-            O_VALUE         => integer_value       , -- Out :
-            O_SIGN          => open                , -- Out :
-            O_LAST          => open                , -- Out :
-            O_VALID         => integer_valid       , -- Out :
-            O_READY         => '1'                   -- In  :
-        );
+    MATCH: MsgPack_KVMap_Key_Compare             -- 
+        generic map (                            -- 
+            CODE_WIDTH      => CODE_WIDTH      , -- 
+            I_MAX_PHASE     => MATCH_PHASE     , --
+            KEYWORD         => kEY               --
+        )                                        -- 
+        port map (                               -- 
+            CLK             => CLK             , -- 
+            RST             => RST             , -- 
+            CLR             => CLR             , -- 
+            I_CODE          => MATCH_CODE      , -- 
+            I_REQ_PHASE     => MATCH_REQ       , -- 
+            MATCH           => MATCH_OK        , -- 
+            MISMATCH        => MATCH_NOT       , -- 
+            SHIFT           => MATCH_SHIFT       -- 
+        );                                       -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (I_VALID, I_CODE, BUSY, integer_i_error, integer_i_done, integer_i_shift, integer_value, integer_valid) begin
-        if (I_VALID = '1' and I_CODE(0).valid = '1' and BUSY = '0') then
-            if    (I_CODE(0).class = MsgPack_Object.CLASS_NIL) then
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
-                START     <= '1';
-                I_ERROR   <= '0';
-                I_DONE    <= '1';
-                I_SHIFT   <= (0 => '1', others => '0');
-            elsif (integer_i_done = '1' and integer_i_error = '0') then
-                SIZE      <= integer_value;
-                START     <= integer_valid;
-                I_ERROR   <= '0';
-                I_DONE    <= '1';
-                I_SHIFT   <= integer_i_shift;
-            else
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
-                START     <= '0';
-                I_ERROR   <= '1';
-                I_DONE    <= '1';
-                I_SHIFT   <= (others => '0');
-            end if;
-        else
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
-                START     <= '0';
-                I_ERROR   <= '0';
-                I_DONE    <= '0';
-                I_SHIFT   <= (others => '0');
-        end if;
-    end process;
+    DECODE: MsgPack_Object_Decode_Integer_Stream -- 
+        generic map (                            -- 
+            CODE_WIDTH      => CODE_WIDTH      , --
+            VALUE_BITS      => VALUE_BITS      , --
+            VALUE_SIGN      => VALUE_SIGN      , --
+            CHECK_RANGE     => CHECK_RANGE     , --
+            ENABLE64        => ENABLE64          --
+        )                                        -- 
+        port map (                               -- 
+            CLK             => CLK             , -- In  :
+            RST             => RST             , -- In  :
+            CLR             => CLR             , -- In  :
+            I_CODE          => I_CODE          , -- In  :
+            I_LAST          => I_LAST          , -- In  :
+            I_VALID         => I_VALID         , -- In  :
+            I_ERROR         => I_ERROR         , -- Out :
+            I_DONE          => I_DONE          , -- Out :
+            I_SHIFT         => I_SHIFT         , -- Out :
+            O_VALUE         => VALUE           , -- Out :
+            O_SIGN          => SIGN            , -- Out :
+            O_LAST          => LAST            , -- Out :
+            O_VALID         => VALID           , -- Out :
+            O_READY         => READY             -- In  :
+        );                                       --
 end RTL;

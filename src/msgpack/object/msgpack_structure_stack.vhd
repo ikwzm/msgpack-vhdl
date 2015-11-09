@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_structre_stack.vhd
 --!     @brief   MessagePack Array/Map Structure Stack :
---!     @version 0.1.0
---!     @date    2015/10/11
+--!     @version 0.2.0
+--!     @date    2015/11/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --

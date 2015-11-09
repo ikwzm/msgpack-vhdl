@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_encode_integer_memory.vhd
 --!     @brief   MessagePack Object encode to integer memory
---!     @version 0.1.0
---!     @date    2015/10/25
+--!     @version 0.2.0
+--!     @date    2015/11/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
