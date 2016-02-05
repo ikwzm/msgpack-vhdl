@@ -2,11 +2,11 @@
 --!     @file    msgpack_object_unpacker.vhd
 --!     @brief   MessagePack Object Code Unpack from Byte Stream Module :
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/2/4
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2015 Ichiro Kawazome
+--      Copyright (C) 2012-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -527,7 +527,7 @@ begin
                     -- no used 11000001
                     ---------------------------------------------------------------
                     elsif (buffer_data(6 downto 0) = "1000001") then
-                        unpack_code(0) <= MsgPack_Object.New_Code_Reserve;
+                        unpack_code(0) <= MsgPack_Object.New_Code_Reserve(0);
                         unpack_valid   <= to_valid(1, buffer_valid);
                         buffer_shift   <= to_shift(1);
                         data_length    <= dummy_data_length;
