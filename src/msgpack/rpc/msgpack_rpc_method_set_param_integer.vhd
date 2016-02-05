@@ -2,7 +2,7 @@
 --!     @file    msgpack_rpc_method_set_param_integer.vhd
 --!     @brief   MessagePack-RPC Method Set Parameter (Integer) Module :
 --!     @version 0.1.0
---!     @date    2015/10/19
+--!     @date    2015/10/22
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -44,7 +44,7 @@ entity  MsgPack_RPC_Method_Set_Param_Integer is
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         CHECK_RANGE     :  boolean  := TRUE ;
         ENABLE64        :  boolean  := TRUE
@@ -68,12 +68,12 @@ entity  MsgPack_RPC_Method_Set_Param_Integer is
     -------------------------------------------------------------------------------
     -- Default Value Input Interface
     -------------------------------------------------------------------------------
-        DEFAULT_VALUE   : in  std_logic_vector(VALUE_WIDTH-1 downto 0);
+        DEFAULT_VALUE   : in  std_logic_vector(VALUE_BITS-1 downto 0);
         DEFAULT_WE      : in  std_logic;
     -------------------------------------------------------------------------------
     -- Parameter Value Output Interface
     -------------------------------------------------------------------------------
-        PARAM_VALUE     : out std_logic_vector(VALUE_WIDTH-1 downto 0);
+        PARAM_VALUE     : out std_logic_vector(VALUE_BITS-1 downto 0);
         PARAM_WE        : out std_logic
     );
 end  MsgPack_RPC_Method_Set_Param_Integer;
@@ -88,7 +88,7 @@ use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_RPC;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
 architecture RTL of MsgPack_RPC_Method_Set_Param_Integer is
-    signal    value_din         :  std_logic_vector(VALUE_WIDTH-1 downto 0);
+    signal    value_din         :  std_logic_vector(VALUE_BITS-1 downto 0);
     signal    value_load        :  std_logic;
 begin
     -------------------------------------------------------------------------------
@@ -97,23 +97,27 @@ begin
     DECODE: MsgPack_Object_Decode_Integer                -- 
         generic map (                                    -- 
             CODE_WIDTH      => MsgPack_RPC.Code_Length , --
-            VALUE_WIDTH     => VALUE_WIDTH             , --
+            VALUE_BITS      => VALUE_BITS              , --
             VALUE_SIGN      => VALUE_SIGN              , --
+            QUEUE_SIZE      => 0                       , --
             CHECK_RANGE     => CHECK_RANGE             , --
             ENABLE64        => ENABLE64                  --
         )                                                -- 
         port map (                                       -- 
-            CLK             => CLK                     , -- : In  :
-            RST             => RST                     , -- : In  :
-            CLR             => CLR                     , -- : In  :
-            I_CODE          => SET_PARAM_CODE          , -- : In  :
-            I_LAST          => SET_PARAM_LAST          , -- : In  :
-            I_VALID         => SET_PARAM_VALID         , -- : In  :
-            I_ERROR         => SET_PARAM_ERROR         , -- : Out :
-            I_DONE          => SET_PARAM_DONE          , -- : Out :
-            I_SHIFT         => SET_PARAM_SHIFT         , -- : Out :
-            VALUE           => value_din               , -- : Out :
-            WE              => value_load                -- : Out :
+            CLK             => CLK                     , -- In  :
+            RST             => RST                     , -- In  :
+            CLR             => CLR                     , -- In  :
+            I_CODE          => SET_PARAM_CODE          , -- In  :
+            I_LAST          => SET_PARAM_LAST          , -- In  :
+            I_VALID         => SET_PARAM_VALID         , -- In  :
+            I_ERROR         => SET_PARAM_ERROR         , -- Out :
+            I_DONE          => SET_PARAM_DONE          , -- Out :
+            I_SHIFT         => SET_PARAM_SHIFT         , -- Out :
+            O_VALUE         => value_din               , -- Out :
+            O_SIGN          => open                    , -- Out :
+            O_LAST          => open                    , -- Out :
+            O_VALID         => value_load              , -- Out :
+            O_READY         => '1'                       -- In  :
         );                                               --
     -------------------------------------------------------------------------------
     --

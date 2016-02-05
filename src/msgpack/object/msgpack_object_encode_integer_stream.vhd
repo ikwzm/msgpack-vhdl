@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_encode_integer.vhd
---!     @brief   MessagePack Object encode integer :
+--!     @file    msgpack_object_encode_integer_stream.vhd
+--!     @brief   MessagePack Object encode to integer stream
 --!     @version 0.1.0
 --!     @date    2015/10/19
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2015 Ichiro Kawazome
+--      Copyright (C) 2015 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -38,12 +38,13 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Encode_Integer is
+entity  MsgPack_Object_Encode_Integer_Stream is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  positive := 32;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0
@@ -56,26 +57,27 @@ entity  MsgPack_Object_Encode_Integer is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Control and Status Signals 
+    -- 
     -------------------------------------------------------------------------------
-        START           : in  std_logic := '1';
+        START           : in  std_logic;
+        SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
         BUSY            : out std_logic;
     -------------------------------------------------------------------------------
-    -- Object Code Output Interface
+    -- Integer Value Input Interface
+    -------------------------------------------------------------------------------
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Array Object Encode Output Interface
     -------------------------------------------------------------------------------
         O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         O_LAST          : out std_logic;
         O_ERROR         : out std_logic;
         O_VALID         : out std_logic;
-        O_READY         : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- Integer Value Input
-    -------------------------------------------------------------------------------
-        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
-        I_VALID         : in  std_logic;
-        I_READY         : out std_logic
+        O_READY         : in  std_logic
     );
-end MsgPack_Object_Encode_Integer;
+end MsgPack_Object_Encode_Integer_Stream;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -85,22 +87,24 @@ use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Code_Reducer;
-architecture RTL of MsgPack_Object_Encode_Integer is
-    function  max(A,B:integer) return integer is begin
-        if (A>B) then return A;
-        else          return B;
-        end if;
-    end function;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Array;
+architecture RTL of MsgPack_Object_Encode_Integer_Stream is
     constant  CODE_DATA_BITS    :  integer := MsgPack_Object.CODE_DATA_BITS;
     constant  I_WIDTH           :  integer := (VALUE_BITS+CODE_DATA_BITS-1)/CODE_DATA_BITS;
     signal    i_code            :  MsgPack_Object.Code_Vector(I_WIDTH-1 downto 0);
-    constant  o_shift           :  std_logic_vector(CODE_WIDTH-1 downto 0) := (others => '1');
-    constant  I_QUEUE_SIZE      :  integer := max(QUEUE_SIZE, max(CODE_WIDTH, I_WIDTH));
+    signal    t_code            :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+    signal    t_last            :  std_logic;
+    constant  t_error           :  std_logic := '0';
+    signal    t_valid           :  std_logic;
+    signal    t_ready           :  std_logic;
+    signal    t_shift           :  std_logic_vector(CODE_WIDTH-1 downto 0);
     signal    queue_busy        :  std_logic;
     signal    i_enable          :  std_logic;
+    signal    i_last            :  std_logic;
     signal    q_ready           :  std_logic;
-    type      STATE_TYPE        is (IDLE_STATE, RUN_STATE);
+    type      STATE_TYPE        is (IDLE_STATE, START_STATE, RUN_STATE);
     signal    curr_state        :  STATE_TYPE;
+    signal    curr_count        :  unsigned(SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
@@ -114,75 +118,137 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    QUEUE: MsgPack_Object_Code_Reducer              -- 
-        generic map (                               -- 
-            I_WIDTH         => I_WIDTH            , -- 
-            O_WIDTH         => CODE_WIDTH         , --
-            O_VALID_SIZE    => CODE_WIDTH         , -- 
-            QUEUE_SIZE      => I_QUEUE_SIZE         --
-        )                                           -- 
-        port map (                                  -- 
+    QUEUE: MsgPack_Object_Code_Reducer            -- 
+        generic map (                             -- 
+            I_WIDTH         => I_WIDTH          , -- 
+            O_WIDTH         => CODE_WIDTH       , --
+            O_VALID_SIZE    => CODE_WIDTH       , -- 
+            QUEUE_SIZE      => QUEUE_SIZE         --
+        )                                         -- 
+        port map (                                -- 
         ---------------------------------------------------------------------------
         -- Clock and Reset Signals
         ---------------------------------------------------------------------------
-            CLK             => CLK                , -- In  :
-            RST             => RST                , -- In  :
-            CLR             => CLR                , -- In  :
+            CLK             => CLK              , -- In  :
+            RST             => RST              , -- In  :
+            CLR             => CLR              , -- In  :
         ---------------------------------------------------------------------------
         -- Control and Status Signals
         ---------------------------------------------------------------------------
-            DONE            => '0'                , -- In  :
-            BUSY            => queue_busy         , -- Out :
+            DONE            => '0'              , -- In  :
+            BUSY            => queue_busy       , -- Out :
         ---------------------------------------------------------------------------
         -- Object Code Input Interface
         ---------------------------------------------------------------------------
-            I_ENABLE        => i_enable           , -- In  :
-            I_CODE          => i_code             , -- In  :
-            I_DONE          => '1'                , -- In  :
-            I_VALID         => I_VALID            , -- In  :
-            I_READY         => q_ready            , -- Out :
+            I_ENABLE        => i_enable         , -- In  :
+            I_CODE          => i_code           , -- In  :
+            I_DONE          => i_last           , -- In  :
+            I_VALID         => I_VALID          , -- In  :
+            I_READY         => q_ready          , -- Out :
         ---------------------------------------------------------------------------
         -- Object Code Output Interface
         ---------------------------------------------------------------------------
-            O_ENABLE        => '1'                , -- In  :
-            O_CODE          => O_CODE             , -- Out :
-            O_DONE          => O_LAST             , -- Out :
-            O_VALID         => O_VALID            , -- Out :
-            O_READY         => O_READY            , -- In  :
-            O_SHIFT         => o_shift              -- In  :
-    );                                              -- 
-    O_ERROR  <= '0';
-    I_READY  <= q_ready;
+            O_ENABLE        => '1'              , -- In  :
+            O_CODE          => t_code           , -- Out :
+            O_DONE          => open             , -- Out :
+            O_VALID         => t_valid          , -- Out :
+            O_READY         => t_ready          , -- In  :
+            O_SHIFT         => t_shift            -- In  :
+    );                                            -- 
+    I_READY  <= q_ready;                          -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    i_enable <= '1' when (curr_state = IDLE_STATE and START = '1') or
-                         (curr_state = RUN_STATE                 ) else '0';
+    process (t_code)
+        variable shift :  std_logic_vector(CODE_WIDTH-1 downto 0);
+        variable last  :  std_logic;
+    begin
+        last := '0';
+        for i in 0 to CODE_WIDTH-1 loop
+            if (last = '0' and t_code(i).valid = '1') then
+                shift(i) := '1';
+            else
+                shift(i) := '0';
+            end if;
+            if (t_code(i).valid = '1' and t_code(i).complete = '1') then
+                last := '1';
+            end if;
+        end loop;
+        t_last  <= last;
+        t_shift <= shift;
+    end process;        
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    ENCODE_ARRAY: MsgPack_Object_Encode_Array     -- 
+        generic map (                             -- 
+             CODE_WIDTH      => CODE_WIDTH      , --
+             SIZE_BITS       => SIZE_BITS         -- 
+        )                                         -- 
+        port map (                                -- 
+             CLK             => CLK             , -- In  :
+             RST             => RST             , -- In  :
+             CLR             => CLR             , -- In  :
+             START           => START           , -- In  :
+             SIZE            => SIZE            , -- In  :
+             I_CODE          => t_code          , -- In  :
+             I_LAST          => t_last          , -- In  :
+             I_ERROR         => t_error         , -- In  :
+             I_VALID         => t_valid         , -- In  :
+             I_READY         => t_ready         , -- Out :
+             O_CODE          => O_CODE          , -- Out :
+             O_LAST          => O_LAST          , -- Out :
+             O_ERROR         => O_ERROR         , -- Out :
+             O_VALID         => O_VALID         , -- Out :
+             O_READY         => O_READY           -- In  :
+    );                                            -- 
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    i_enable <= '1' when (curr_state = START_STATE and to_01(curr_count) > 0) or
+                         (curr_state = RUN_STATE  ) else '0';
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
     process (CLK, RST) begin
         if (RST = '1') then
                 curr_state <= IDLE_STATE;
+                curr_count <= (others => '0');
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
                 curr_state <= IDLE_STATE;
+                curr_count <= (others => '0');
             else
                 case curr_state is
                     when IDLE_STATE =>
                         if (START = '1') then
+                            curr_state <= START_STATE;
+                        else
+                            curr_state <= IDLE_STATE;
+                        end if;
+                        curr_count <= unsigned(SIZE);
+                    when START_STATE =>
+                        if (curr_count > 0) then
                             curr_state <= RUN_STATE;
                         else
                             curr_state <= IDLE_STATE;
                         end if;
-                    when RUN_STATE  =>
-                        if (I_VALID = '1' and q_ready = '1') then
+                    when RUN_STATE   =>
+                        if (I_VALID = '1' and i_last = '1' and q_ready = '1') then
                             curr_state <= IDLE_STATE;
                         else
                             curr_state <= RUN_STATE;
+                        end if;
+                        if (I_VALID = '1' and q_ready = '1') then
+                            curr_count <= curr_count - 1;
                         end if;
                     when others => 
-                            curr_state <= IDLE_STATE;
+                        curr_state <= IDLE_STATE;
+                        curr_count <= (others => '0');
                 end case;
             end if;
         end if;
     end process;
-    BUSY <= '1' when (curr_state = RUN_STATE or queue_busy = '1') else '0';
+    i_last <= '1' when (to_01(curr_count) <= 1) else '0';
+    BUSY   <= '1' when (curr_state = RUN_STATE or queue_busy = '1') else '0';
 end RTL;

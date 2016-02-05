@@ -2,7 +2,7 @@
 --!     @file    rpc/msgpack_rpc_components.vhd                                  --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.1.0                                                           --
---!     @date    2015/10/21                                                      --
+--!     @date    2015/10/25                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -318,7 +318,7 @@ component MsgPack_RPC_Method_Set_Param_Integer
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        VALUE_WIDTH     :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         CHECK_RANGE     :  boolean  := TRUE ;
         ENABLE64        :  boolean  := TRUE
@@ -342,12 +342,12 @@ component MsgPack_RPC_Method_Set_Param_Integer
     -------------------------------------------------------------------------------
     -- Default Value Input Interface
     -------------------------------------------------------------------------------
-        DEFAULT_VALUE   : in  std_logic_vector(VALUE_WIDTH-1 downto 0);
+        DEFAULT_VALUE   : in  std_logic_vector(VALUE_BITS-1 downto 0);
         DEFAULT_WE      : in  std_logic;
     -------------------------------------------------------------------------------
     -- Parameter Value Output Interface
     -------------------------------------------------------------------------------
-        PARAM_VALUE     : out std_logic_vector(VALUE_WIDTH-1 downto 0);
+        PARAM_VALUE     : out std_logic_vector(VALUE_BITS-1 downto 0);
         PARAM_WE        : out std_logic
     );
 end component;
@@ -490,24 +490,24 @@ component MsgPack_RPC_Server_KVMap_Set_Value
         PARAM_LAST      : in  std_logic;
         PARAM_SHIFT     : out MsgPack_RPC.Shift_Type;
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Key Match I/F
+    -- MessagePack-RPC Map Key Match I/F
     -------------------------------------------------------------------------------
-        KEY_MATCH_REQ   : out std_logic_vector       (MATCH_PHASE-1 downto 0);
-        KEY_MATCH_CODE  : out MsgPack_RPC.Code_Type;
-        KEY_MATCH_OK    : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        KEY_MATCH_NOT   : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        KEY_MATCH_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
+        MAP_MATCH_REQ   : out std_logic_vector       (MATCH_PHASE-1 downto 0);
+        MAP_MATCH_CODE  : out MsgPack_RPC.Code_Type;
+        MAP_MATCH_OK    : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_MATCH_NOT   : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_MATCH_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
     -------------------------------------------------------------------------------
-    -- MessagePack Value Set Request Interface
+    -- MessagePack-RPC Map Value Object Decode Output I/F
     -------------------------------------------------------------------------------
-        VALUE_VALID     : out std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_CODE      : out MsgPack_RPC.Code_Type;
-        VALUE_LAST      : out std_logic;
-        VALUE_ERROR     : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_DONE      : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_SHIFT     : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
+        MAP_VALUE_VALID : out std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_CODE  : out MsgPack_RPC.Code_Type;
+        MAP_VALUE_LAST  : out std_logic;
+        MAP_VALUE_ERROR : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_DONE  : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Method Return Interface
+    -- MessagePack-RPC Method Return I/F
     -------------------------------------------------------------------------------
         RES_ID          : out MsgPack_RPC.MsgID_Type;
         RES_CODE        : out MsgPack_RPC.Code_Type;
@@ -556,24 +556,33 @@ component MsgPack_RPC_Server_KVMap_Get_Value
         PARAM_LAST      : in  std_logic;
         PARAM_SHIFT     : out MsgPack_RPC.Shift_Type;
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Key Match I/F
+    -- MessagePack-RPC Map Key Match I/F
     -------------------------------------------------------------------------------
-        KEY_MATCH_REQ   : out std_logic_vector       (MATCH_PHASE-1 downto 0);
-        KEY_MATCH_CODE  : out MsgPack_RPC.Code_Type;
-        KEY_MATCH_OK    : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        KEY_MATCH_NOT   : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        KEY_MATCH_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
+        MAP_MATCH_REQ   : out std_logic_vector       (MATCH_PHASE-1 downto 0);
+        MAP_MATCH_CODE  : out MsgPack_RPC.Code_Type;
+        MAP_MATCH_OK    : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_MATCH_NOT   : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_MATCH_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
     -------------------------------------------------------------------------------
-    -- MessagePack Value Set Request Interface
+    -- MessagePack-RPC Map Parameter Object Decode Output I/F
     -------------------------------------------------------------------------------
-        VALUE_START     : out std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_VALID     : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_CODE      : in  MsgPack_RPC.Code_Vector (STORE_SIZE-1 downto 0);
-        VALUE_LAST      : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_ERROR     : in  std_logic_vector        (STORE_SIZE-1 downto 0);
-        VALUE_READY     : out std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_PARAM_START : out std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_PARAM_VALID : out std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_PARAM_CODE  : out MsgPack_RPC.Code_Type;
+        MAP_PARAM_LAST  : out std_logic;
+        MAP_PARAM_ERROR : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_PARAM_DONE  : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_PARAM_SHIFT : in  MsgPack_RPC.Shift_Vector(STORE_SIZE-1 downto 0);
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Method Return Interface
+    -- MessagePack-RPC Map Value Object Encode Input I/F
+    -------------------------------------------------------------------------------
+        MAP_VALUE_VALID : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_CODE  : in  MsgPack_RPC.Code_Vector (STORE_SIZE-1 downto 0);
+        MAP_VALUE_LAST  : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_ERROR : in  std_logic_vector        (STORE_SIZE-1 downto 0);
+        MAP_VALUE_READY : out std_logic_vector        (STORE_SIZE-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- MessagePack-RPC Method Return I/F
     -------------------------------------------------------------------------------
         RES_ID          : out MsgPack_RPC.MsgID_Type;
         RES_CODE        : out MsgPack_RPC.Code_Type;

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_encode_map.vhd
---!     @brief   MessagePack Object encode to map
+--!     @file    msgpack_object_encode_array.vhd
+--!     @brief   MessagePack Object encode to array
 --!     @version 0.1.0
 --!     @date    2015/10/19
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Encode_Map is
+entity  MsgPack_Object_Encode_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -59,31 +59,23 @@ entity  MsgPack_Object_Encode_Map is
         START           : in  std_logic;
         SIZE            : in  std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Key Object Encode Input Interface
-    -------------------------------------------------------------------------------
-        I_KEY_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_KEY_LAST      : in  std_logic;
-        I_KEY_ERROR     : in  std_logic;
-        I_KEY_VALID     : in  std_logic;
-        I_KEY_READY     : out std_logic;
-    -------------------------------------------------------------------------------
     -- Value Object Encode Input Interface
     -------------------------------------------------------------------------------
-        I_VAL_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_VAL_LAST      : in  std_logic;
-        I_VAL_ERROR     : in  std_logic;
-        I_VAL_VALID     : in  std_logic;
-        I_VAL_READY     : out std_logic;
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_ERROR         : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic;
     -------------------------------------------------------------------------------
-    -- Key Value Map Object Encode Output Interface
+    -- Array Object Encode Output Interface
     -------------------------------------------------------------------------------
-        O_MAP_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        O_MAP_LAST      : out std_logic;
-        O_MAP_ERROR     : out std_logic;
-        O_MAP_VALID     : out std_logic;
-        O_MAP_READY     : in  std_logic
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
     );
-end MsgPack_Object_Encode_Map;
+end MsgPack_Object_Encode_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -92,11 +84,11 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-architecture RTL of MsgPack_Object_Encode_Map is
-    type      STATE_TYPE        is (IDLE_STATE, MAP_STATE, KEY_STATE, VAL_STATE);
+architecture RTL of MsgPack_Object_Encode_Array is
+    type      STATE_TYPE        is (IDLE_STATE, ARRAY_STATE, VALUE_STATE);
     signal    curr_state        :  STATE_TYPE;
-    signal    map_count         :  unsigned(SIZE_BITS-1 downto 0);
-    signal    map_count_zero    :  boolean;
+    signal    array_count       :  unsigned(SIZE_BITS-1 downto 0);
+    signal    array_count_zero  :  boolean;
 begin
     -------------------------------------------------------------------------------
     --
@@ -111,35 +103,29 @@ begin
                 case curr_state is
                     when IDLE_STATE =>
                         if (START = '1') then
-                                curr_state <= MAP_STATE;
+                                curr_state <= ARRAY_STATE;
                         else
                                 curr_state <= IDLE_STATE;
                         end if;
-                    when MAP_STATE =>
-                        if (O_MAP_READY = '1') then
-                            if (map_count_zero) then
-                                curr_state <= IDLE_STATE;
-                            else
-                                curr_state <= KEY_STATE;
-                            end if;
-                        else
-                                curr_state <= MAP_STATE;
-                        end if;
-                    when KEY_STATE =>
-                        if (I_KEY_VALID = '1' and I_KEY_LAST = '1' and O_MAP_READY = '1') then
-                                curr_state <= VAL_STATE;
-                        else
-                                curr_state <= KEY_STATE;
-                        end if;
-                    when VAL_STATE =>
-                        if (I_VAL_VALID = '1' and I_VAL_LAST = '1' and O_MAP_READY = '1') then
-                            if (map_count_zero) then
+                    when ARRAY_STATE =>
+                        if (O_READY = '1') then
+                            if (array_count_zero) then
                                 curr_state <= IDLE_STATE;
                             else
-                                curr_state <= KEY_STATE;
+                                curr_state <= VALUE_STATE;
                             end if;
                         else
-                                curr_state <= VAL_STATE;
+                                curr_state <= ARRAY_STATE;
+                        end if;
+                    when VALUE_STATE =>
+                        if (I_VALID = '1' and I_LAST = '1' and O_READY = '1') then
+                            if (array_count_zero) then
+                                curr_state <= IDLE_STATE;
+                            else
+                                curr_state <= VALUE_STATE;
+                            end if;
+                        else
+                                curr_state <= VALUE_STATE;
                         end if;
                     when others =>
                                 curr_state <= IDLE_STATE;
@@ -151,44 +137,41 @@ begin
     --
     -------------------------------------------------------------------------------
     process (CLK, RST)
-        variable next_count :  unsigned(SIZE_BITS-1 downto 0);
+        variable next_count :  unsigned(SIZE'range);
     begin 
         if (RST = '1') then
-                map_count      <= (others => '0');
-                map_count_zero <= TRUE;
+                array_count      <= (others => '0');
+                array_count_zero <= TRUE;
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
-                map_count      <= (others => '0');
-                map_count_zero <= TRUE;
+                array_count      <= (others => '0');
+                array_count_zero <= TRUE;
             else
                 if (curr_state = IDLE_STATE) then
                     next_count := unsigned(SIZE);
                 else
-                    next_count := map_count;
+                    next_count := array_count;
                 end if;
-                if (curr_state = MAP_STATE and map_count_zero = FALSE and O_MAP_READY = '1') or
-                   (curr_state = VAL_STATE and map_count_zero = FALSE and I_VAL_VALID = '1' and I_VAL_LAST = '1' and O_MAP_READY = '1') then
+                if (curr_state = ARRAY_STATE and array_count_zero = FALSE and O_READY = '1') or
+                   (curr_state = VALUE_STATE and array_count_zero = FALSE and I_VALID = '1' and I_LAST = '1' and O_READY = '1') then
                     next_count := next_count - 1;
                 end if;
-                map_count      <= next_count;
-                map_count_zero <= (next_count = 0);
+                array_count      <= next_count;
+                array_count_zero <= (next_count = 0);
             end if;
         end if;
     end process;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    O_MAP_CODE  <= I_KEY_CODE  when (curr_state = KEY_STATE) else
-                   I_VAL_CODE  when (curr_state = VAL_STATE) else
-                   MsgPack_Object.New_Code_Vector_MapSize(CODE_WIDTH, map_count);
-    O_MAP_VALID <= '1'         when (curr_state = MAP_STATE) else
-                   I_KEY_VALID when (curr_state = KEY_STATE) else
-                   I_VAL_VALID when (curr_state = VAL_STATE) else '0';
-    O_MAP_LAST  <= '1'         when (curr_state = MAP_STATE and map_count_zero) or
-                                    (curr_state = VAL_STATE and map_count_zero and I_VAL_LAST = '1') else '0';
-    O_MAP_ERROR <= '0';
-    I_KEY_READY <= O_MAP_READY when (curr_state = KEY_STATE) else '0';
-    I_VAL_READY <= O_MAP_READY when (curr_state = VAL_STATE) else '0';
+    O_CODE  <= I_CODE  when (curr_state = VALUE_STATE) else
+               MsgPack_Object.New_Code_Vector_ArraySize(CODE_WIDTH, array_count);
+    O_VALID <= '1'     when (curr_state = ARRAY_STATE) else
+               I_VALID when (curr_state = VALUE_STATE) else '0';
+    O_LAST  <= '1'     when (curr_state = ARRAY_STATE and array_count_zero) or
+                            (curr_state = VALUE_STATE and array_count_zero and I_LAST = '1') else '0';
+    O_ERROR <= '0';
+    I_READY <= O_READY when (curr_state = VALUE_STATE) else '0';
 end RTL;
 
 
