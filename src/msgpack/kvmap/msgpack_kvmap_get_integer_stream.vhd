@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_get_integer.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Get Integer Value Module :
+--!     @file    msgpack_kvmap_get_integer_stream.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Get Integer Stream Module :
 --!     @version 0.2.0
 --!     @date    2015/11/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Get_Integer is
+entity  MsgPack_KVMap_Get_Integer_Stream is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -46,6 +46,8 @@ entity  MsgPack_KVMap_Get_Integer is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
+        SIZE_BITS       :  positive := 32;
+        SIZE_MAX        :  positive := 32;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE
     );
@@ -82,13 +84,13 @@ entity  MsgPack_KVMap_Get_Integer is
         MATCH_NOT       : out std_logic;
         MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- 
+    -- Integer Value Input Interface
     -------------------------------------------------------------------------------
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
         READY           : out std_logic
     );
-end  MsgPack_KVMap_Get_Integer;
+end  MsgPack_KVMap_Get_Integer_Stream;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -97,13 +99,13 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Stream;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Decode_Get_Stream_Parameter;
-architecture RTL of MsgPack_KVMap_Get_Integer is
+architecture RTL of MsgPack_KVMap_Get_Integer_Stream is
     signal    start    :  std_logic;
     signal    busy     :  std_logic;
-    signal    size     :  std_logic_vector(0 downto 0);
+    signal    size     :  std_logic_vector(SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
@@ -112,7 +114,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , -- 
             I_MAX_PHASE     => MATCH_PHASE     , --
-            KEYWORD         => KEY               --
+            KEYWORD         => kEY               --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- 
@@ -130,8 +132,8 @@ begin
     PARAM: MsgPack_KVMap_Decode_Get_Stream_Parameter  --
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            SIZE_BITS       => 1               , --
-            SIZE_MAX        => 1                 --
+            SIZE_BITS       => SIZE_BITS       , --
+            SIZE_MAX        => SIZE_MAX          --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
@@ -150,26 +152,28 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ENCODE: MsgPack_Object_Encode_Integer        -- 
+    ENCODE: MsgPack_Object_Encode_Integer_Stream -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
+            SIZE_BITS       => SIZE_BITS       , --
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
-            QUEUE_SIZE      => 0                 --
+            QUEUE_SIZE      => 0                 -- 
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
             START           => start           , -- In  :
-            BUSY            => busy            , -- Out :
+            SIZE            => size            , -- In  :
+            BUSY            => busy            , -- In  :
+            I_VALUE         => VALUE           , -- In  :
+            I_VALID         => VALID           , -- In  :
+            I_READY         => READY           , -- Out :
             O_CODE          => O_CODE          , -- Out :
             O_LAST          => O_LAST          , -- Out :
             O_ERROR         => O_ERROR         , -- Out :
             O_VALID         => O_VALID         , -- Out :
-            O_READY         => O_READY         , -- In  :
-            I_VALUE         => VALUE           , -- In  :
-            I_VALID         => VALID           , -- In  :
-            I_READY         => READY             -- Out :
+            O_READY         => O_READY           -- In  :
         );                                       --
 end RTL;

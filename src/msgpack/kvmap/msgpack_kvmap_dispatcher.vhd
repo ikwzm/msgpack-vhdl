@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_kvmap_dispatcher.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Set/Get Dispatcher Module :
---!     @version 0.1.0
---!     @date    2015/10/25
+--!     @version 0.2.0
+--!     @date    2015/11/9
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
