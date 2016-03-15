@@ -87,7 +87,7 @@ library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.PipeWork_Components.REDUCER;
 use     MsgPack.PipeWork_Components.CHOPPER;
-architecture RTL of MsgPack_Object_Decode_Memory is
+architecture RTL of MsgPack_Object_Decode_Binary_Memory is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
