@@ -83,7 +83,7 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_ComponentMsgPack_Object_Decode_Binary_Core;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Binary_Core;
 use     MsgPack.PipeWork_Components.REDUCER;
 architecture RTL of MsgPack_Object_Decode_Binary_Stream is
     -------------------------------------------------------------------------------
