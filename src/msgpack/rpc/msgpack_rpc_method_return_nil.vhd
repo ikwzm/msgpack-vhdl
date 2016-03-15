@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc_method_return_nil.vhd
 --!     @brief   MessagePack-RPC Method Return Nil Module :
---!     @version 0.3.0
+--!     @version 0.2.0
 --!     @date    2016/3/15
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
