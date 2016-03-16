@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object.vhd
 --!     @brief   MessagePack Object Code Package :
---!     @version 0.1.0
---!     @date    2015/10/19
+--!     @version 0.1.2
+--!     @date    2016/3/16
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -161,13 +161,12 @@ package MsgPack_Object is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    function  New_Code_Nil     return Code_Type;
-    function  New_Code_True    return Code_Type;
-    function  New_Code_False   return Code_Type;
+    constant  New_Code_Nil      :  Code_Type := New_Code(CLASS_NIL    , std_logic_vector'("00000000"));
+    constant  New_Code_True     :  Code_Type := New_Code(CLASS_BOOLEAN, std_logic_vector'("00000001"));
+    constant  New_Code_False    :  Code_Type := New_Code(CLASS_BOOLEAN, std_logic_vector'("00000000"));
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    function  New_Code_Reserve                           return Code_Type;
     function  New_Code_Reserve   (DATA:integer         ) return Code_Type;
     function  New_Code_Reserve   (DATA:unsigned        ) return Code_Type;
     function  New_Code_Reserve   (DATA:std_logic_vector) return Code_Type;
@@ -540,27 +539,6 @@ package body MsgPack_Object is
     end function;
 
     -------------------------------------------------------------------------------
-    -- New_Code_Nil
-    -------------------------------------------------------------------------------
-    function  New_Code_Nil     return Code_Type is begin
-        return New_Code(CLASS_NIL    , std_logic_vector'("00000000"));
-    end function;
-    
-    -------------------------------------------------------------------------------
-    -- New_Code_True
-    -------------------------------------------------------------------------------
-    function  New_Code_True    return Code_Type is begin
-        return New_Code(CLASS_BOOLEAN, std_logic_vector'("00000001"));
-    end function;
-
-    -------------------------------------------------------------------------------
-    -- New_Code_False
-    -------------------------------------------------------------------------------
-    function  New_Code_False   return Code_Type is begin
-        return New_Code(CLASS_BOOLEAN, std_logic_vector'("00000000"));
-    end function;
-
-    -------------------------------------------------------------------------------
     -- New_Code_Reserve
     -------------------------------------------------------------------------------
     function  New_Code_Reserve   (DATA:std_logic_vector) return Code_Type is begin
@@ -571,9 +549,6 @@ package body MsgPack_Object is
     end function;
     function  New_Code_Reserve   (DATA:integer         ) return Code_Type is begin
         return New_Code_Reserve(to_unsigned(DATA, CODE_DATA_BITS));
-    end function;
-    function  New_Code_Reserve                           return Code_Type is begin
-        return New_Code_Reserve(0);
     end function;
 
     -------------------------------------------------------------------------------
@@ -1119,7 +1094,7 @@ package body MsgPack_Object is
     function  New_Code_Vector_Reserve   (LENGTH:integer) return Code_Vector is
         variable code_vec :  Code_Vector(LENGTH-1 downto 0);
     begin
-        code_vec(0) := New_Code_Reserve;
+        code_vec(0) := New_Code_Reserve(0);
         if (LENGTH > 1) then
             code_vec(LENGTH-1 downto 1) := (LENGTH-1 downto 1 => CODE_NULL);
         end if;

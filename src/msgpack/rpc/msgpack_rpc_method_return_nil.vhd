@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc_method_return_nil.vhd
 --!     @brief   MessagePack-RPC Method Return Nil Module :
---!     @version 0.1.1
---!     @date    2016/2/4
+--!     @version 0.1.2
+--!     @date    2016/3/16
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -75,12 +75,12 @@ use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Code_Reducer;
 architecture RTL of MsgPack_RPC_Method_Return_Nil is
     constant  res_shift     :  MsgPack_RPC.Shift_Type := (others => '1');
     constant  ERROR_CODE    :  MsgPack_Object.Code_Vector(1 downto 0) := (
-                   MsgPack_Object.New_Code_Nil,
-                   MsgPack_RPC.New_Error_Code_Invalid_Argment
+                   0 => MsgPack_RPC.New_Error_Code_Invalid_Argment,
+                   1 => MsgPack_Object.New_Code_Nil
               );
     constant  NIL_CODE      :  MsgPack_Object.Code_Vector(1 downto 0) := (
-                   MsgPack_Object.New_Code_Nil,
-                   MsgPack_Object.New_Code_Nil
+                   0 => MsgPack_Object.New_Code_Nil,
+                   1 => MsgPack_Object.New_Code_Nil
               );
     signal    return_code   :  MsgPack_Object.Code_Vector(1 downto 0);
     signal    return_valid  :  std_logic;

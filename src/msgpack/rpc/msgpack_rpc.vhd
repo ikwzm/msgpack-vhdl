@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc.vhd
 --!     @brief   MessagePack-RPC(Remote Procedure Call) Package :
---!     @version 0.1.0
---!     @date    2015/10/11
+--!     @version 0.1.2
+--!     @date    2016/3/16
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -80,10 +80,10 @@ package MsgPack_RPC is
     --
     -------------------------------------------------------------------------------
     function  New_Error_Code(CODE:integer)   return MsgPack_Object.Code_Type;
-    function  New_Error_Code_Proc_Busy       return MsgPack_Object.Code_Type;
-    function  New_Error_Code_No_Method       return MsgPack_Object.Code_Type;
-    function  New_Error_Code_Invalid_Argment return MsgPack_Object.Code_Type;
-    function  New_Error_Code_Invalid_Message return MsgPack_Object.Code_Type;
+    constant  New_Error_Code_Proc_Busy       : MsgPack_Object.Code_Type := New_Error_Code(ERROR_CODE_PROC_BUSY);
+    constant  New_Error_Code_No_Method       : MsgPack_Object.Code_Type := New_Error_Code(ERROR_CODE_NO_METHOD);
+    constant  New_Error_Code_Invalid_Argment : MsgPack_Object.Code_Type := New_Error_Code(ERROR_CODE_INVALID_ARGMENT);
+    constant  New_Error_Code_Invalid_Message : MsgPack_Object.Code_Type := New_Error_Code(ERROR_CODE_INVALID_MESSAGE);
 
     -------------------------------------------------------------------------------
     --
@@ -138,22 +138,6 @@ package body MsgPack_RPC is
         return MsgPack_Object.New_Code_Reserve(CODE);
     end function;
 
-    function  New_Error_Code_Proc_Busy       return MsgPack_Object.Code_Type is begin
-        return New_Error_Code(ERROR_CODE_PROC_BUSY);
-    end function;
-        
-    function  New_Error_Code_No_Method       return MsgPack_Object.Code_Type is begin
-        return New_Error_Code(ERROR_CODE_NO_METHOD);
-    end function;
-        
-    function  New_Error_Code_Invalid_Argment return MsgPack_Object.Code_Type is begin
-        return New_Error_Code(ERROR_CODE_INVALID_ARGMENT);
-    end function;
-
-    function  New_Error_Code_Invalid_Message return MsgPack_Object.Code_Type is begin
-        return New_Error_Code(ERROR_CODE_INVALID_MESSAGE);
-    end function;
-        
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
