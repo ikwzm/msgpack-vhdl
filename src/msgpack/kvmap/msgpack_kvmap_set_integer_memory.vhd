@@ -107,7 +107,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , -- 
             I_MAX_PHASE     => MATCH_PHASE     , --
-            KEYWORD         => kEY               --
+            KEYWORD         => KEY               --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- 
