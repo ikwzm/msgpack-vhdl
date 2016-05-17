@@ -169,7 +169,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (curr_state, key_match_state, key_match_select) begin
+    process (curr_state, key_match_state) begin
         case curr_state is
             when MATCH_KEY_STATE =>
                 case key_match_state is

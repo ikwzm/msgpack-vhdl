@@ -63,13 +63,13 @@ KVMAP_ENTITY_FILES    = kvmap/msgpack_kvmap_key_compare.vhd                 \
                         kvmap/msgpack_kvmap_set_integer.vhd                 \
                         kvmap/msgpack_kvmap_set_integer_memory.vhd          \
                         kvmap/msgpack_kvmap_set_integer_stream.vhd          \
-                        kvmap/msgpack_kvmap_set_value.vhd                   \
                         kvmap/msgpack_kvmap_set_map_value.vhd               \
+                        kvmap/msgpack_kvmap_set_map.vhd                     \
                         kvmap/msgpack_kvmap_get_integer.vhd                 \
                         kvmap/msgpack_kvmap_get_integer_memory.vhd          \
                         kvmap/msgpack_kvmap_get_integer_stream.vhd          \
-                        kvmap/msgpack_kvmap_get_value.vhd                   \
                         kvmap/msgpack_kvmap_get_map_value.vhd               \
+                        kvmap/msgpack_kvmap_get_map.vhd                     \
                         $(END_LIST)
 
 KVMAP_SOURCE_FILES    = $(KVMAP_COMP_FILE)       \

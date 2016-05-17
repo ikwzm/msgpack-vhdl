@@ -2,11 +2,11 @@
 --!     @file    msgpack_rpc_server_kvmap_set_value.vhd
 --!     @brief   MessagePack-RPC Server Key Value Map Set Value Module :
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/5/17
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -114,7 +114,7 @@ use     MsgPack.MsgPack_RPC;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Code_Reducer;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Array;
 use     MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Return_Nil;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Set_Map_Value;
+use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Set_Map;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_RPC_Server_KVMap_Set_Value is
     -------------------------------------------------------------------------------
@@ -252,7 +252,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    SET_KVMap: MsgPack_KVMap_Set_Map_Value               -- 
+    SET_KVMap: MsgPack_KVMap_Set_Map                     -- 
         generic map (                                    -- 
             CODE_WIDTH      => I_PARAM_WIDTH           , --
             STORE_SIZE      => STORE_SIZE              , --
@@ -393,4 +393,3 @@ begin
         end if;
     end process;
 end RTL;
-

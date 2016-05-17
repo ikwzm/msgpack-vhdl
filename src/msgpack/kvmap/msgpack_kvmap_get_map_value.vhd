@@ -2,11 +2,11 @@
 --!     @file    msgpack_kvmap_get_map_value.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Get Map Value Module :
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/5/17
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -55,22 +55,41 @@ entity  MsgPack_KVMap_Get_Map_Value is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Key Array Object Decode Input Interface
+    -- Key Object Decode Input Interface
     -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_ERROR         : out std_logic;
-        I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(                     CODE_WIDTH-1 downto 0);
+        I_KEY_CODE      : in  MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
+        I_KEY_LAST      : in  std_logic;
+        I_KEY_VALID     : in  std_logic;
+        I_KEY_ERROR     : out std_logic;
+        I_KEY_DONE      : out std_logic;
+        I_KEY_SHIFT     : out std_logic_vector(                     CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Key Value Map Encode Output Interface
+    -- Value Object Decode Input Interface
     -------------------------------------------------------------------------------
-        O_CODE          : out MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
-        O_VALID         : out std_logic;
-        O_LAST          : out std_logic;
-        O_ERROR         : out std_logic;
-        O_READY         : in  std_logic;
+        I_VAL_START     : in  std_logic;
+        I_VAL_ABORT     : in  std_logic;
+        I_VAL_CODE      : in  MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
+        I_VAL_LAST      : in  std_logic;
+        I_VAL_VALID     : in  std_logic;
+        I_VAL_ERROR     : out std_logic;
+        I_VAL_DONE      : out std_logic;
+        I_VAL_SHIFT     : out std_logic_vector(                     CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Key Object Encode Output Interface
+    -------------------------------------------------------------------------------
+        O_KEY_CODE      : out MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
+        O_KEY_VALID     : out std_logic;
+        O_KEY_LAST      : out std_logic;
+        O_KEY_ERROR     : out std_logic;
+        O_KEY_READY     : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Value Object Encode Output Interface
+    -------------------------------------------------------------------------------
+        O_VAL_CODE      : out MsgPack_Object.Code_Vector(           CODE_WIDTH-1 downto 0);
+        O_VAL_VALID     : out std_logic;
+        O_VAL_LAST      : out std_logic;
+        O_VAL_ERROR     : out std_logic;
+        O_VAL_READY     : in  std_logic;
     -------------------------------------------------------------------------------
     -- Key Object Compare Interface
     -------------------------------------------------------------------------------
@@ -107,225 +126,195 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Map;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Map;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Get_Value;
+use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Dispatcher;
 architecture RTL of MsgPack_KVMap_Get_Map_Value is
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    constant  SIZE_BITS         :  integer := 32;
-    signal    map_start         :  std_logic;
-    signal    map_size          :  std_logic_vector(SIZE_BITS-1 downto 0);
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    signal    intake_key_code   :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    intake_key_valid  :  std_logic;
-    signal    intake_key_last   :  std_logic;
-    signal    intake_key_error  :  std_logic;
-    signal    intake_key_done   :  std_logic;
-    signal    intake_key_shift  :  std_logic_vector          (CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    signal    intake_val_code   :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    intake_val_start  :  std_logic;
-    signal    intake_val_abort  :  std_logic;
-    signal    intake_val_valid  :  std_logic;
-    signal    intake_val_last   :  std_logic;
-    signal    intake_val_error  :  std_logic;
-    signal    intake_val_done   :  std_logic;
-    signal    intake_val_shift  :  std_logic_vector          (CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    signal    outlet_key_code   :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    outlet_key_valid  :  std_logic;
-    signal    outlet_key_last   :  std_logic;
-    signal    outlet_key_error  :  std_logic;
-    signal    outlet_key_ready  :  std_logic;
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    signal    outlet_val_code   :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    outlet_val_valid  :  std_logic;
-    signal    outlet_val_last   :  std_logic;
-    signal    outlet_val_error  :  std_logic;
-    signal    outlet_val_ready  :  std_logic;
+    signal    req_select    :  std_logic_vector(STORE_SIZE-1 downto 0);
+    signal    req_start     :  std_logic;
+    signal    req_error     :  std_logic;
+    signal    req_abort     :  std_logic;
+    signal    busy          :  std_logic;
+    signal    value_select  :  std_logic_vector(STORE_SIZE-1 downto 0);
+    type      STATE_TYPE    is (IDLE_STATE, GET_VALUE_STATE, UNDEF_KEY_STATE);
+    signal    curr_state    :  STATE_TYPE;
+    signal    next_state    :  STATE_TYPE;
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE_MAP: MsgPack_Object_Decode_Map            -- 
-        generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH            --
-        )                                            -- 
-        port map (                                   -- 
+    DISPATCH: MsgPack_KVMap_Dispatcher           -- 
+        generic map (                            -- 
+            CODE_WIDTH      => CODE_WIDTH      , --
+            STORE_SIZE      => STORE_SIZE      , --
+            MATCH_PHASE     => MATCH_PHASE       --
+        )                                        -- 
+        port map (                               -- 
         ---------------------------------------------------------------------------
         -- Clock and Reset Signals
         ---------------------------------------------------------------------------
-            CLK             => CLK                 , -- In  :
-            RST             => RST                 , -- In  :
-            CLR             => CLR                 , -- In  :
-        ---------------------------------------------------------------------------
-        -- MessagePack Object Code Input Interface
-        ---------------------------------------------------------------------------
-            I_CODE          => I_CODE              , -- In  :
-            I_LAST          => I_LAST              , -- In  :
-            I_VALID         => I_VALID             , -- In  :
-            I_ERROR         => I_ERROR             , -- Out :
-            I_DONE          => I_DONE              , -- Out :
-            I_SHIFT         => I_SHIFT             , -- Out :
-        ---------------------------------------------------------------------------
-        -- 
-        ---------------------------------------------------------------------------
-            MAP_START       => map_start           , -- Out :
-            MAP_SIZE        => map_size            , -- Out :
-        ---------------------------------------------------------------------------
-        -- 
-        ---------------------------------------------------------------------------
-            KEY_START       => open                , -- Out :
-            KEY_VALID       => intake_key_valid    , -- Out :
-            KEY_CODE        => intake_key_code     , -- Out :
-            KEY_LAST        => intake_key_last     , -- Out :
-            KEY_ERROR       => intake_key_error    , -- In  :
-            KEY_DONE        => intake_key_done     , -- In  :
-            KEY_SHIFT       => intake_key_shift    , -- In  :
-        ---------------------------------------------------------------------------
-        -- 
-        ---------------------------------------------------------------------------
-            VALUE_START     => intake_val_start    , -- Out :
-            VALUE_ABORT     => intake_val_abort    , -- Out :
-            VALUE_VALID     => intake_val_valid    , -- Out :
-            VALUE_CODE      => intake_val_code     , -- Out :
-            VALUE_LAST      => intake_val_last     , -- Out :
-            VALUE_ERROR     => intake_val_error    , -- In  :
-            VALUE_DONE      => intake_val_done     , -- In  :
-            VALUE_SHIFT     => intake_val_shift      -- In  :
-        );                                           -- 
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    GET_VALUE: MsgPack_KVMap_Get_Value               -- 
-        generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH          , --
-            STORE_SIZE      => STORE_SIZE          , --
-            MATCH_PHASE     => MATCH_PHASE           --
-        )                                            -- 
-        port map (                                   -- 
-        ---------------------------------------------------------------------------
-        -- Clock and Reset Signals
-        ---------------------------------------------------------------------------
-            CLK             => CLK                 , -- In  :
-            RST             => RST                 , -- In  :
-            CLR             => CLR                 , -- In  :
+            CLK             => CLK             , -- In  :
+            RST             => RST             , -- In  :
+            CLR             => CLR             , -- In  :
         ---------------------------------------------------------------------------
         -- Key Object Decode Input Interface
         ---------------------------------------------------------------------------
-            I_KEY_CODE      => intake_key_code     , -- In  :
-            I_KEY_LAST      => intake_key_last     , -- In  :
-            I_KEY_VALID     => intake_key_valid    , -- In  :
-            I_KEY_ERROR     => intake_key_error    , -- Out :
-            I_KEY_DONE      => intake_key_done     , -- Out :
-            I_KEY_SHIFT     => intake_key_shift    , -- Out :
+            I_KEY_CODE      => I_KEY_CODE      , -- In  :
+            I_KEY_LAST      => I_KEY_LAST      , -- In  :
+            I_KEY_VALID     => I_KEY_VALID     , -- In  :
+            I_KEY_ERROR     => I_KEY_ERROR     , -- Out :
+            I_KEY_DONE      => I_KEY_DONE      , -- Out :
+            I_KEY_SHIFT     => I_KEY_SHIFT     , -- Out :
         ---------------------------------------------------------------------------
         -- Value Object Decode Input Interface
         ---------------------------------------------------------------------------
-            I_VAL_START     => intake_val_start    , -- In  :
-            I_VAL_ABORT     => intake_val_abort    , -- In  :
-            I_VAL_CODE      => intake_val_code     , -- In  :
-            I_VAL_LAST      => intake_val_last     , -- In  :
-            I_VAL_VALID     => intake_val_valid    , -- In  :
-            I_VAL_ERROR     => intake_val_error    , -- Out :
-            I_VAL_DONE      => intake_val_done     , -- Out :
-            I_VAL_SHIFT     => intake_val_shift    , -- Out :
+            I_VAL_START     => I_VAL_START     , -- In  :
+            I_VAL_ABORT     => I_VAL_ABORT     , -- In  :
+            I_VAL_CODE      => I_VAL_CODE      , -- In  :
+            I_VAL_LAST      => I_VAL_LAST      , -- In  :
+            I_VAL_VALID     => I_VAL_VALID     , -- In  :
+            I_VAL_ERROR     => I_VAL_ERROR     , -- Out :
+            I_VAL_DONE      => I_VAL_DONE      , -- Out :
+            I_VAL_SHIFT     => I_VAL_SHIFT     , -- Out :
         ---------------------------------------------------------------------------
         -- Key Object Encode Output Interface
         ---------------------------------------------------------------------------
-            O_KEY_CODE      => outlet_key_code     , -- Out :
-            O_KEY_VALID     => outlet_key_valid    , -- Out :
-            O_KEY_LAST      => outlet_key_last     , -- Out :
-            O_KEY_ERROR     => outlet_key_error    , -- Out :
-            O_KEY_READY     => outlet_key_ready    , -- In  :
-        ---------------------------------------------------------------------------
-        -- Value Object Encode Output Interface
-        ---------------------------------------------------------------------------
-            O_VAL_CODE      => outlet_val_code     , -- Out :
-            O_VAL_VALID     => outlet_val_valid    , -- Out :
-            O_VAL_LAST      => outlet_val_last     , -- Out :
-            O_VAL_ERROR     => outlet_val_error    , -- Out :
-            O_VAL_READY     => outlet_val_ready    , -- In  :
+            O_KEY_CODE      => O_KEY_CODE      , -- Out :
+            O_KEY_VALID     => O_KEY_VALID     , -- Out :
+            O_KEY_LAST      => O_KEY_LAST      , -- Out :
+            O_KEY_ERROR     => O_KEY_ERROR     , -- Out :
+            O_KEY_READY     => O_KEY_READY     , -- In  :
         ---------------------------------------------------------------------------
         -- Key Object Compare Interface
         ---------------------------------------------------------------------------
-            MATCH_REQ       => MATCH_REQ           , -- Out :
-            MATCH_CODE      => MATCH_CODE          , -- Out :
-            MATCH_OK        => MATCH_OK            , -- In  :
-            MATCH_NOT       => MATCH_NOT           , -- In  :
-            MATCH_SHIFT     => MATCH_SHIFT         , -- In  :
+            MATCH_REQ       => MATCH_REQ       , -- Out :
+            MATCH_CODE      => MATCH_CODE      , -- Out :
+            MATCH_OK        => MATCH_OK        , -- In  :
+            MATCH_NOT       => MATCH_NOT       , -- In  :
+            MATCH_SHIFT     => MATCH_SHIFT     , -- In  :
         ---------------------------------------------------------------------------
-        -- Parameter Object Decode Output Interface
+        -- Value Object Decode Output Interface
         ---------------------------------------------------------------------------
-            PARAM_START     => PARAM_START         , -- Out :
-            PARAM_VALID     => PARAM_VALID         , -- Out :
-            PARAM_CODE      => PARAM_CODE          , -- Out :
-            PARAM_LAST      => PARAM_LAST          , -- Out :
-            PARAM_ERROR     => PARAM_ERROR         , -- In  :
-            PARAM_DONE      => PARAM_DONE          , -- In  :
-            PARAM_SHIFT     => PARAM_SHIFT         , -- In  :
+            VALUE_START     => PARAM_START     , -- Out :
+            VALUE_VALID     => PARAM_VALID     , -- Out :
+            VALUE_CODE      => PARAM_CODE      , -- Out :
+            VALUE_LAST      => PARAM_LAST      , -- Out :
+            VALUE_ERROR     => PARAM_ERROR     , -- In  :
+            VALUE_DONE      => PARAM_DONE      , -- In  :
+            VALUE_SHIFT     => PARAM_SHIFT     , -- In  :
         ---------------------------------------------------------------------------
-        -- Value Object Encode Input Interface
+        -- Dispatch Control/Status Interface
         ---------------------------------------------------------------------------
-            VALUE_VALID     => VALUE_VALID         , -- In  :
-            VALUE_CODE      => VALUE_CODE          , -- In  :
-            VALUE_LAST      => VALUE_LAST          , -- In  :
-            VALUE_ERROR     => VALUE_ERROR         , -- In  :
-            VALUE_READY     => VALUE_READY           -- Out :
-        );                                           -- 
+            DISPATCH_SELECT => req_select      , -- Out :
+            DISPATCH_START  => req_start       , -- Out :
+            DISPATCH_ERROR  => req_error       , -- Out :
+            DISPATCH_ABORT  => req_abort       , -- Out :
+            DISPATCH_BUSY   => busy              -- In  :
+        );                                       -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ENCODE_MAP: MsgPack_Object_Encode_Map            -- 
-        generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH          , --
-            SIZE_BITS       => SIZE_BITS             -- 
-        )                                            -- 
-        port map (                                   -- 
-        ---------------------------------------------------------------------------
-        -- Clock and Reset Signals
-        ---------------------------------------------------------------------------
-            CLK             => CLK                 , -- In  :
-            RST             => RST                 , -- In  :
-            CLR             => CLR                 , -- In  :
-        ---------------------------------------------------------------------------
-        -- 
-        ---------------------------------------------------------------------------
-            START           => map_start           , -- In  :
-            SIZE            => map_size            , -- In  :
-        ---------------------------------------------------------------------------
-        -- Key Object Encode Input Interface
-        ---------------------------------------------------------------------------
-            I_KEY_CODE      => outlet_key_code     , -- In  :
-            I_KEY_LAST      => outlet_key_last     , -- In  :
-            I_KEY_ERROR     => outlet_key_error    , -- In  :
-            I_KEY_VALID     => outlet_key_valid    , -- In  :
-            I_KEY_READY     => outlet_key_ready    , -- Out :
-        ---------------------------------------------------------------------------
-        -- Value Object Encode Input Interface
-        ---------------------------------------------------------------------------
-            I_VAL_CODE      => outlet_val_code     , -- In  :
-            I_VAL_LAST      => outlet_val_last     , -- In  :
-            I_VAL_ERROR     => outlet_val_error    , -- In  :
-            I_VAL_VALID     => outlet_val_valid    , -- In  :
-            I_VAL_READY     => outlet_val_ready    , -- Out :
-        ---------------------------------------------------------------------------
-        -- Map Object Encode Output Interface
-        ---------------------------------------------------------------------------
-            O_MAP_CODE      => O_CODE              , -- Out :
-            O_MAP_LAST      => O_LAST              , -- Out :
-            O_MAP_ERROR     => O_ERROR             , -- Out :
-            O_MAP_VALID     => O_VALID             , -- Out :
-            O_MAP_READY     => O_READY               -- In  :
-    );                                               -- 
+    process (CLK, RST) begin
+        if (RST = '1') then
+                curr_state   <= IDLE_STATE;
+                value_select <= (others => '0');
+        elsif (CLK'event and CLK = '1') then
+            if (CLR = '1') then
+                curr_state   <= IDLE_STATE;
+                value_select <= (others => '0');
+            else
+                case curr_state is
+                    when IDLE_STATE =>
+                        if    (req_start = '1') then
+                            curr_state   <= GET_VALUE_STATE;
+                            value_select <= req_select;
+                        elsif (req_error = '1') then
+                            curr_state   <= UNDEF_KEY_STATE;
+                            value_select <= (others => '0');
+                        else
+                            curr_state   <= IDLE_STATE;
+                            value_select <= (others => '0');
+                        end if;
+                    when GET_VALUE_STATE =>
+                        curr_state <= next_state;
+                        if (next_state /= GET_VALUE_STATE) then
+                            value_select <= (others => '0');
+                        end if;
+                    when UNDEF_KEY_STATE =>
+                        curr_state <= next_state;
+                        value_select <= (others => '0');
+                    when others =>
+                        curr_state   <= IDLE_STATE;
+                        value_select <= (others => '0');
+                end case;
+            end if;
+        end if;
+    end process;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    process (curr_state, value_select,
+             VALUE_VALID, VALUE_CODE, VALUE_LAST, VALUE_ERROR, O_VAL_READY)
+        variable  val_valid     :  std_logic;
+        variable  val_last      :  std_logic;
+        variable  val_error     :  std_logic;
+        variable  val_code      :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+    begin
+        val_valid := '0';
+        val_last  := '0';
+        val_error := '0';
+        val_code  := (others => MsgPack_Object.CODE_NULL);
+        for i in 0 to STORE_SIZE-1 loop
+            if (value_select(i) = '1') then
+                 val_valid := val_valid or VALUE_VALID(i);
+                 val_last  := val_last  or VALUE_LAST (i);
+                 val_error := val_error or VALUE_ERROR(i);
+                 for n in 0 to CODE_WIDTH-1 loop
+                     val_code(n).data     := val_code(n).data     or VALUE_CODE(CODE_WIDTH*i+n).data;
+                     val_code(n).strb     := val_code(n).strb     or VALUE_CODE(CODE_WIDTH*i+n).strb;
+                     val_code(n).class    := val_code(n).class    or VALUE_CODE(CODE_WIDTH*i+n).class;
+                     val_code(n).complete := val_code(n).complete or VALUE_CODE(CODE_WIDTH*i+n).complete;
+                     val_code(n).valid    := val_code(n).valid    or VALUE_CODE(CODE_WIDTH*i+n).valid;
+                 end loop;
+            end if;
+        end loop;
+        case curr_state is
+            when GET_VALUE_STATE =>
+                O_VAL_VALID <= val_valid;
+                O_VAL_LAST  <= val_last;
+                O_VAL_ERROR <= val_error;
+                O_VAL_CODE  <= val_code;
+                if (O_VAL_READY = '1') then
+                    VALUE_READY <= value_select;
+                else
+                    VALUE_READY <= (others => '0');
+                end if;
+                if (val_valid = '1' and val_last = '1' and O_VAL_READY = '1') then
+                    next_state <= IDLE_STATE;
+                    busy       <= '0';
+                else
+                    next_state <= GET_VALUE_STATE;
+                    busy       <= '1';
+                end if;
+            when UNDEF_KEY_STATE =>
+                O_VAL_VALID <= '1';
+                O_VAL_LAST  <= '1';
+                O_VAL_ERROR <= '1';
+                O_VAL_CODE  <= MsgPack_Object.New_Code_Vector_Nil(CODE_WIDTH);
+                VALUE_READY <= (others => '0');
+                if (O_VAL_READY = '1') then
+                    next_state <= IDLE_STATE;
+                    busy       <= '0';
+                else
+                    next_state <= UNDEF_KEY_STATE;
+                    busy       <= '1';
+                end if;
+            when others =>
+                O_VAL_VALID <= '0';
+                O_VAL_LAST  <= '0';
+                O_VAL_ERROR <= '0';
+                O_VAL_CODE  <= val_code;
+                VALUE_READY <= (others => '0');
+                next_state  <= curr_state;
+                busy        <= '0';
+        end case;
+    end process;
 end RTL;

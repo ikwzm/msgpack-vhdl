@@ -2,7 +2,7 @@
 --!     @file    kvmap/msgpack_kvmap_components.vhd                              --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/02/05                                                      --
+--!     @date    2016/05/17                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -389,9 +389,9 @@ component MsgPack_KVMap_Set_Integer_Stream
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Set_Value                                               --
+--! @brief MsgPack_KVMap_Set_Map_Value                                           --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Set_Value
+component MsgPack_KVMap_Set_Map_Value
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -456,9 +456,9 @@ component MsgPack_KVMap_Set_Value
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Set_Map_Value                                           --
+--! @brief MsgPack_KVMap_Set_Map                                                 --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Set_Map_Value
+component MsgPack_KVMap_Set_Map
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -671,9 +671,9 @@ component MsgPack_KVMap_Get_Integer_Stream
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Get_Value                                               --
+--! @brief MsgPack_KVMap_Get_Map_Value                                           --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Get_Value
+component MsgPack_KVMap_Get_Map_Value
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -754,9 +754,9 @@ component MsgPack_KVMap_Get_Value
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Get_Map_Value                                           --
+--! @brief MsgPack_KVMap_Get_Map                                                 --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Get_Map_Value
+component MsgPack_KVMap_Get_Map
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
