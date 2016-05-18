@@ -2,7 +2,7 @@
 --!     @file    kvmap/msgpack_kvmap_components.vhd                              --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/05/17                                                      --
+--!     @date    2016/05/18                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -198,9 +198,9 @@ component MsgPack_KVMap_Dispatcher
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Decode_Get_Stream_Parameter                             --
+--! @brief MsgPack_KVMap_Query_Stream_Parameter                                  --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Decode_Get_Stream_Parameter
+component MsgPack_KVMap_Query_Stream_Parameter
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -234,9 +234,9 @@ component MsgPack_KVMap_Decode_Get_Stream_Parameter
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Set_Integer                                             --
+--! @brief MsgPack_KVMap_Store_Integer_Register                                  --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Set_Integer
+component MsgPack_KVMap_Store_Integer_Register
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -285,9 +285,9 @@ component MsgPack_KVMap_Set_Integer
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Set_Integer_Memory                                      --
+--! @brief MsgPack_KVMap_Store_Integer_Array                                     --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Set_Integer_Memory
+component MsgPack_KVMap_Store_Integer_Array
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -338,9 +338,9 @@ component MsgPack_KVMap_Set_Integer_Memory
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Set_Integer_Stream                                      --
+--! @brief MsgPack_KVMap_Store_Integer_Stream                                    --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Set_Integer_Stream
+component MsgPack_KVMap_Store_Integer_Stream
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -389,9 +389,49 @@ component MsgPack_KVMap_Set_Integer_Stream
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Set_Map_Value                                           --
+--! @brief MsgPack_KVMap_Store_Array                                             --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Set_Map_Value
+component MsgPack_KVMap_Store_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        ADDR_BITS       :  integer  := 8
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Key Value Map Object Decode Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(          CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Object Decode Output Interface
+    -------------------------------------------------------------------------------
+        VALUE_START     : out std_logic;
+        VALUE_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
+        VALUE_VALID     : out std_logic;
+        VALUE_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        VALUE_LAST      : out std_logic;
+        VALUE_ERROR     : in  std_logic;
+        VALUE_DONE      : in  std_logic;
+        VALUE_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0)
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_KVMap_Store_Map_Value                                         --
+-----------------------------------------------------------------------------------
+component MsgPack_KVMap_Store_Map_Value
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -456,9 +496,9 @@ component MsgPack_KVMap_Set_Map_Value
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Set_Map                                                 --
+--! @brief MsgPack_KVMap_Store                                                   --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Set_Map
+component MsgPack_KVMap_Store
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -504,9 +544,9 @@ component MsgPack_KVMap_Set_Map
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Get_Integer                                             --
+--! @brief MsgPack_KVMap_Query_Integer_Register                                  --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Get_Integer
+component MsgPack_KVMap_Query_Integer_Register
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -558,9 +598,9 @@ component MsgPack_KVMap_Get_Integer
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Get_Integer_Memory                                      --
+--! @brief MsgPack_KVMap_Query_Integer_Array                                     --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Get_Integer_Memory
+component MsgPack_KVMap_Query_Integer_Array
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -569,7 +609,7 @@ component MsgPack_KVMap_Get_Integer_Memory
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         ADDR_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;  
+        SIZE_BITS       :  positive := 32;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE
     );
@@ -615,9 +655,9 @@ component MsgPack_KVMap_Get_Integer_Memory
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Get_Integer_Stream                                      --
+--! @brief MsgPack_KVMap_Query_Integer_Stream                                    --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Get_Integer_Stream
+component MsgPack_KVMap_Query_Integer_Stream
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -671,9 +711,9 @@ component MsgPack_KVMap_Get_Integer_Stream
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Get_Map_Value                                           --
+--! @brief MsgPack_KVMap_Query_Map_Value                                         --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Get_Map_Value
+component MsgPack_KVMap_Query_Map_Value
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -754,9 +794,65 @@ component MsgPack_KVMap_Get_Map_Value
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Get_Map                                                 --
+--! @brief MsgPack_KVMap_Query_Array                                             --
 -----------------------------------------------------------------------------------
-component MsgPack_KVMap_Get_Map
+component MsgPack_KVMap_Query_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        ADDR_BITS       :  integer  := 8
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Key Array Object Decode Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(          CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Key Value Map Encode Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_VALID         : out std_logic;
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Parameter Object Decode Output Interface
+    -------------------------------------------------------------------------------
+        PARAM_START     : out std_logic;
+        PARAM_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
+        PARAM_VALID     : out std_logic;
+        PARAM_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        PARAM_LAST      : out std_logic;
+        PARAM_ERROR     : in  std_logic;
+        PARAM_DONE      : in  std_logic;
+        PARAM_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Object Encode Input Interface
+    -------------------------------------------------------------------------------
+        VALUE_VALID     : in  std_logic;
+        VALUE_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        VALUE_LAST      : in  std_logic;
+        VALUE_ERROR     : in  std_logic;
+        VALUE_READY     : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_KVMap_Query                                                   --
+-----------------------------------------------------------------------------------
+component MsgPack_KVMap_Query
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------

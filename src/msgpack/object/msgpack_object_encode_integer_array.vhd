@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_encode_integer_memory.vhd
---!     @brief   MessagePack Object encode to integer memory
+--!     @file    msgpack_object_encode_integer_array.vhd
+--!     @brief   MessagePack Object encode to integer array
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/5/18
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Encode_Integer_Memory is
+entity  MsgPack_Object_Encode_Integer_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ entity  MsgPack_Object_Encode_Integer_Memory is
         O_VALID         : out std_logic;
         O_READY         : in  std_logic
     );
-end MsgPack_Object_Encode_Integer_Memory;
+end MsgPack_Object_Encode_Integer_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Stream;
-architecture RTL of MsgPack_Object_Encode_Integer_Memory is
+architecture RTL of MsgPack_Object_Encode_Integer_Array is
     signal    curr_addr         :  unsigned(ADDR_BITS-1 downto 0);
     signal    next_addr         :  unsigned(ADDR_BITS-1 downto 0);
     signal    intake_ready      :  std_logic;

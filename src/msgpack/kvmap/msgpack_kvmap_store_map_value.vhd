@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_set_map_value.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Set Map Value Module :
+--!     @file    msgpack_kvmap_store_map_value.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Store Map Value Module :
 --!     @version 0.2.0
 --!     @date    2016/5/17
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Set_Map_Value is
+entity  MsgPack_KVMap_Store_Map_Value is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ entity  MsgPack_KVMap_Set_Map_Value is
         VALUE_DONE      : in  std_logic_vector(STORE_SIZE           -1 downto 0);
         VALUE_SHIFT     : in  std_logic_vector(STORE_SIZE*CODE_WIDTH-1 downto 0)
     );
-end MsgPack_KVMap_Set_Map_Value;
+end MsgPack_KVMap_Store_Map_Value;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Dispatcher;
-architecture RTL of MsgPack_KVMap_Set_Map_Value is
+architecture RTL of MsgPack_KVMap_Store_Map_Value is
 begin
     -------------------------------------------------------------------------------
     --

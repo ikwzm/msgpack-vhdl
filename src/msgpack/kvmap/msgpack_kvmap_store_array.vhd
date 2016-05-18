@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_set_map.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Set Map Module :
+--!     @file    msgpack_kvmap_store_array.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Store Array Module :
 --!     @version 0.2.0
---!     @date    2016/5/17
+--!     @date    2016/5/18
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -38,14 +38,13 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Set_Map is
+entity  MsgPack_KVMap_Store_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        STORE_SIZE      :  positive := 8;
-        MATCH_PHASE     :  positive := 8
+        ADDR_BITS       :  integer  := 8
     );
     port (
     -------------------------------------------------------------------------------
@@ -57,32 +56,25 @@ entity  MsgPack_KVMap_Set_Map is
     -------------------------------------------------------------------------------
     -- Key Value Map Object Decode Input Interface
     -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector( CODE_WIDTH-1 downto 0);
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         I_LAST          : in  std_logic;
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(           CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    -- Key Object Compare Interface
-    -------------------------------------------------------------------------------
-        MATCH_REQ       : out std_logic_vector(          MATCH_PHASE-1 downto 0);
-        MATCH_CODE      : out MsgPack_Object.Code_Vector( CODE_WIDTH-1 downto 0);
-        MATCH_OK        : in  std_logic_vector(STORE_SIZE           -1 downto 0);
-        MATCH_NOT       : in  std_logic_vector(STORE_SIZE           -1 downto 0);
-        MATCH_SHIFT     : in  std_logic_vector(STORE_SIZE*CODE_WIDTH-1 downto 0);
+        I_SHIFT         : out std_logic_vector(          CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Value Object Decode Output Interface
     -------------------------------------------------------------------------------
-        VALUE_START     : out std_logic_vector(STORE_SIZE           -1 downto 0);
-        VALUE_VALID     : out std_logic_vector(STORE_SIZE           -1 downto 0);
-        VALUE_CODE      : out MsgPack_Object.Code_Vector( CODE_WIDTH-1 downto 0);
+        VALUE_START     : out std_logic;
+        VALUE_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
+        VALUE_VALID     : out std_logic;
+        VALUE_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         VALUE_LAST      : out std_logic;
-        VALUE_ERROR     : in  std_logic_vector(STORE_SIZE           -1 downto 0);
-        VALUE_DONE      : in  std_logic_vector(STORE_SIZE           -1 downto 0);
-        VALUE_SHIFT     : in  std_logic_vector(STORE_SIZE*CODE_WIDTH-1 downto 0)
+        VALUE_ERROR     : in  std_logic;
+        VALUE_DONE      : in  std_logic;
+        VALUE_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0)
     );
-end MsgPack_KVMap_Set_Map;
+end MsgPack_KVMap_Store_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -92,8 +84,8 @@ use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Map;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Set_Map_Value;
-architecture RTL of MsgPack_KVMap_Set_Map is
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
+architecture RTL of MsgPack_KVMap_Store_Array is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -106,14 +98,10 @@ architecture RTL of MsgPack_KVMap_Set_Map is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    signal    intake_val_code   :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    intake_val_start  :  std_logic;
-    signal    intake_val_abort  :  std_logic;
-    signal    intake_val_valid  :  std_logic;
-    signal    intake_val_last   :  std_logic;
-    signal    intake_val_error  :  std_logic;
-    signal    intake_val_done   :  std_logic;
-    signal    intake_val_shift  :  std_logic_vector          (CODE_WIDTH-1 downto 0);
+    signal    decode_addr_value :  std_logic_vector          ( ADDR_BITS-1 downto 0);
+    signal    decode_addr_valid :  std_logic;
+    constant  decode_addr_ready :  std_logic := '1';
+    constant  DECODE_ADDR_ENA64 :  boolean   := (ADDR_BITS >= 64);
 begin
     -------------------------------------------------------------------------------
     --
@@ -156,23 +144,26 @@ begin
         ---------------------------------------------------------------------------
         -- 
         ---------------------------------------------------------------------------
-            VALUE_START     => intake_val_start    , -- Out :
-            VALUE_ABORT     => intake_val_abort    , -- Out :
-            VALUE_VALID     => intake_val_valid    , -- Out :
-            VALUE_CODE      => intake_val_code     , -- Out :
-            VALUE_LAST      => intake_val_last     , -- Out :
-            VALUE_ERROR     => intake_val_error    , -- In  :
-            VALUE_DONE      => intake_val_done     , -- In  :
-            VALUE_SHIFT     => intake_val_shift      -- In  :
-        );                                           -- 
+            VALUE_START     => VALUE_START         , -- Out :
+            VALUE_ABORT     => open                , -- Out :
+            VALUE_VALID     => VALUE_VALID         , -- Out :
+            VALUE_CODE      => VALUE_CODE          , -- Out :
+            VALUE_LAST      => VALUE_LAST          , -- Out :
+            VALUE_ERROR     => VALUE_ERROR         , -- In  :
+            VALUE_DONE      => VALUE_DONE          , -- In  :
+            VALUE_SHIFT     => VALUE_SHIFT           -- In  :
+        );                                           --
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    SET_VALUE: MsgPack_KVMap_Set_Map_Value           -- 
+    DECODE_ADDR: MsgPack_Object_Decode_Integer       -- 
         generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH          , --
-            STORE_SIZE      => STORE_SIZE          , --
-            MATCH_PHASE     => MATCH_PHASE           --
+            CODE_WIDTH      => CODE_WIDTH          , -- 
+            VALUE_BITS      => ADDR_BITS           , -- 
+            VALUE_SIGN      => FALSE               , -- 
+            QUEUE_SIZE      => 0                   , -- 
+            CHECK_RANGE     => TRUE                , -- 
+            ENABLE64        => DECODE_ADDR_ENA64     -- 
         )                                            -- 
         port map (                                   -- 
         ---------------------------------------------------------------------------
@@ -182,50 +173,35 @@ begin
             RST             => RST                 , -- In  :
             CLR             => CLR                 , -- In  :
         ---------------------------------------------------------------------------
-        -- Key Object Decode Input Interface
-        -------------------------------------------------------------------------------
-            I_KEY_CODE      => intake_key_code     , -- In  :
-            I_KEY_LAST      => intake_key_last     , -- In  :
-            I_KEY_VALID     => intake_key_valid    , -- In  :
-            I_KEY_ERROR     => intake_key_error    , -- Out :
-            I_KEY_DONE      => intake_key_done     , -- Out :
-            I_KEY_SHIFT     => intake_key_shift    , -- Out :
+        -- MessagePack Object Code Input Interface
         ---------------------------------------------------------------------------
-        -- Value Object Decode Input Interface
+            I_CODE          => intake_key_code     , -- In  :
+            I_LAST          => intake_key_last     , -- In  :
+            I_VALID         => intake_key_valid    , -- In  :
+            I_ERROR         => intake_key_error    , -- Out :
+            I_DONE          => intake_key_done     , -- Out :
+            I_SHIFT         => intake_key_shift    , -- Out :
         ---------------------------------------------------------------------------
-            I_VAL_START     => intake_val_start    , -- In  :
-            I_VAL_ABORT     => intake_val_abort    , -- In  :
-            I_VAL_CODE      => intake_val_code     , -- In  :
-            I_VAL_LAST      => intake_val_last     , -- In  :
-            I_VAL_VALID     => intake_val_valid    , -- In  :
-            I_VAL_ERROR     => intake_val_error    , -- Out :
-            I_VAL_DONE      => intake_val_done     , -- Out :
-            I_VAL_SHIFT     => intake_val_shift    , -- Out :
+        -- Integer Value Output Interface
         ---------------------------------------------------------------------------
-        -- Key Object Encode Output Interface
-        ---------------------------------------------------------------------------
-            O_KEY_CODE      => open                , -- Out :
-            O_KEY_VALID     => open                , -- Out :
-            O_KEY_LAST      => open                , -- Out :
-            O_KEY_ERROR     => open                , -- Out :
-            O_KEY_READY     => '1'                 , -- In  :
-        ---------------------------------------------------------------------------
-        -- Key Object Compare Interface
-        ---------------------------------------------------------------------------
-            MATCH_REQ       => MATCH_REQ           , -- Out :
-            MATCH_CODE      => MATCH_CODE          , -- Out :
-            MATCH_OK        => MATCH_OK            , -- In  :
-            MATCH_NOT       => MATCH_NOT           , -- In  :
-            MATCH_SHIFT     => MATCH_SHIFT         , -- In  :
-        ---------------------------------------------------------------------------
-        -- Value Object Decode Output Interface
-        ---------------------------------------------------------------------------
-            VALUE_START     => VALUE_START         , -- Out :
-            VALUE_VALID     => VALUE_VALID         , -- Out :
-            VALUE_CODE      => VALUE_CODE          , -- Out :
-            VALUE_LAST      => VALUE_LAST          , -- Out :
-            VALUE_ERROR     => VALUE_ERROR         , -- In  :
-            VALUE_DONE      => VALUE_DONE          , -- In  :
-            VALUE_SHIFT     => VALUE_SHIFT           -- In  :
+            O_VALUE         => decode_addr_value   , -- Out :
+            O_SIGN          => open                , -- Out :
+            O_LAST          => open                , -- Out :
+            O_VALID         => decode_addr_valid   , -- Out :
+            O_READY         => decode_addr_ready     -- In  :
         );
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    ADDR: process (CLK, RST) begin
+        if (RST = '1') then
+                VALUE_ADDR <= (others => '0');
+        elsif (CLK'event and CLK = '1') then
+            if (CLR = '1') then
+                VALUE_ADDR <= (others => '0');
+            elsif (decode_addr_valid = '1' and decode_addr_ready = '1') then
+                VALUE_ADDR <= decode_addr_value;
+            end if;
+        end if;
+    end process;
 end RTL;

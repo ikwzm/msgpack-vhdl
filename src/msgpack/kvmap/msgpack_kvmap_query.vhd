@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_get_map.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Get Map Module :
+--!     @file    msgpack_kvmap_query.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Query Module :
 --!     @version 0.2.0
 --!     @date    2016/5/17
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Get_Map is
+entity  MsgPack_KVMap_Query is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ entity  MsgPack_KVMap_Get_Map is
         VALUE_ERROR     : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
         VALUE_READY     : out std_logic_vector(          STORE_SIZE           -1 downto 0)
     );
-end MsgPack_KVMap_Get_Map;
+end MsgPack_KVMap_Query;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -109,8 +109,8 @@ library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Map;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Map;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Get_Map_Value;
-architecture RTL of MsgPack_KVMap_Get_Map is
+use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Query_Map_Value;
+architecture RTL of MsgPack_KVMap_Query is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -207,7 +207,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    GET_VALUE: MsgPack_KVMap_Get_Map_Value           -- 
+    GET_VALUE: MsgPack_KVMap_Query_Map_Value         -- 
         generic map (                                -- 
             CODE_WIDTH      => CODE_WIDTH          , --
             STORE_SIZE      => STORE_SIZE          , --

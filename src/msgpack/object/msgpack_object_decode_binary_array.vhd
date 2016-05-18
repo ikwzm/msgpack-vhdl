@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_decode_binary_memory.vhd
---!     @brief   MessagePack Object decode to binary/string memory
+--!     @file    msgpack_object_decode_binary_array.vhd
+--!     @brief   MessagePack Object decode to binary/string array
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/5/18
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Decode_Binary_Memory is
+entity  MsgPack_Object_Decode_Binary_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ entity  MsgPack_Object_Decode_Binary_Memory is
         O_VALID         : out std_logic;
         O_READY         : in  std_logic
     );
-end  MsgPack_Object_Decode_Binary_Memory;
+end  MsgPack_Object_Decode_Binary_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.PipeWork_Components.REDUCER;
 use     MsgPack.PipeWork_Components.CHOPPER;
-architecture RTL of MsgPack_Object_Decode_Binary_Memory is
+architecture RTL of MsgPack_Object_Decode_Binary_Array is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

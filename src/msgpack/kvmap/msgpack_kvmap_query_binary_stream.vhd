@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_set_integer_memory.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Set Integer Memory Module :
+--!     @file    msgpack_kvmap_query_binary_stream.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Get Binary Stream Module :
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/5/18
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Set_Integer_Memory is
+entity  MsgPack_KVMap_Query_Binary_Stream is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -46,12 +46,8 @@ entity  MsgPack_KVMap_Set_Integer_Memory is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
-        ADDR_BITS       :  integer  := 8;
-        VALUE_BITS      :  integer range 1 to 64;
-        VALUE_SIGN      :  boolean  := FALSE;
-        QUEUE_SIZE      :  integer  := 0;
-        CHECK_RANGE     :  boolean  := TRUE ;
-        ENABLE64        :  boolean  := TRUE
+        DATA_BITS       :  positive := 1;
+        ADDR_BITS       :  positive := 1
     );
     port (
     -------------------------------------------------------------------------------
@@ -61,14 +57,19 @@ entity  MsgPack_KVMap_Set_Integer_Memory is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- MessagePack Object Code Input Interface
+    -- Control and Status Signals 
     -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_ERROR         : out std_logic;
-        I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+        START           : in  std_logic := '1';
+        SIZE            : in  std_logic_vector(31 downto 0);
+        BUSY            : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
@@ -78,16 +79,21 @@ entity  MsgPack_KVMap_Set_Integer_Memory is
         MATCH_NOT       : out std_logic;
         MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Integer Value Data and Address Output
+    -- Binary/String Data Side Band Output 
     -------------------------------------------------------------------------------
-        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
-        SIGN            : out std_logic;
-        LAST            : out std_logic;
-        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
-        VALID           : out std_logic;
-        READY           : in  std_logic
+        S_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
+        S_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
+        S_LAST          : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Binary/String Data Stream Input Interface
+    -------------------------------------------------------------------------------
+        I_DATA          : in  std_logic_vector(DATA_BITS  -1 downto 0);
+        I_STRB          : in  std_logic_vector(DATA_BITS/8-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic
     );
-end  MsgPack_KVMap_Set_Integer_Memory;
+end  MsgPack_KVMap_Query_Binary_Stream;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -96,9 +102,9 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer_Memory;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Binary;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
-architecture RTL of MsgPack_KVMap_Set_Integer_Memory is
+architecture RTL of MsgPack_KVMap_Query_Binary_Stream is
 begin
     -------------------------------------------------------------------------------
     --
@@ -107,7 +113,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , -- 
             I_MAX_PHASE     => MATCH_PHASE     , --
-            KEYWORD         => KEY               --
+            KEYWORD         => kEY               --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- 
@@ -122,31 +128,33 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE: MsgPack_Object_Decode_Integer_Memory -- 
+    ENCODE: MsgPack_Object_Encode_Binary         -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             ADDR_BITS       => ADDR_BITS       , -- 
-            VALUE_BITS      => VALUE_BITS      , --
-            VALUE_SIGN      => VALUE_SIGN      , --
-            CHECK_RANGE     => CHECK_RANGE     , --
-            ENABLE64        => ENABLE64          --
+            DATA_BITS       => DATA_BITS       , --
+            ENCODE_BINARY   => TRUE            , --
+            ENCODE_STRING   => FALSE             -- 
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            I_ADDR          => std_logic_vector(to_unsigned(0, ADDR_BITS)), 
-            I_CODE          => I_CODE          , -- In  :
+            START           => START           , -- In  :
+            SIZE            => SIZE            , -- In  :
+            BUSY            => BUSY            , -- In  :
+            O_CODE          => O_CODE          , -- Out :
+            O_LAST          => O_LAST          , -- Out :
+            O_ERROR         => O_ERROR         , -- Out :
+            O_VALID         => O_VALID         , -- Out :
+            O_READY         => O_READY         , -- In  :
+            S_ADDR          => S_ADDR          , -- Out :
+            S_STRB          => S_STRB          , -- Out :
+            S_LAST          => S_LAST          , -- Out :
+            I_DATA          => I_DATA          , -- In  :
+            I_STRB          => I_STRB          , -- In  :
             I_LAST          => I_LAST          , -- In  :
             I_VALID         => I_VALID         , -- In  :
-            I_ERROR         => I_ERROR         , -- Out :
-            I_DONE          => I_DONE          , -- Out :
-            I_SHIFT         => I_SHIFT         , -- Out :
-            O_VALUE         => VALUE           , -- Out :
-            O_ADDR          => ADDR            , -- Out :
-            O_SIGN          => SIGN            , -- Out :
-            O_LAST          => LAST            , -- Out :
-            O_VALID         => VALID           , -- Out :
-            O_READY         => READY             -- In  :
+            I_READY         => I_READY           -- Out :
         );                                       --
 end RTL;

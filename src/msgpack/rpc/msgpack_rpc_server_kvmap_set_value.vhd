@@ -114,7 +114,7 @@ use     MsgPack.MsgPack_RPC;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Code_Reducer;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Array;
 use     MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Return_Nil;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Set_Map;
+use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Store;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_RPC_Server_KVMap_Set_Value is
     -------------------------------------------------------------------------------
@@ -252,7 +252,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    SET_KVMap: MsgPack_KVMap_Set_Map                     -- 
+    STORE_MAP: MsgPack_KVMap_Store                       -- 
         generic map (                                    -- 
             CODE_WIDTH      => I_PARAM_WIDTH           , --
             STORE_SIZE      => STORE_SIZE              , --

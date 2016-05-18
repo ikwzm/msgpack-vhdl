@@ -28,19 +28,19 @@ OBJECT_ENTITY_FILES   = object/msgpack_object_packer.vhd                    \
                         object/msgpack_object_code_compare.vhd              \
                         object/msgpack_object_decode_array.vhd              \
                         object/msgpack_object_decode_binary_core.vhd        \
-                        object/msgpack_object_decode_binary_memory.vhd      \
+                        object/msgpack_object_decode_binary_array.vhd       \
                         object/msgpack_object_decode_binary_stream.vhd      \
                         object/msgpack_object_decode_map.vhd                \
                         object/msgpack_object_decode_integer.vhd            \
                         object/msgpack_object_decode_integer_stream.vhd     \
-                        object/msgpack_object_decode_integer_memory.vhd     \
+                        object/msgpack_object_decode_integer_array.vhd      \
                         object/msgpack_object_encode_array.vhd              \
                         object/msgpack_object_encode_map.vhd                \
-                        object/msgpack_object_encode_binary_memory.vhd      \
+                        object/msgpack_object_encode_binary_array.vhd       \
                         object/msgpack_object_encode_binary_stream.vhd      \
                         object/msgpack_object_encode_integer.vhd            \
                         object/msgpack_object_encode_integer_stream.vhd     \
-                        object/msgpack_object_encode_integer_memory.vhd     \
+                        object/msgpack_object_encode_integer_array.vhd      \
                         object/msgpack_object_encode_string_constant.vhd    \
                         object/msgpack_structure_stack.vhd                  \
                         object/msgpack_object_match_aggregator.vhd          \
@@ -59,17 +59,19 @@ KVMAP_PACKAGE_FILES   = $(END_LIST)
 KVMAP_ENTITY_FILES    = kvmap/msgpack_kvmap_key_compare.vhd                 \
                         kvmap/msgpack_kvmap_key_match_aggregator.vhd        \
                         kvmap/msgpack_kvmap_dispatcher.vhd                  \
-                        kvmap/msgpack_kvmap_decode_get_stream_parameter.vhd \
-                        kvmap/msgpack_kvmap_set_integer.vhd                 \
-                        kvmap/msgpack_kvmap_set_integer_memory.vhd          \
-                        kvmap/msgpack_kvmap_set_integer_stream.vhd          \
-                        kvmap/msgpack_kvmap_set_map_value.vhd               \
-                        kvmap/msgpack_kvmap_set_map.vhd                     \
-                        kvmap/msgpack_kvmap_get_integer.vhd                 \
-                        kvmap/msgpack_kvmap_get_integer_memory.vhd          \
-                        kvmap/msgpack_kvmap_get_integer_stream.vhd          \
-                        kvmap/msgpack_kvmap_get_map_value.vhd               \
-                        kvmap/msgpack_kvmap_get_map.vhd                     \
+                        kvmap/msgpack_kvmap_query_stream_parameter.vhd      \
+                        kvmap/msgpack_kvmap_store_integer_register.vhd      \
+                        kvmap/msgpack_kvmap_store_integer_array.vhd         \
+                        kvmap/msgpack_kvmap_store_integer_stream.vhd        \
+                        kvmap/msgpack_kvmap_store_array.vhd                 \
+                        kvmap/msgpack_kvmap_store_map_value.vhd             \
+                        kvmap/msgpack_kvmap_store.vhd                       \
+                        kvmap/msgpack_kvmap_query_integer_register.vhd      \
+                        kvmap/msgpack_kvmap_query_integer_array.vhd         \
+                        kvmap/msgpack_kvmap_query_integer_stream.vhd        \
+                        kvmap/msgpack_kvmap_query_map_value.vhd             \
+                        kvmap/msgpack_kvmap_query_array.vhd                 \
+                        kvmap/msgpack_kvmap_query.vhd                       \
                         $(END_LIST)
 
 KVMAP_SOURCE_FILES    = $(KVMAP_COMP_FILE)       \

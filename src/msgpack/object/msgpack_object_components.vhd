@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/03/15                                                      --
+--!     @date    2016/05/18                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -317,9 +317,9 @@ component MsgPack_Object_Decode_Binary_Core
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_Object_Decode_Binary_Memory                                   --
+--! @brief MsgPack_Object_Decode_Binary_Array                                    --
 -----------------------------------------------------------------------------------
-component MsgPack_Object_Decode_Binary_Memory
+component MsgPack_Object_Decode_Binary_Array
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -537,9 +537,9 @@ component MsgPack_Object_Decode_Integer_Stream
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_Object_Decode_Integer_Memory                                  --
+--! @brief MsgPack_Object_Decode_Integer_Array                                   --
 -----------------------------------------------------------------------------------
-component MsgPack_Object_Decode_Integer_Memory
+component MsgPack_Object_Decode_Integer_Array
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -672,9 +672,9 @@ component MsgPack_Object_Encode_Map
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_Object_Encode_Binary_Memory                                   --
+--! @brief MsgPack_Object_Encode_Binary_Array                                    --
 -----------------------------------------------------------------------------------
-component MsgPack_Object_Encode_Binary_Memory
+component MsgPack_Object_Encode_Binary_Array
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -851,9 +851,9 @@ component MsgPack_Object_Encode_Integer_Stream
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_Object_Encode_Integer_Memory                                  --
+--! @brief MsgPack_Object_Encode_Integer_Array                                   --
 -----------------------------------------------------------------------------------
-component MsgPack_Object_Encode_Integer_Memory
+component MsgPack_Object_Encode_Integer_Array
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------

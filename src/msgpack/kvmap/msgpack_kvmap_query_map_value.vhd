@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_get_map_value.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Get Map Value Module :
+--!     @file    msgpack_kvmap_query_map_value.vhd
+--!     @brief   MessagePack-KVMap(Key Value Map) Query Map Value Module :
 --!     @version 0.2.0
 --!     @date    2016/5/17
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Get_Map_Value is
+entity  MsgPack_KVMap_Query_Map_Value is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ entity  MsgPack_KVMap_Get_Map_Value is
         VALUE_ERROR     : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
         VALUE_READY     : out std_logic_vector(          STORE_SIZE           -1 downto 0)
     );
-end MsgPack_KVMap_Get_Map_Value;
+end MsgPack_KVMap_Query_Map_Value;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Dispatcher;
-architecture RTL of MsgPack_KVMap_Get_Map_Value is
+architecture RTL of MsgPack_KVMap_Query_Map_Value is
     signal    req_select    :  std_logic_vector(STORE_SIZE-1 downto 0);
     signal    req_start     :  std_logic;
     signal    req_error     :  std_logic;
