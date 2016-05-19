@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_query_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Query Array Module :
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/5/19
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -122,6 +122,16 @@ architecture RTL of MsgPack_KVMap_Query_Array is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
+    signal    outlet_key_code   :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+    signal    outlet_key_valid  :  std_logic;
+    signal    outlet_key_ready  :  std_logic;
+    signal    outlet_key_last   :  std_logic;
+    signal    outlet_key_error  :  std_logic;
+    signal    outlet_key_done   :  std_logic;
+    signal    outlet_key_shift  :  std_logic_vector          (CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
     signal    decode_addr_value :  std_logic_vector          ( ADDR_BITS-1 downto 0);
     signal    decode_addr_valid :  std_logic;
     constant  decode_addr_ready :  std_logic := '1';
@@ -180,6 +190,37 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
+    KEY_QUEUE: block
+        signal intake_valid    :  std_logic;
+        signal intake_complete :  std_logic;
+    begin
+        outlet_key_code  <= intake_key_code;
+        outlet_key_error <= '0';
+        intake_key_ready <= outlet_key_ready;
+        process(intake_key_code, intake_key_last)
+            variable  i_code_valid    :  std_logic_vector(CODE_WIDTH-1 downto 0);
+            variable  i_code_complete :  std_logic_vector(CODE_WIDTH-1 downto 0);
+            constant  VALID_ALL_0     :  std_logic_vector(CODE_WIDTH-1 downto 0) := (others => '0');
+        begin
+            for i in 0 to CODE_WIDTH-1 loop
+                i_code_valid   (i) := intake_key_code(i).valid;
+                i_code_complete(i) := intake_key_code(i).complete;
+            end loop;
+            if (intake_key_last = '1') or
+               ((i_code_valid and i_code_complete) /= VALID_ALL_0) then
+                intake_complete <= '1';
+                intake_valid    <= i_code_valid(i_code_valid'low );
+            else
+                intake_complete <= '0';
+                intake_valid    <= i_code_valid(i_code_valid'high);
+            end if;
+        end process;
+        outlet_key_valid <= '1' when (intake_valid    = '1' and intake_key_valid(0) = '1') else '0';
+        outlet_key_last  <= '1' when (intake_complete = '1' and intake_key_valid(0) = '1') else '0';
+    end block;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
     ENCODE_MAP: MsgPack_Object_Encode_Map            -- 
         generic map (                                -- 
             CODE_WIDTH      => CODE_WIDTH          , --
@@ -200,11 +241,11 @@ begin
         ---------------------------------------------------------------------------
         -- Key Object Encode Input Interface
         ---------------------------------------------------------------------------
-            I_KEY_CODE      => intake_key_code     , -- In  :
-            I_KEY_LAST      => intake_key_last     , -- In  :
-            I_KEY_ERROR     => intake_key_error    , -- In  :
-            I_KEY_VALID     => intake_key_valid(0) , -- In  :
-            I_KEY_READY     => intake_key_ready    , -- Out :
+            I_KEY_CODE      => outlet_key_code     , -- In  :
+            I_KEY_LAST      => outlet_key_last     , -- In  :
+            I_KEY_ERROR     => outlet_key_error    , -- In  :
+            I_KEY_VALID     => outlet_key_valid    , -- In  :
+            I_KEY_READY     => outlet_key_ready    , -- Out :
         ---------------------------------------------------------------------------
         -- Value Object Encode Input Interface
         ---------------------------------------------------------------------------
