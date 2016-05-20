@@ -2,11 +2,11 @@
 --!     @file    msgpack_rpc_method_return_integer.vhd
 --!     @brief   MessagePack-RPC Method Return (Integer Type) Module :
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/5/20
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -62,6 +62,7 @@ entity  MsgPack_RPC_Method_Return_Integer is
     -------------------------------------------------------------------------------
         RET_ERROR       : in  std_logic;
         RET_START       : in  std_logic;
+        RET_DONE        : in  std_logic;
         RET_BUSY        : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack-RPC Method Response Interface
@@ -90,12 +91,7 @@ architecture RTL of MsgPack_RPC_Method_Return_Integer is
     constant  RESULT_WIDTH  :  integer := (VALUE'length+MsgPack_Object.CODE_DATA_BITS-1)/MsgPack_Object.CODE_DATA_BITS;
     signal    return_code   :  MsgPack_Object.Code_Vector(RESULT_WIDTH downto 0);
     constant  res_shift     :  MsgPack_RPC.Shift_Type := (others => '1');
-    signal    return_valid  :  std_logic;
 begin
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    return_valid <= '1' when (RET_START = '1' or RET_ERROR = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -139,7 +135,7 @@ begin
             I_ENABLE        => '1'                     , -- In  :
             I_CODE          => return_code             , -- In  :
             I_DONE          => '1'                     , -- In  :
-            I_VALID         => return_valid            , -- In  :
+            I_VALID         => RET_DONE                , -- In  :
             I_READY         => open                    , -- Out :
             O_ENABLE        => '1'                     , -- In  :
             O_CODE          => RES_CODE                , -- Out :

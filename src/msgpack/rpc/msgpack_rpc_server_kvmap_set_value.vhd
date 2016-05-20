@@ -2,7 +2,7 @@
 --!     @file    msgpack_rpc_server_kvmap_set_value.vhd
 --!     @brief   MessagePack-RPC Server Key Value Map Set Value Module :
 --!     @version 0.2.0
---!     @date    2016/5/17
+--!     @date    2016/5/20
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -153,6 +153,7 @@ architecture RTL of MsgPack_RPC_Server_KVMap_Set_Value is
     -------------------------------------------------------------------------------
     signal    return_error      :  std_logic;
     signal    return_start      :  std_logic;
+    signal    return_done       :  std_logic;
     signal    return_busy       :  std_logic;
     -------------------------------------------------------------------------------
     --
@@ -300,6 +301,7 @@ begin
             CLR             => CLR                     , -- In  :
             RET_ERROR       => return_error            , -- In  :
             RET_START       => return_start            , -- In  :
+            RET_DONE        => return_done             , -- In  :
             RET_BUSY        => return_busy             , -- Out :
             RES_CODE        => RES_CODE                , -- Out :
             RES_VALID       => RES_VALID               , -- Out :
@@ -365,8 +367,9 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    return_start   <= '1' when (curr_state = RUN_STATE and unpack_done  = '1') else '0';
-    return_error   <= '1' when (curr_state = RUN_STATE and unpack_error = '1') else '0';
+    return_start   <= '1' when (curr_state  = IDLE_STATE and PROC_REQ    = '1') else '0';
+    return_done    <= '1' when (curr_state  = RUN_STATE  and unpack_done = '1') else '0';
+    return_error   <= '1' when (curr_state  = RUN_STATE  and unpack_done = '1' and unpack_error = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

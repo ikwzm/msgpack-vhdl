@@ -2,11 +2,11 @@
 --!     @file    msgpack_rpc_method_main_with_param.vhd
 --!     @brief   MessagePack-RPC Method Main Module with Parameter :
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/5/20
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -94,6 +94,7 @@ entity  MsgPack_RPC_Method_Main_with_Param is
         RET_ID          : out MsgPack_RPC.MsgID_Type;
         RET_ERROR       : out std_logic;
         RET_START       : out std_logic;
+        RET_DONE        : out std_logic;
         RET_BUSY        : in  std_logic
     );
 end  MsgPack_RPC_Method_Main_with_Param;
@@ -349,8 +350,10 @@ begin
     PROC_BUSY <= '1' when (curr_state /= IDLE_STATE        ) else '0';
     RUN_REQ   <= '1' when (curr_state  = PROC_BEGIN_STATE  ) else '0';
     RET_ERROR <= '1' when (curr_state  = ERROR_RETURN_STATE) else '0';
-    RET_START <= '1' when (curr_state  = PROC_BUSY_STATE   ) and
-                          (RUN_BUSY    = '0'               ) else '0';
+    RET_START <= '1' when (curr_state  = ERROR_RETURN_STATE) or
+                          (curr_state  = PROC_BEGIN_STATE and RUN_BUSY = '1') else '0';
+    RET_DONE  <= '1' when (curr_state  = ERROR_RETURN_STATE) or
+                          (curr_state  = PROC_BUSY_STATE  and RUN_BUSY = '0') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

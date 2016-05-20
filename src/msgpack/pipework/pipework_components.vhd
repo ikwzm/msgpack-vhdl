@@ -1,13 +1,13 @@
 -----------------------------------------------------------------------------------
 --!     @file    pipework/pipework_components.vhd                                --
 --!     @brief   MessagaPack Component Library Description                       --
---!     @version 0.1.0                                                           --
---!     @date    2015/10/25                                                      --
+--!     @version 0.2.0                                                           --
+--!     @date    2016/05/20                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
 --                                                                               --
---      Copyright (C) 2015 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
+--      Copyright (C) 2016 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
 --      All rights reserved.                                                     --
 --                                                                               --
 --      Redistribution and use in source and binary forms, with or without       --
