@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_query_integer_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Queary Integer Array Module :
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -86,6 +86,8 @@ entity  MsgPack_KVMap_Query_Integer_Array is
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
@@ -228,7 +230,9 @@ begin
             START           => encode_start    , -- In  :
             ADDR            => encode_addr     , -- In  :
             SIZE            => encode_size     , -- In  :
-            BUSY            => encode_busy     , -- In  :
+            BUSY            => encode_busy     , -- Out :
+            I_START         => START           , -- Out :
+            I_BUSY          => BUSY            , -- Out :
             I_ADDR          => ADDR            , -- Out :
             I_VALUE         => VALUE           , -- In  :
             I_VALID         => VALID           , -- In  :

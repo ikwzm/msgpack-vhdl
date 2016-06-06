@@ -652,6 +652,8 @@ component MsgPack_KVMap_Query_Integer_Array
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
@@ -709,6 +711,8 @@ component MsgPack_KVMap_Query_Integer_Stream
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
         READY           : out std_logic
