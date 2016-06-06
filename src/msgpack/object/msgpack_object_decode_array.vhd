@@ -2,11 +2,11 @@
 --!     @file    msgpack_object_decode_array.vhd
 --!     @brief   MessagePack Object decode to array
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/6/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,12 @@ entity  MsgPack_Object_Decode_Array is
     -------------------------------------------------------------------------------
         ARRAY_START     : out std_logic;
         ARRAY_SIZE      : out std_logic_vector(31 downto 0);
-        ARRAY_LAST      : out std_logic;
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+        ENTRY_START     : out std_logic;
+        ENTRY_BUSY      : out std_logic;
+        ENTRY_LAST      : out std_logic;
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -131,6 +136,7 @@ begin
                         I_DONE      <= '1';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                     else
@@ -138,6 +144,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '1';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= START_STATE;
                     end if;
@@ -146,6 +153,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                 end if;
@@ -155,6 +163,7 @@ begin
                         I_DONE      <= '1';
                         I_SHIFT     <= to_shift(1);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                 elsif (i_nomore(to_shift(1))) then
@@ -162,6 +171,7 @@ begin
                         I_DONE      <= '1';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                 else
@@ -169,6 +179,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= to_shift(1);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '1';
                         VALUE_START <= '1';
                         next_state  <= VALUE_STATE;
                 end if;
@@ -180,12 +191,14 @@ begin
                         I_DONE      <= '1';
                         I_SHIFT     <= VALUE_SHIFT;
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                     elsif (array_count_zero = TRUE) then
                         I_ERROR     <= '0';
                         I_DONE      <= '1';
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         I_SHIFT     <= VALUE_SHIFT;
                         next_state  <= IDLE_STATE;
@@ -193,6 +206,7 @@ begin
                         I_ERROR     <= '0';
                         I_DONE      <= '0';
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '1';
                         I_SHIFT     <= VALUE_SHIFT;
                         next_state  <= VALUE_STATE;
@@ -202,6 +216,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= VALUE_SHIFT;
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= VALUE_STATE;
                 end if;
@@ -210,6 +225,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
         end case;
@@ -260,7 +276,11 @@ begin
     --
     -------------------------------------------------------------------------------
     ARRAY_SIZE  <= I_CODE(0).data;
-    ARRAY_LAST  <= '1' when (array_count_zero) else '0';
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    ENTRY_BUSY  <= '1' when (curr_state = VALUE_STATE) else '0';
+    ENTRY_LAST  <= '1' when (array_count_zero) else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

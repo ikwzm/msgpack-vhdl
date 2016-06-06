@@ -2,11 +2,11 @@
 --!     @file    msgpack_object_decode_integer_stream.vhd
 --!     @brief   MessagePack Object decode to integer stream
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/6/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -113,8 +113,11 @@ begin
             I_ERROR         => I_ERROR             , -- Out :
             I_DONE          => I_DONE              , -- Out :
             I_SHIFT         => I_SHIFT             , -- Out :
-            ARRAY_START     => O_START             , -- Out :
+            ARRAY_START     => open                , -- Out :
             ARRAY_SIZE      => open                , -- Out :
+            ENTRY_START     => O_START             , -- Out :
+            ENTRY_BUSY      => open                , -- Out :
+            ENTRY_LAST      => open                , -- Out :
             VALUE_START     => open                , -- Out :
             VALUE_VALID     => value_valid         , -- Out :
             VALUE_CODE      => value_code          , -- Out :
