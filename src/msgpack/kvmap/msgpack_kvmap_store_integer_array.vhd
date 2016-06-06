@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_store_integer_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Store Integer Array Module :
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -80,10 +80,12 @@ entity  MsgPack_KVMap_Store_Integer_Array is
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
         LAST            : out std_logic;
-        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALID           : out std_logic;
         READY           : in  std_logic
     );
@@ -180,8 +182,10 @@ begin
             I_ERROR         => param_error     , -- Out :
             I_DONE          => param_done      , -- Out :
             I_SHIFT         => param_shift     , -- Out :
-            O_VALUE         => VALUE           , -- Out :
+            O_START         => START           , -- Out :
+            O_BUSY          => BUSY            , -- Out :
             O_ADDR          => ADDR            , -- Out :
+            O_VALUE         => VALUE           , -- Out :
             O_SIGN          => SIGN            , -- Out :
             O_LAST          => LAST            , -- Out :
             O_VALID         => VALID           , -- Out :

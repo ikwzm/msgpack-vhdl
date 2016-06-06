@@ -70,6 +70,7 @@ entity  MsgPack_Object_Decode_Integer_Stream is
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
@@ -116,7 +117,7 @@ begin
             ARRAY_START     => open                , -- Out :
             ARRAY_SIZE      => open                , -- Out :
             ENTRY_START     => O_START             , -- Out :
-            ENTRY_BUSY      => open                , -- Out :
+            ENTRY_BUSY      => O_BUSY              , -- Out :
             ENTRY_LAST      => open                , -- Out :
             VALUE_START     => open                , -- Out :
             VALUE_VALID     => value_valid         , -- Out :

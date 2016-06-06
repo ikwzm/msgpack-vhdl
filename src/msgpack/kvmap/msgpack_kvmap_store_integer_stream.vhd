@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_store_integer_stream.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Store Integer Stream Module :
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -79,6 +79,8 @@ entity  MsgPack_KVMap_Store_Integer_Stream is
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
         LAST            : out std_logic;
@@ -138,6 +140,8 @@ begin
             I_ERROR         => I_ERROR         , -- Out :
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
+            O_START         => START           , -- Out :
+            O_BUSY          => BUSY            , -- Out :
             O_VALUE         => VALUE           , -- Out :
             O_SIGN          => SIGN            , -- Out :
             O_LAST          => LAST            , -- Out :

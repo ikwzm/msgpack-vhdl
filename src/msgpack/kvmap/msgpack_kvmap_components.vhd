@@ -2,7 +2,7 @@
 --!     @file    kvmap/msgpack_kvmap_components.vhd                              --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/05/20                                                      --
+--!     @date    2016/06/06                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -329,10 +329,12 @@ component MsgPack_KVMap_Store_Integer_Array
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
         LAST            : out std_logic;
-        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALID           : out std_logic;
         READY           : in  std_logic
     );
@@ -381,6 +383,8 @@ component MsgPack_KVMap_Store_Integer_Stream
     -------------------------------------------------------------------------------
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
         LAST            : out std_logic;

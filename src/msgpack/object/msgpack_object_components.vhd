@@ -534,6 +534,7 @@ component MsgPack_Object_Decode_Integer_Stream
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
@@ -578,6 +579,7 @@ component MsgPack_Object_Decode_Integer_Array
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         O_SIGN          : out std_logic;
