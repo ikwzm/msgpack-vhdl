@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_store_integer_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Store Integer Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/7
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -98,9 +98,8 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer_Array;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Store_Integer_Array;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Store_Array;
 architecture RTL of MsgPack_KVMap_Store_Integer_Array is
     -------------------------------------------------------------------------------
     --
@@ -135,34 +134,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    STORE_ARRAY: MsgPack_KVMap_Store_Array       -- 
-        generic map (                            -- 
-            CODE_WIDTH      => CODE_WIDTH      , -- 
-            ADDR_BITS       => ADDR_BITS         -- 
-        )                                        -- 
-        port map (                               -- 
-            CLK             => CLK             , -- In  :
-            RST             => RST             , -- In  :
-            CLR             => CLR             , -- In  :
-            I_CODE          => I_CODE          , -- In  :
-            I_LAST          => I_LAST          , -- In  :
-            I_VALID         => I_VALID         , -- In  :
-            I_ERROR         => I_ERROR         , -- Out :
-            I_DONE          => I_DONE          , -- Out :
-            I_SHIFT         => I_SHIFT         , -- Out :
-            VALUE_START     => open            , -- Out :
-            VALUE_ADDR      => param_addr      , -- Out :
-            VALUE_VALID     => param_valid     , -- Out :
-            VALUE_CODE      => param_code      , -- Out :
-            VALUE_LAST      => param_last      , -- Out :
-            VALUE_ERROR     => param_error     , -- In  :
-            VALUE_DONE      => param_done      , -- In  :
-            VALUE_SHIFT     => param_shift       -- In  :
-        );                                       -- 
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    DECODE: MsgPack_Object_Decode_Integer_Array  -- 
+    STORE: MsgPack_Object_Store_Integer_Array    -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             ADDR_BITS       => ADDR_BITS       , -- 
@@ -175,20 +147,19 @@ begin
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            I_ADDR          => param_addr      , -- In  :
-            I_CODE          => param_code      , -- In  :
-            I_LAST          => param_last      , -- In  :
-            I_VALID         => param_valid     , -- In  :
-            I_ERROR         => param_error     , -- Out :
-            I_DONE          => param_done      , -- Out :
-            I_SHIFT         => param_shift     , -- Out :
-            O_START         => START           , -- Out :
-            O_BUSY          => BUSY            , -- Out :
-            O_ADDR          => ADDR            , -- Out :
-            O_VALUE         => VALUE           , -- Out :
-            O_SIGN          => SIGN            , -- Out :
-            O_LAST          => LAST            , -- Out :
-            O_VALID         => VALID           , -- Out :
-            O_READY         => READY             -- In  :
+            I_CODE          => I_CODE          , -- In  :
+            I_LAST          => I_LAST          , -- In  :
+            I_VALID         => I_VALID         , -- In  :
+            I_ERROR         => I_ERROR         , -- Out :
+            I_DONE          => I_DONE          , -- Out :
+            I_SHIFT         => I_SHIFT         , -- Out :
+            START           => START           , -- Out :
+            BUSY            => BUSY            , -- Out :
+            ADDR            => ADDR            , -- Out :
+            VALUE           => VALUE           , -- Out :
+            SIGN            => SIGN            , -- Out :
+            LAST            => LAST            , -- Out :
+            VALID           => VALID           , -- Out :
+            READY           => READY             -- In  :
         );                                       --
 end RTL;

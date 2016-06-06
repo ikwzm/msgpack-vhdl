@@ -44,6 +44,15 @@ OBJECT_ENTITY_FILES   = object/msgpack_object_packer.vhd                    \
                         object/msgpack_object_encode_string_constant.vhd    \
                         object/msgpack_structure_stack.vhd                  \
                         object/msgpack_object_match_aggregator.vhd          \
+                        object/msgpack_object_store_array.vhd               \
+                        object/msgpack_object_store_integer_register.vhd    \
+                        object/msgpack_object_store_integer_array.vhd       \
+                        object/msgpack_object_store_integer_stream.vhd      \
+                        object/msgpack_object_query_stream_parameter.vhd    \
+                        object/msgpack_object_query_integer_register.vhd    \
+                        object/msgpack_object_query_integer_array.vhd       \
+                        object/msgpack_object_query_integer_stream.vhd      \
+                        object/msgpack_object_query_array.vhd               \
                         $(END_LIST)
 
 OBJECT_SOURCE_FILES   = $(OBJECT_COMP_FILE)      \
@@ -59,18 +68,15 @@ KVMAP_PACKAGE_FILES   = $(END_LIST)
 KVMAP_ENTITY_FILES    = kvmap/msgpack_kvmap_key_compare.vhd                 \
                         kvmap/msgpack_kvmap_key_match_aggregator.vhd        \
                         kvmap/msgpack_kvmap_dispatcher.vhd                  \
-                        kvmap/msgpack_kvmap_query_stream_parameter.vhd      \
                         kvmap/msgpack_kvmap_store_integer_register.vhd      \
                         kvmap/msgpack_kvmap_store_integer_array.vhd         \
                         kvmap/msgpack_kvmap_store_integer_stream.vhd        \
-                        kvmap/msgpack_kvmap_store_array.vhd                 \
                         kvmap/msgpack_kvmap_store_map_value.vhd             \
                         kvmap/msgpack_kvmap_store.vhd                       \
                         kvmap/msgpack_kvmap_query_integer_register.vhd      \
                         kvmap/msgpack_kvmap_query_integer_array.vhd         \
                         kvmap/msgpack_kvmap_query_integer_stream.vhd        \
                         kvmap/msgpack_kvmap_query_map_value.vhd             \
-                        kvmap/msgpack_kvmap_query_array.vhd                 \
                         kvmap/msgpack_kvmap_query.vhd                       \
                         $(END_LIST)
 

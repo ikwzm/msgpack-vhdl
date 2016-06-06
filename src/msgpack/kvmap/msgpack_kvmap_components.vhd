@@ -2,7 +2,7 @@
 --!     @file    kvmap/msgpack_kvmap_components.vhd                              --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/06                                                      --
+--!     @date    2016/06/07                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -198,42 +198,6 @@ component MsgPack_KVMap_Dispatcher
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Query_Stream_Parameter                                  --
------------------------------------------------------------------------------------
-component MsgPack_KVMap_Query_Stream_Parameter
-    -------------------------------------------------------------------------------
-    -- Generic Parameters
-    -------------------------------------------------------------------------------
-    generic (
-        CODE_WIDTH      :  positive := 1;
-        SIZE_BITS       :  positive := 32;  
-        SIZE_MAX        :  positive := 1
-    );
-    port (
-    -------------------------------------------------------------------------------
-    -- Clock and Reset Signals
-    -------------------------------------------------------------------------------
-        CLK             : in  std_logic; 
-        RST             : in  std_logic;
-        CLR             : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- Object Code Input Interface
-    -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_ERROR         : out std_logic;
-        I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    -- 
-    -------------------------------------------------------------------------------
-        START           : out std_logic;
-        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
-        BUSY            : in  std_logic
-    );
-end component;
------------------------------------------------------------------------------------
 --! @brief MsgPack_KVMap_Store_Integer_Register                                  --
 -----------------------------------------------------------------------------------
 component MsgPack_KVMap_Store_Integer_Register
@@ -390,46 +354,6 @@ component MsgPack_KVMap_Store_Integer_Stream
         LAST            : out std_logic;
         VALID           : out std_logic;
         READY           : in  std_logic
-    );
-end component;
------------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Store_Array                                             --
------------------------------------------------------------------------------------
-component MsgPack_KVMap_Store_Array
-    -------------------------------------------------------------------------------
-    -- Generic Parameters
-    -------------------------------------------------------------------------------
-    generic (
-        CODE_WIDTH      :  positive := 1;
-        ADDR_BITS       :  integer  := 8
-    );
-    port (
-    -------------------------------------------------------------------------------
-    -- Clock and Reset Signals
-    -------------------------------------------------------------------------------
-        CLK             : in  std_logic; 
-        RST             : in  std_logic;
-        CLR             : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- Key Value Map Object Decode Input Interface
-    -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_ERROR         : out std_logic;
-        I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(          CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    -- Value Object Decode Output Interface
-    -------------------------------------------------------------------------------
-        VALUE_START     : out std_logic;
-        VALUE_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
-        VALUE_VALID     : out std_logic;
-        VALUE_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        VALUE_LAST      : out std_logic;
-        VALUE_ERROR     : in  std_logic;
-        VALUE_DONE      : in  std_logic;
-        VALUE_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0)
     );
 end component;
 -----------------------------------------------------------------------------------
@@ -799,62 +723,6 @@ component MsgPack_KVMap_Query_Map_Value
         VALUE_LAST      : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
         VALUE_ERROR     : in  std_logic_vector(          STORE_SIZE           -1 downto 0);
         VALUE_READY     : out std_logic_vector(          STORE_SIZE           -1 downto 0)
-    );
-end component;
------------------------------------------------------------------------------------
---! @brief MsgPack_KVMap_Query_Array                                             --
------------------------------------------------------------------------------------
-component MsgPack_KVMap_Query_Array
-    -------------------------------------------------------------------------------
-    -- Generic Parameters
-    -------------------------------------------------------------------------------
-    generic (
-        CODE_WIDTH      :  positive := 1;
-        ADDR_BITS       :  integer  := 8
-    );
-    port (
-    -------------------------------------------------------------------------------
-    -- Clock and Reset Signals
-    -------------------------------------------------------------------------------
-        CLK             : in  std_logic; 
-        RST             : in  std_logic;
-        CLR             : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- Key Array Object Decode Input Interface
-    -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_ERROR         : out std_logic;
-        I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(          CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    -- Key Value Map Encode Output Interface
-    -------------------------------------------------------------------------------
-        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        O_VALID         : out std_logic;
-        O_LAST          : out std_logic;
-        O_ERROR         : out std_logic;
-        O_READY         : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- Parameter Object Decode Output Interface
-    -------------------------------------------------------------------------------
-        PARAM_START     : out std_logic;
-        PARAM_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
-        PARAM_VALID     : out std_logic;
-        PARAM_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        PARAM_LAST      : out std_logic;
-        PARAM_ERROR     : in  std_logic;
-        PARAM_DONE      : in  std_logic;
-        PARAM_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    -- Value Object Encode Input Interface
-    -------------------------------------------------------------------------------
-        VALUE_VALID     : in  std_logic;
-        VALUE_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        VALUE_LAST      : in  std_logic;
-        VALUE_ERROR     : in  std_logic;
-        VALUE_READY     : out std_logic
     );
 end component;
 -----------------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_query_stream_parameter.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) query stream parameter Module :
+--!     @file    msgpack_object_query_integer_register.vhd
+--!     @brief   MessagePack Object Query Integer Register Module :
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/7
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -38,14 +38,14 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Query_Stream_Parameter is
+entity  MsgPack_Object_Query_Integer_Register is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        SIZE_BITS       :  positive := 32;  
-        SIZE_MAX        :  positive := 1
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE
     );
     port (
     -------------------------------------------------------------------------------
@@ -64,13 +64,21 @@ entity  MsgPack_KVMap_Query_Stream_Parameter is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
-        START           : out std_logic;
-        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
-        BUSY            : in  std_logic
+        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
     );
-end MsgPack_KVMap_Query_Stream_Parameter;
+end  MsgPack_Object_Query_Integer_Register;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -79,72 +87,59 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
-architecture RTL of MsgPack_KVMap_Query_Stream_Parameter is
-    signal    integer_i_error   :  std_logic;
-    signal    integer_i_done    :  std_logic;
-    signal    integer_i_shift   :  std_logic_vector(CODE_WIDTH-1 downto 0);
-    signal    integer_valid     :  std_logic;
-    signal    integer_value     :  std_logic_vector( SIZE_BITS-1 downto 0);
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Stream_Parameter;
+architecture RTL of MsgPack_Object_Query_Integer_Register is
+    signal    start    :  std_logic;
+    signal    busy     :  std_logic;
+    signal    size     :  std_logic_vector(0 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE_INTEGER: MsgPack_Object_Decode_Integer    -- 
-        generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH          , --
-            VALUE_BITS      => SIZE_BITS           , --
-            VALUE_SIGN      => FALSE               , --
-            QUEUE_SIZE      => 0                   , -- Must 0 !
-            CHECK_RANGE     => FALSE               , --
-            ENABLE64        => FALSE                 --
-        )                                            -- 
-        port map (                                   -- 
-            CLK             => CLK                 , -- In  :
-            RST             => RST                 , -- In  :
-            CLR             => CLR                 , -- In  :
-            I_CODE          => I_CODE              , -- In  :
-            I_LAST          => I_LAST              , -- In  :
-            I_VALID         => I_VALID             , -- In  :
-            I_ERROR         => integer_i_error     , -- Out :
-            I_DONE          => integer_i_done      , -- Out :
-            I_SHIFT         => integer_i_shift     , -- Out :
-            O_VALUE         => integer_value       , -- Out :
-            O_SIGN          => open                , -- Out :
-            O_LAST          => open                , -- Out :
-            O_VALID         => integer_valid       , -- Out :
-            O_READY         => '1'                   -- In  :
-        );
+    PARAM: MsgPack_Object_Query_Stream_Parameter --
+        generic map (                            -- 
+            CODE_WIDTH      => CODE_WIDTH      , --
+            SIZE_BITS       => 1               , --
+            SIZE_MAX        => 1                 --
+        )                                        -- 
+        port map (                               -- 
+            CLK             => CLK             , -- In  :
+            RST             => RST             , -- In  :
+            CLR             => CLR             , -- In  :
+            I_CODE          => I_CODE          , -- In  :
+            I_LAST          => I_LAST          , -- In  :
+            I_VALID         => I_VALID         , -- In  :
+            I_ERROR         => I_ERROR         , -- Out :
+            I_DONE          => I_DONE          , -- Out :
+            I_SHIFT         => I_SHIFT         , -- Out :
+            START           => start           , -- Out :
+            SIZE            => size            , -- Out :
+            BUSY            => busy              -- In  :
+        );                                       -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (I_VALID, I_CODE, BUSY, integer_i_error, integer_i_done, integer_i_shift, integer_value, integer_valid) begin
-        if (I_VALID = '1' and I_CODE(0).valid = '1' and BUSY = '0') then
-            if    (I_CODE(0).class = MsgPack_Object.CLASS_NIL) then
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
-                START     <= '1';
-                I_ERROR   <= '0';
-                I_DONE    <= '1';
-                I_SHIFT   <= (0 => '1', others => '0');
-            elsif (integer_i_done = '1' and integer_i_error = '0') then
-                SIZE      <= integer_value;
-                START     <= integer_valid;
-                I_ERROR   <= '0';
-                I_DONE    <= '1';
-                I_SHIFT   <= integer_i_shift;
-            else
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
-                START     <= '0';
-                I_ERROR   <= '1';
-                I_DONE    <= '1';
-                I_SHIFT   <= (others => '0');
-            end if;
-        else
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
-                START     <= '0';
-                I_ERROR   <= '0';
-                I_DONE    <= '0';
-                I_SHIFT   <= (others => '0');
-        end if;
-    end process;
+    ENCODE: MsgPack_Object_Encode_Integer        -- 
+        generic map (                            -- 
+            CODE_WIDTH      => CODE_WIDTH      , --
+            VALUE_BITS      => VALUE_BITS      , --
+            VALUE_SIGN      => VALUE_SIGN      , --
+            QUEUE_SIZE      => 0                 --
+        )                                        -- 
+        port map (                               -- 
+            CLK             => CLK             , -- In  :
+            RST             => RST             , -- In  :
+            CLR             => CLR             , -- In  :
+            START           => start           , -- In  :
+            BUSY            => busy            , -- Out :
+            O_CODE          => O_CODE          , -- Out :
+            O_LAST          => O_LAST          , -- Out :
+            O_ERROR         => O_ERROR         , -- Out :
+            O_VALID         => O_VALID         , -- Out :
+            O_READY         => O_READY         , -- In  :
+            I_VALUE         => VALUE           , -- In  :
+            I_VALID         => VALID           , -- In  :
+            I_READY         => READY             -- Out :
+        );                                       --
 end RTL;

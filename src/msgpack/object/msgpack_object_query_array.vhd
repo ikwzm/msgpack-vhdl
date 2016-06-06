@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_kvmap_store_array.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Store Array Module :
+--!     @file    msgpack_object_query_array.vhd
+--!     @brief   MessagePack Object Query Array Module :
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/7
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_KVMap_Store_Array is
+entity  MsgPack_Object_Query_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ entity  MsgPack_KVMap_Store_Array is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Key Value Map Object Decode Input Interface
+    -- Key Array Object Decode Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         I_LAST          : in  std_logic;
@@ -63,18 +63,34 @@ entity  MsgPack_KVMap_Store_Array is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(          CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Value Object Decode Output Interface
+    -- Key Value Map Encode Output Interface
     -------------------------------------------------------------------------------
-        VALUE_START     : out std_logic;
-        VALUE_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
-        VALUE_VALID     : out std_logic;
-        VALUE_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        VALUE_LAST      : out std_logic;
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_VALID         : out std_logic;
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Parameter Object Decode Output Interface
+    -------------------------------------------------------------------------------
+        PARAM_START     : out std_logic;
+        PARAM_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
+        PARAM_VALID     : out std_logic;
+        PARAM_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        PARAM_LAST      : out std_logic;
+        PARAM_ERROR     : in  std_logic;
+        PARAM_DONE      : in  std_logic;
+        PARAM_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Object Encode Input Interface
+    -------------------------------------------------------------------------------
+        VALUE_VALID     : in  std_logic;
+        VALUE_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        VALUE_LAST      : in  std_logic;
         VALUE_ERROR     : in  std_logic;
-        VALUE_DONE      : in  std_logic;
-        VALUE_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0)
+        VALUE_READY     : out std_logic
     );
-end MsgPack_KVMap_Store_Array;
+end MsgPack_Object_Query_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -84,17 +100,35 @@ use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Map;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Map;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Integer;
-architecture RTL of MsgPack_KVMap_Store_Array is
+architecture RTL of MsgPack_Object_Query_Array is
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    constant  SIZE_BITS         :  integer := 32;
+    signal    map_start         :  std_logic;
+    signal    map_size          :  std_logic_vector          ( SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     signal    intake_key_code   :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    intake_key_valid  :  std_logic;
+    signal    intake_key_valid  :  std_logic_vector          (           1 downto 0);
+    signal    intake_key_ready  :  std_logic;
     signal    intake_key_last   :  std_logic;
     signal    intake_key_error  :  std_logic;
     signal    intake_key_done   :  std_logic;
     signal    intake_key_shift  :  std_logic_vector          (CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    signal    outlet_key_code   :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+    signal    outlet_key_valid  :  std_logic;
+    signal    outlet_key_ready  :  std_logic;
+    signal    outlet_key_last   :  std_logic;
+    signal    outlet_key_error  :  std_logic;
+    signal    outlet_key_done   :  std_logic;
+    signal    outlet_key_shift  :  std_logic_vector          (CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -129,13 +163,13 @@ begin
         ---------------------------------------------------------------------------
         -- 
         ---------------------------------------------------------------------------
-            MAP_START       => open                , -- Out :
-            MAP_SIZE        => open                , -- Out :
+            MAP_START       => map_start           , -- Out :
+            MAP_SIZE        => map_size            , -- Out :
         ---------------------------------------------------------------------------
         -- 
         ---------------------------------------------------------------------------
             KEY_START       => open                , -- Out :
-            KEY_VALID       => intake_key_valid    , -- Out :
+            KEY_VALID       => intake_key_valid(0) , -- Out :
             KEY_CODE        => intake_key_code     , -- Out :
             KEY_LAST        => intake_key_last     , -- Out :
             KEY_ERROR       => intake_key_error    , -- In  :
@@ -144,15 +178,91 @@ begin
         ---------------------------------------------------------------------------
         -- 
         ---------------------------------------------------------------------------
-            VALUE_START     => VALUE_START         , -- Out :
+            VALUE_START     => PARAM_START         , -- Out :
             VALUE_ABORT     => open                , -- Out :
-            VALUE_VALID     => VALUE_VALID         , -- Out :
-            VALUE_CODE      => VALUE_CODE          , -- Out :
-            VALUE_LAST      => VALUE_LAST          , -- Out :
-            VALUE_ERROR     => VALUE_ERROR         , -- In  :
-            VALUE_DONE      => VALUE_DONE          , -- In  :
-            VALUE_SHIFT     => VALUE_SHIFT           -- In  :
+            VALUE_VALID     => PARAM_VALID         , -- Out :
+            VALUE_CODE      => PARAM_CODE          , -- Out :
+            VALUE_LAST      => PARAM_LAST          , -- Out :
+            VALUE_ERROR     => PARAM_ERROR         , -- In  :
+            VALUE_DONE      => PARAM_DONE          , -- In  :
+            VALUE_SHIFT     => PARAM_SHIFT           -- In  :
         );                                           --
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    KEY_QUEUE: block
+        signal intake_valid    :  std_logic;
+        signal intake_complete :  std_logic;
+    begin
+        outlet_key_code  <= intake_key_code;
+        outlet_key_error <= '0';
+        intake_key_ready <= outlet_key_ready;
+        process(intake_key_code, intake_key_last)
+            variable  i_code_valid    :  std_logic_vector(CODE_WIDTH-1 downto 0);
+            variable  i_code_complete :  std_logic_vector(CODE_WIDTH-1 downto 0);
+            constant  VALID_ALL_0     :  std_logic_vector(CODE_WIDTH-1 downto 0) := (others => '0');
+        begin
+            for i in 0 to CODE_WIDTH-1 loop
+                i_code_valid   (i) := intake_key_code(i).valid;
+                i_code_complete(i) := intake_key_code(i).complete;
+            end loop;
+            if (intake_key_last = '1') or
+               ((i_code_valid and i_code_complete) /= VALID_ALL_0) then
+                intake_complete <= '1';
+                intake_valid    <= i_code_valid(i_code_valid'low );
+            else
+                intake_complete <= '0';
+                intake_valid    <= i_code_valid(i_code_valid'high);
+            end if;
+        end process;
+        outlet_key_valid <= '1' when (intake_valid    = '1' and intake_key_valid(0) = '1') else '0';
+        outlet_key_last  <= '1' when (intake_complete = '1' and intake_key_valid(0) = '1') else '0';
+    end block;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    ENCODE_MAP: MsgPack_Object_Encode_Map            -- 
+        generic map (                                -- 
+            CODE_WIDTH      => CODE_WIDTH          , --
+            SIZE_BITS       => SIZE_BITS             -- 
+        )                                            -- 
+        port map (                                   -- 
+        ---------------------------------------------------------------------------
+        -- Clock and Reset Signals
+        ---------------------------------------------------------------------------
+            CLK             => CLK                 , -- In  :
+            RST             => RST                 , -- In  :
+            CLR             => CLR                 , -- In  :
+        ---------------------------------------------------------------------------
+        -- 
+        ---------------------------------------------------------------------------
+            START           => map_start           , -- In  :
+            SIZE            => map_size            , -- In  :
+        ---------------------------------------------------------------------------
+        -- Key Object Encode Input Interface
+        ---------------------------------------------------------------------------
+            I_KEY_CODE      => outlet_key_code     , -- In  :
+            I_KEY_LAST      => outlet_key_last     , -- In  :
+            I_KEY_ERROR     => outlet_key_error    , -- In  :
+            I_KEY_VALID     => outlet_key_valid    , -- In  :
+            I_KEY_READY     => outlet_key_ready    , -- Out :
+        ---------------------------------------------------------------------------
+        -- Value Object Encode Input Interface
+        ---------------------------------------------------------------------------
+            I_VAL_CODE      => VALUE_CODE          , -- In  :
+            I_VAL_LAST      => VALUE_LAST          , -- In  :
+            I_VAL_ERROR     => VALUE_ERROR         , -- In  :
+            I_VAL_VALID     => VALUE_VALID         , -- In  :
+            I_VAL_READY     => VALUE_READY         , -- Out :
+        ---------------------------------------------------------------------------
+        -- Map Object Encode Output Interface
+        ---------------------------------------------------------------------------
+            O_MAP_CODE      => O_CODE              , -- Out :
+            O_MAP_LAST      => O_LAST              , -- Out :
+            O_MAP_ERROR     => O_ERROR             , -- Out :
+            O_MAP_VALID     => O_VALID             , -- Out :
+            O_MAP_READY     => O_READY               -- In  :
+    );                                               -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -177,7 +287,7 @@ begin
         ---------------------------------------------------------------------------
             I_CODE          => intake_key_code     , -- In  :
             I_LAST          => intake_key_last     , -- In  :
-            I_VALID         => intake_key_valid    , -- In  :
+            I_VALID         => intake_key_valid(1) , -- In  :
             I_ERROR         => intake_key_error    , -- Out :
             I_DONE          => intake_key_done     , -- Out :
             I_SHIFT         => intake_key_shift    , -- Out :
@@ -190,17 +300,18 @@ begin
             O_VALID         => decode_addr_valid   , -- Out :
             O_READY         => decode_addr_ready     -- In  :
         );
+    intake_key_valid(1) <= '1' when (intake_key_valid(0) = '1' and intake_key_ready = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     ADDR: process (CLK, RST) begin
         if (RST = '1') then
-                VALUE_ADDR <= (others => '0');
+                PARAM_ADDR <= (others => '0');
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
-                VALUE_ADDR <= (others => '0');
+                PARAM_ADDR <= (others => '0');
             elsif (decode_addr_valid = '1' and decode_addr_ready = '1') then
-                VALUE_ADDR <= decode_addr_value;
+                PARAM_ADDR <= decode_addr_value;
             end if;
         end if;
     end process;

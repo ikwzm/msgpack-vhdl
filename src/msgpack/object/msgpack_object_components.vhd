@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/06                                                      --
+--!     @date    2016/06/07                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -1005,6 +1005,405 @@ component MsgPack_Object_Match_Aggregator
     -------------------------------------------------------------------------------
         MATCH_SEL       : out std_logic_vector(MATCH_NUM           -1 downto 0);
         MATCH_STATE     : out MsgPack_Object.Match_State_Type
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Store_Array                                            --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Store_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        ADDR_BITS       :  integer  := 8
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Key Value Map Object Decode Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(          CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Object Decode Output Interface
+    -------------------------------------------------------------------------------
+        VALUE_START     : out std_logic;
+        VALUE_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
+        VALUE_VALID     : out std_logic;
+        VALUE_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        VALUE_LAST      : out std_logic;
+        VALUE_ERROR     : in  std_logic;
+        VALUE_DONE      : in  std_logic;
+        VALUE_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0)
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Store_Integer_Register                                 --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Store_Integer_Register
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        CHECK_RANGE     :  boolean  := TRUE ;
+        ENABLE64        :  boolean  := TRUE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Output Interface
+    -------------------------------------------------------------------------------
+        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
+        SIGN            : out std_logic;
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Store_Integer_Array                                    --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Store_Integer_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        ADDR_BITS       :  integer  := 8;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        CHECK_RANGE     :  boolean  := TRUE ;
+        ENABLE64        :  boolean  := TRUE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Integer Value Data and Address Output
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
+        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
+        SIGN            : out std_logic;
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Store_Integer_Stream                                   --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Store_Integer_Stream
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        CHECK_RANGE     :  boolean  := TRUE ;
+        ENABLE64        :  boolean  := TRUE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Integer Value Data and Address Output
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
+        SIGN            : out std_logic;
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Query_Stream_Parameter                                 --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Query_Stream_Parameter
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  positive := 32;  
+        SIZE_MAX        :  positive := 1
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
+        BUSY            : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Query_Integer_Register                                 --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Query_Integer_Register
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Query_Integer_Array                                    --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Query_Integer_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        ADDR_BITS       :  positive := 32;
+        SIZE_BITS       :  positive := 32;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Integer Value Input Interface
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
+        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Query_Integer_Stream                                   --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Query_Integer_Stream
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  positive := 32;
+        SIZE_MAX        :  positive := 32;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Integer Value Input Interface
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Query_Array                                            --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Query_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        ADDR_BITS       :  integer  := 8
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Key Array Object Decode Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(          CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Key Value Map Encode Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_VALID         : out std_logic;
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Parameter Object Decode Output Interface
+    -------------------------------------------------------------------------------
+        PARAM_START     : out std_logic;
+        PARAM_ADDR      : out std_logic_vector(           ADDR_BITS-1 downto 0);
+        PARAM_VALID     : out std_logic;
+        PARAM_CODE      : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        PARAM_LAST      : out std_logic;
+        PARAM_ERROR     : in  std_logic;
+        PARAM_DONE      : in  std_logic;
+        PARAM_SHIFT     : in  std_logic_vector(          CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Value Object Encode Input Interface
+    -------------------------------------------------------------------------------
+        VALUE_VALID     : in  std_logic;
+        VALUE_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        VALUE_LAST      : in  std_logic;
+        VALUE_ERROR     : in  std_logic;
+        VALUE_READY     : out std_logic
     );
 end component;
 end MsgPack_Object_Components;
