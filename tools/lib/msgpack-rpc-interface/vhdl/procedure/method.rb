@@ -261,6 +261,9 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     list = Array.new
     if arguments.size > 0 then
       list << "MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Main_with_Param"
+      arguments.each do |argument|
+        list.concat(argument.interface.use_package_list)
+      end
     else
       list << "MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Main_no_Param"
     end
