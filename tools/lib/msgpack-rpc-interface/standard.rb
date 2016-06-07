@@ -56,36 +56,33 @@ module MsgPack_RPC_Interface::Standard
       end
       
       def generate_vhdl_body_store(indent, registory)
-        set_method = (@kvmap == true) ? :Store : :Decode
-        new_regs   = registory.dup
+        new_regs = registory.dup
         new_regs[:write_value] = registory.fetch(:write_value, @port_wdata)
         new_regs[:write_valid] = registory.fetch(:write_valid, @port_we   )
-        return @generator.const_get(set_method).generate_body(indent, @name, @type, new_regs)
+        return @generator::Store.generate_body(indent, @name, @type, @kvmap, new_regs)
       end
 
       def generate_vhdl_body_query(indent, registory)
-        get_method = :Query
-        new_regs   = registory.dup
+        new_regs = registory.dup
         new_regs[:read_value]  = registory.fetch(:read_value , @port_rdata)
-        return @generator.const_get(get_method).generate_body(indent, @name, @type, new_regs)
+        return @generator::Query.generate_body(indent, @name, @type, @kvmap, new_regs)
       end
 
       def generate_vhdl_port_list(master)
-        registory  = Hash.new
-        registory[:read_value ] = @port_rdata if @read  == true
-        registory[:write_value] = @port_wdata if @write == true
-        registory[:write_valid] = @port_we    if @write == true
-        return @generator.generate_port_list(master, @type, registory)
+        new_regs = Hash.new
+        new_regs[:read_value ] = @port_rdata if @read  == true
+        new_regs[:write_value] = @port_wdata if @write == true
+        new_regs[:write_valid] = @port_we    if @write == true
+        return @generator.generate_port_list(master, @type, @kvmap, new_regs)
       end
 
       def use_package_list
-        use_list   = Array.new
-        if @read then
-          use_list.concat(@generator.const_get(:Query ).use_package_list)
+        use_list = Array.new
+        if @read  then
+          use_list.concat(@generator::Query.use_package_list(@kvmap))
         end
         if @write then
-          use_list.concat(@generator.const_get(:Store ).use_package_list)
-          use_list.concat(@generator.const_get(:Decode).use_package_list)
+          use_list.concat(@generator::Store.use_package_list(@kvmap))
         end
         return use_list
       end
@@ -132,33 +129,41 @@ module MsgPack_RPC_Interface::Standard
       end
 
       def generate_vhdl_body_store(indent, registory)
-        set_method = (@kvmap == true)? :Store : :Decode
-        new_regs   = registory.dup
+        new_regs = registory.dup
         new_regs[:write_value] = registory.fetch(:write_value, @port_wdata)
-        return @generator.const_get(set_method).generate_body(indent, @name, @type, new_regs)
+        return @generator::Store.generate_body(indent, @name, @type, @kvmap, new_regs)
       end
 
       def generate_vhdl_body_query(indent, registory)
-        get_method = :Query
-        new_regs   = registory.dup
+        new_regs = registory.dup
         new_regs[:read_value]  = registory.fetch(:read_value , @port_rdata)
-        return @generator.const_get(get_method).generate_body(indent, @name, @type, new_regs)
+        return @generator::Query.generate_body(indent, @name, @type, @kvmap, new_regs)
       end
 
       def generate_vhdl_port_list(master)
-        registory  = Hash.new
-        registory[:read_value ] = @port_rdata if @read  == true
-        registory[:write_value] = @port_wdata if @write == true
-        return @generator.generate_port_list(master, @type, registory)
+        new_regs = Hash.new
+        new_regs[:read_value ] = @port_rdata if @read  == true
+        new_regs[:write_value] = @port_wdata if @write == true
+        return @generator.generate_port_list(master, @type, @kvmap, new_regs)
       end
 
       def use_package_list
-        return @generator.use_package_list
+        use_list = Array.new
+        if @read then
+          use_list.concat(@generator::Query.use_package_list(@kvmap))
+        end
+        if @write then
+          use_list.concat(@generator::Store.use_package_list(@kvmap))
+        end
+        puts "=== #{use_list}"
+        return use_list
       end
 
     end
 
     class  Memory   < Base
+
+
     end
   end
 

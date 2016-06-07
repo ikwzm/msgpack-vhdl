@@ -1,19 +1,57 @@
 module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
+  extend MsgPack_RPC_Interface::VHDL::Util
 
-  def generate_decl(indent, name, type, registory)
-    return StoreDecode.generate_decl(:Store , indent, name, type, registory)
+  def generate_decl(indent, name, type, kvmap, registory)
+    block_regs = registory.dup
+    block_regs[:write_value] = "proc_0_value"
+    block_regs[:write_valid] = "proc_0_valid"
+    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.width, "sign" => type.sign}))
+    generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
+    return string_to_lines(
+      indent, <<"      EOT"
+           signal    proc_0_value   :  std_logic_vector(#{type.width-1} downto 0);
+           signal    proc_0_valid   :  std_logic;
+      EOT
+    ).concat(generator.generate_decl(indent, name, logic_type, kvmap, block_regs))
   end
 
-  def generate_stmt(indent, name, type, registory)
-    return StoreDecode.generate_stmt(:Store , indent, name, type, registory)
+  def generate_stmt(indent, name, type, kvmap, registory)
+    block_regs = registory.dup
+    block_regs[:write_value] = "proc_0_value"
+    block_regs[:write_valid] = "proc_0_valid"
+    conv_value = type.generate_vhdl_convert("proc_0_value")
+    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.width, "sign" => type.sign}))
+    generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
+    return string_to_lines(
+      indent, <<"      EOT"
+             process(#{registory[:clock]}, #{registory[:reset]}) begin
+                 if (#{registory[:reset]} = '1') then
+                          #{registory[:write_value]} <= (others => '0');
+                 elsif (#{registory[:clock]}'event and #{registory[:clock]} = '1') then
+                     if    (#{registory[:clear]} = '1') then
+                          #{registory[:write_value]} <= (others => '0');
+                     elsif (proc_0_valid = '1') then
+                          #{registory[:write_value]} <= #{conv_value};
+                     end if;
+                 end if;
+             end process;
+      EOT
+    ).concat(generator.generate_stmt(indent, name, logic_type, kvmap, block_regs))
   end
 
-  def generate_body(indent, name, type, registory)
-    return StoreDecode.generate_body(:Store , indent, name, type, registory)
+  def generate_body(indent, name, type, kvmap, registory)
+    block_name = registory.fetch(:instance_name, "PROC_0_" + name.upcase)
+    decl_lines = generate_decl(indent + "    ", name, type, kvmap, registory)
+    stmt_lines = generate_stmt(indent + "    ", name, type, kvmap, registory)
+    return ["#{indent}#{block_name}: block"] + 
+           decl_lines + 
+           ["#{indent}begin"] +
+           stmt_lines +
+           ["#{indent}end block;"]
   end
 
-  def use_package_list
-    return MsgPack_RPC_Interface::VHDL::Register::Integer::Store.use_package_list
+  def use_package_list(kvmap)
+    return MsgPack_RPC_Interface::VHDL::Register::Integer::Store.use_package_list(kvmap)
   end
 
   module_function :generate_body
