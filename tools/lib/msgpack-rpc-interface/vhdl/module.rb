@@ -3,7 +3,7 @@ require 'set'
 module MsgPack_RPC_Interface::VHDL::Module
   extend MsgPack_RPC_Interface::VHDL::Util
     
-  def generate_decl(indent, name, methods, registory)
+  def generate_decl(indent, name, methods, variables, registory)
     code_width  = registory[:code_width ]
     match_phase = registory[:match_phase]
     vhdl_lines  = string_to_lines(
@@ -27,11 +27,14 @@ module MsgPack_RPC_Interface::VHDL::Module
           signal    proc_res_last     :  std_logic_vector        (PROC_NUM-1 downto 0);
           signal    proc_res_ready    :  std_logic_vector        (PROC_NUM-1 downto 0);
         EOT
-      )
-      return vhdl_lines
+    )
+    (methods + variables).map{|a| a.interface.blocks}.flatten.each do |block|
+      vhdl_lines.concat(block.generate_vhdl_decl(indent, registory))
+    end
+    return vhdl_lines
   end
 
-  def generate_stmt(indent, name, methods, registory)
+  def generate_stmt(indent, name, methods, variables, registory)
     code_width  = registory[:code_width ]
     match_phase = registory[:match_phase]
     vhdl_lines  = string_to_lines(
@@ -103,22 +106,25 @@ module MsgPack_RPC_Interface::VHDL::Module
       method_registory[:res_ready  ] = "proc_res_ready  (#{num})"
       vhdl_lines.concat(method.interface.generate_vhdl_body(indent, method_registory))
     end
+    (methods + variables).map{|a| a.interface.blocks}.flatten.each do |block|
+      vhdl_lines.concat(block.generate_vhdl_stmt(indent, registory))
+    end
     return vhdl_lines
   end
     
-  def generate_body(indent, name, methods, registory)
+  def generate_body(indent, name, methods, variables, registory)
     indent_sub = indent + "    "
-    decl_code  = generate_decl(indent_sub, name, methods, registory)
+    decl_code  = generate_decl(indent_sub, name, methods, variables, registory)
     if (decl_code.size > 0) then
       block_start = registory.fetch(:block_start, "#{name}: block")
       block_end   = registory.fetch(:block_end  , "end #{name}")
       return ["#{indent}#{block_start}"] + 
              decl_code +
              ["#{indent}begin"] +
-             generate_stmt(indent_sub, name, methods, registory) +
+             generate_stmt(indent_sub, name, methods, variables, registory) +
              ["#{indent}#{block_end};"]
     else
-      return generate_stmt(indent    , name, methods, registory)
+      return generate_stmt(indent    , name, methods, variables, registory)
     end
   end
 
@@ -141,9 +147,11 @@ module MsgPack_RPC_Interface::VHDL::Module
     add_port_line(port_list, registory, :outlet_last , "out", "std_logic"      )
     add_port_line(port_list, registory, :outlet_valid, "out", "std_logic"      )
     add_port_line(port_list, registory, :outlet_ready, "in ", "std_logic"      )
+
     methods.each   do |m|
       port_list.concat(m.interface.generate_vhdl_port_list(true))
     end
+
     variables.each do |v|
       port_list.concat(v.interface.generate_vhdl_port_list(true))
     end
@@ -165,7 +173,6 @@ module MsgPack_RPC_Interface::VHDL::Module
   end
 
   def generate_entity(indent, name, methods, variables, registory)
-
     vhdl_lines = ["library ieee;"                   ,
                   "use     ieee.std_logic_1164.all;",
                   "use     ieee.numeric_std.all;"   
