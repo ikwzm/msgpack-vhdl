@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_query_integer_array.vhd
---!     @brief   MessagePack Object Queary Integer Array Module :
+--!     @file    msgpack_object_query_binary_array.vhd
+--!     @brief   MessagePack Object Query to Binary/String Array
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -38,17 +38,18 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Query_Integer_Array is
+entity  MsgPack_Object_Query_Binary_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        DATA_BITS       :  positive := 32;
         ADDR_BITS       :  positive := 32;
         SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 4096;
-        VALUE_BITS      :  integer range 1 to 64;
-        VALUE_SIGN      :  boolean  := FALSE
+        SIZE_MAX        :  positive := 32;
+        ENCODE_BINARY   :  boolean  := TRUE;
+        ENCODE_STRING   :  boolean  := FALSE
     );
     port (
     -------------------------------------------------------------------------------
@@ -58,7 +59,7 @@ entity  MsgPack_Object_Query_Integer_Array is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Object Code Input Interface
+    -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         I_LAST          : in  std_logic;
@@ -75,16 +76,18 @@ entity  MsgPack_Object_Query_Integer_Array is
         O_VALID         : out std_logic;
         O_READY         : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Integer Value Input Interface
+    -- Binary/String Data Stream Input Interface
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
-        ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
-        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
+        STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
+        LAST            : out std_logic;
+        DATA            : in  std_logic_vector(DATA_BITS  -1 downto 0);
         VALID           : in  std_logic;
         READY           : out std_logic
     );
-end  MsgPack_Object_Query_Integer_Array;
+end MsgPack_Object_Query_Binary_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -93,10 +96,10 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Array;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Binary_Array;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Array;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Stream_Parameter;
-architecture RTL of MsgPack_Object_Query_Integer_Array is
+architecture RTL of MsgPack_Object_Query_Binary_Array is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -185,14 +188,14 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ENCODE: MsgPack_Object_Encode_Integer_Array  -- 
+    ENCODE: MsgPack_Object_Encode_Binary_Array   -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
+            DATA_BITS       => DATA_BITS       , --
             ADDR_BITS       => ADDR_BITS       , --
             SIZE_BITS       => SIZE_BITS       , --
-            VALUE_BITS      => VALUE_BITS      , --
-            VALUE_SIGN      => VALUE_SIGN      , --
-            QUEUE_SIZE      => 0                 -- 
+            ENCODE_BINARY   => ENCODE_BINARY   , --
+            ENCODE_STRING   => ENCODE_STRING     --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
@@ -210,7 +213,9 @@ begin
             I_START         => START           , -- Out :
             I_BUSY          => BUSY            , -- Out :
             I_ADDR          => ADDR            , -- Out :
-            I_VALUE         => VALUE           , -- In  :
+            I_STRB          => STRB            , -- Out :
+            I_LAST          => LAST            , -- Out :
+            I_DATA          => DATA            , -- In  :
             I_VALID         => VALID           , -- In  :
             I_READY         => READY             -- Out :
         );                                       --

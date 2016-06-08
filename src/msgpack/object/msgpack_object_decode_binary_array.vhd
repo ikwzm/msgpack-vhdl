@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_decode_binary_array.vhd
---!     @brief   MessagePack Object decode to binary/string array
+--!     @brief   MessagePack Object Decode to Binary/String Array
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -67,8 +67,10 @@ entity  MsgPack_Object_Decode_Binary_Array is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
-    -- Integer Value Output Interface
+    -- Binary/String Data Output Interface
     -------------------------------------------------------------------------------
+        O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
         O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
         O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
@@ -85,6 +87,7 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Binary_Core;
 use     MsgPack.PipeWork_Components.REDUCER;
 use     MsgPack.PipeWork_Components.CHOPPER;
 architecture RTL of MsgPack_Object_Decode_Binary_Array is
@@ -107,12 +110,15 @@ architecture RTL of MsgPack_Object_Decode_Binary_Array is
     signal    outlet_offset     :  std_logic_vector(OUTLET_BYTES-1 downto 0);
     signal    outlet_size       :  integer range 0 to OUTLET_BYTES;
     signal    outlet_start      :  std_logic;
+    signal    outlet_busy       :  std_logic;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     constant  INTAKE_BITS       :  integer := CODE_WIDTH * MsgPack_Object.CODE_DATA_BITS;
     constant  INTAKE_BYTES      :  integer := CODE_WIDTH * MsgPack_Object.CODE_DATA_BYTES;
     signal    intake_enable     :  std_logic;
+    signal    intake_start      :  std_logic;
+    signal    intake_busy       :  std_logic;
     signal    intake_valid      :  std_logic;
     signal    intake_last       :  std_logic;
     signal    intake_ready      :  std_logic;
@@ -144,6 +150,7 @@ begin
             I_SHIFT         => I_SHIFT           , -- Out :
             O_ENABLE        => intake_enable     , -- Out :
             O_START         => intake_start      , -- Out :
+            O_BUSY          => intake_busy       , -- Out :
             O_SIZE          => open              , -- Out :
             O_DATA          => intake_data       , -- Out :
             O_STRB          => intake_strb       , -- Out :
@@ -155,11 +162,13 @@ begin
     --
     -------------------------------------------------------------------------------
     OUTLET_BYTES_1: if (OUTLET_BYTES = 1) generate
+        O_START       <= intake_start;
         outlet_start  <= '0';
         outlet_offset <= (others => '0');
         outlet_size   <= 1;
     end generate;
     OUTLET_BYTES_2: if (OUTLET_BYTES > 1) generate
+        O_START       <= intake_start;
         outlet_start  <= intake_start;
         ---------------------------------------------------------------------------
         -- outlet_offset
@@ -260,7 +269,7 @@ begin
             OFFSET          => outlet_offset      , -- In  :
             DONE            => '0'                , -- In  :
             FLUSH           => '0'                , -- In  :
-            BUSY            => open               , -- Out :
+            BUSY            => outlet_busy        , -- Out :
             VALID           => open               , -- Out :
         ---------------------------------------------------------------------------
         -- Byte Stream Input Interface
@@ -286,7 +295,8 @@ begin
     );                                              --
     O_VALID <= outlet_valid;                        --
     O_STRB  <= outlet_strb;                         --
-    O_ADDR  <= curr_addr;                           -- 
+    O_ADDR  <= curr_addr;                           --
+    O_BUSY  <= intake_busy or outlet_busy;          -- 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

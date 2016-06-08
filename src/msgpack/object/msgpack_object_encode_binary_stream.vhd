@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_encode_binary_stream.vhd
---!     @brief   MessagePack Object encode to binary/string stream
+--!     @brief   MessagePack Object Encode to Binary/String Stream
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -75,6 +75,8 @@ entity  MsgPack_Object_Encode_Binary_Stream is
     -------------------------------------------------------------------------------
     -- Binary/String Data Stream Input Interface
     -------------------------------------------------------------------------------
+        I_START         : out std_logic;
+        I_BUSY          : out std_logic;
         I_DATA          : in  std_logic_vector(DATA_BITS  -1 downto 0);
         I_STRB          : in  std_logic_vector(DATA_BITS/8-1 downto 0);
         I_LAST          : in  std_logic;
@@ -265,7 +267,6 @@ begin
                             curr_state <= IDLE_STATE;
                         end if;
                         curr_size  <= unsigned(SIZE);
-                        curr_addr  <= (others => '0');
                         if (unsigned(SIZE) = 0) then
                             size_zero <= '1';
                         else
@@ -279,7 +280,6 @@ begin
                         else
                             curr_state <= DATA_STATE;
                         end if;
-                        curr_addr  <= next_addr;
                     when DATA_STATE =>
                         if (outlet_valid = '1' and outlet_ready = '1' and outlet_last = '1') then
                             curr_state <= IDLE_STATE;
@@ -303,4 +303,9 @@ begin
     O_LAST        <= outlet_last;
     O_VALID       <= outlet_valid;
     O_ERROR       <= '0';
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    I_START       <= '1' when (curr_state = SIZE_STATE and outlet_ready = '1' and size_zero = '0') else '0';
+    I_BUSY        <= '1' when (curr_state = DATA_STATE) else '0';
 end RTL;

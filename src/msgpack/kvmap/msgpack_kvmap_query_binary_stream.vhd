@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_kvmap_query_binary_stream.vhd
---!     @brief   MessagePack-KVMap(Key Value Map) Get Binary Stream Module :
+--!     @brief   MessagePack-KVMap(Key Value Map) Query Binary/String Stream Module :
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -47,7 +47,10 @@ entity  MsgPack_KVMap_Query_Binary_Stream is
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         DATA_BITS       :  positive := 1;
-        ADDR_BITS       :  positive := 1
+        SIZE_BITS       :  positive := 32;
+        SIZE_MAX        :  positive := 32;
+        ENCODE_BINARY   :  boolean  := TRUE;
+        ENCODE_STRING   :  boolean  := FALSE
     );
     port (
     -------------------------------------------------------------------------------
@@ -56,12 +59,6 @@ entity  MsgPack_KVMap_Query_Binary_Stream is
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- Control and Status Signals 
-    -------------------------------------------------------------------------------
-        START           : in  std_logic := '1';
-        SIZE            : in  std_logic_vector(31 downto 0);
-        BUSY            : out std_logic;
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -79,19 +76,15 @@ entity  MsgPack_KVMap_Query_Binary_Stream is
         MATCH_NOT       : out std_logic;
         MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Binary/String Data Side Band Output 
-    -------------------------------------------------------------------------------
-        S_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
-        S_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
-        S_LAST          : out std_logic;
-    -------------------------------------------------------------------------------
     -- Binary/String Data Stream Input Interface
     -------------------------------------------------------------------------------
-        I_DATA          : in  std_logic_vector(DATA_BITS  -1 downto 0);
-        I_STRB          : in  std_logic_vector(DATA_BITS/8-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_READY         : out std_logic
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        DATA            : in  std_logic_vector(DATA_BITS  -1 downto 0);
+        STRB            : in  std_logic_vector(DATA_BITS/8-1 downto 0);
+        LAST            : in  std_logic;
+        VALID           : in  std_logic;
+        READY           : out std_logic
     );
 end  MsgPack_KVMap_Query_Binary_Stream;
 -----------------------------------------------------------------------------------
@@ -102,7 +95,7 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Binary;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Binary_Stream;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_KVMap_Query_Binary_Stream is
 begin
@@ -128,33 +121,30 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ENCODE: MsgPack_Object_Encode_Binary         -- 
+    QUERY: MsgPack_Object_Query_Binary_Stream    -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            ADDR_BITS       => ADDR_BITS       , -- 
             DATA_BITS       => DATA_BITS       , --
-            ENCODE_BINARY   => TRUE            , --
-            ENCODE_STRING   => FALSE             -- 
+            SIZE_BITS       => SIZE_BITS       , --
+            SIZE_MAX        => SIZE_MAX        , --
+            ENCODE_BINARY   => ENCODE_BINARY   , --
+            ENCODE_STRING   => ENCODE_STRING     --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            START           => START           , -- In  :
-            SIZE            => SIZE            , -- In  :
-            BUSY            => BUSY            , -- In  :
             O_CODE          => O_CODE          , -- Out :
             O_LAST          => O_LAST          , -- Out :
             O_ERROR         => O_ERROR         , -- Out :
             O_VALID         => O_VALID         , -- Out :
             O_READY         => O_READY         , -- In  :
-            S_ADDR          => S_ADDR          , -- Out :
-            S_STRB          => S_STRB          , -- Out :
-            S_LAST          => S_LAST          , -- Out :
-            I_DATA          => I_DATA          , -- In  :
-            I_STRB          => I_STRB          , -- In  :
-            I_LAST          => I_LAST          , -- In  :
-            I_VALID         => I_VALID         , -- In  :
-            I_READY         => I_READY           -- Out :
+            START           => START           , -- Out :
+            BUSY            => BUSY            , -- Out :
+            DATA            => DATA            , -- In  :
+            STRB            => STRB            , -- In  :
+            LAST            => LAST            , -- In  :
+            VALID           => VALID           , -- In  :
+            READY           => READY             -- Out :
         );                                       --
 end RTL;

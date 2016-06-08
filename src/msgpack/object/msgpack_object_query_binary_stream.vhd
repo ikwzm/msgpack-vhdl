@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_query_integer_stream.vhd
---!     @brief   MessagePack Object Query Integer Stream Module :
+--!     @file    msgpack_object_query_binary_stream.vhd
+--!     @brief   MessagePack Object Query to Binary/String Stream
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -38,16 +38,17 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Query_Integer_Stream is
+entity  MsgPack_Object_Query_Binary_Stream is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        DATA_BITS       :  positive := 32;
         SIZE_BITS       :  positive := 32;
         SIZE_MAX        :  positive := 32;
-        VALUE_BITS      :  integer range 1 to 64;
-        VALUE_SIGN      :  boolean  := FALSE
+        ENCODE_BINARY   :  boolean  := TRUE;
+        ENCODE_STRING   :  boolean  := FALSE
     );
     port (
     -------------------------------------------------------------------------------
@@ -57,15 +58,6 @@ entity  MsgPack_Object_Query_Integer_Stream is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Object Code Input Interface
-    -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_ERROR         : out std_logic;
-        I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
         O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
@@ -74,15 +66,17 @@ entity  MsgPack_Object_Query_Integer_Stream is
         O_VALID         : out std_logic;
         O_READY         : in  std_logic;
     -------------------------------------------------------------------------------
-    -- Integer Value Input Interface
+    -- Binary/String Data Stream Input Interface
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
-        VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        DATA            : in  std_logic_vector(DATA_BITS  -1 downto 0);
+        STRB            : in  std_logic_vector(DATA_BITS/8-1 downto 0);
+        LAST            : in  std_logic;
         VALID           : in  std_logic;
         READY           : out std_logic
     );
-end  MsgPack_Object_Query_Integer_Stream;
+end MsgPack_Object_Query_Binary_Stream;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -91,9 +85,9 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Stream;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Binary_Stream;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Stream_Parameter;
-architecture RTL of MsgPack_Object_Query_Integer_Stream is
+architecture RTL of MsgPack_Object_Query_Binary_Stream is
     signal    param_start    :  std_logic;
     signal    param_busy     :  std_logic;
     signal    param_size     :  std_logic_vector(SIZE_BITS-1 downto 0);
@@ -124,13 +118,15 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ENCODE: MsgPack_Object_Encode_Integer_Stream -- 
+    ENCODE: MsgPack_Object_Encode_Binary_Stream  -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
+            DATA_BITS       => DATA_BITS       , --
             SIZE_BITS       => SIZE_BITS       , --
-            VALUE_BITS      => VALUE_BITS      , --
-            VALUE_SIGN      => VALUE_SIGN      , --
-            QUEUE_SIZE      => 0                 -- 
+            ENCODE_BINARY   => ENCODE_BINARY   , --
+            ENCODE_STRING   => ENCODE_STRING   , --
+            I_JUSTIFIED     => FALSE           , --
+            I_BUFFERED      => TRUE              --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
@@ -141,7 +137,9 @@ begin
             BUSY            => param_busy      , -- Out :
             I_START         => START           , -- Out :
             I_BUSY          => BUSY            , -- Out :
-            I_VALUE         => VALUE           , -- In  :
+            I_DATA          => DATA            , -- In  :
+            I_STRB          => STRB            , -- In  :
+            I_LAST          => LAST            , -- In  :
             I_VALID         => VALID           , -- In  :
             I_READY         => READY           , -- Out :
             O_CODE          => O_CODE          , -- Out :

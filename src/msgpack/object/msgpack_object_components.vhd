@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/08                                                      --
+--!     @date    2016/06/09                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -313,6 +313,7 @@ component MsgPack_Object_Decode_Binary_Core
     -------------------------------------------------------------------------------
         O_ENABLE        : out std_logic;
         O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_SIZE          : out std_logic_vector(MsgPack_Object.CODE_DATA_BITS           -1 downto 0);
         O_DATA          : out std_logic_vector(MsgPack_Object.CODE_DATA_BITS*CODE_WIDTH-1 downto 0);
         O_STRB          : out std_logic_vector(MsgPack_Object.CODE_STRB_BITS*CODE_WIDTH-1 downto 0);
@@ -353,8 +354,10 @@ component MsgPack_Object_Decode_Binary_Array
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
-    -- Integer Value Output Interface
+    -- Binary/String Data Output Interface
     -------------------------------------------------------------------------------
+        O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
         O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
         O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
@@ -373,7 +376,6 @@ component MsgPack_Object_Decode_Binary_Stream
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
-        ADDR_BITS       :  integer  := 8;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -394,8 +396,10 @@ component MsgPack_Object_Decode_Binary_Stream
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
-    -- Integer Value Output Interface
+    -- Binary/String Data Output Interface
     -------------------------------------------------------------------------------
+        O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
         O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
         O_LAST          : out std_logic;
@@ -500,49 +504,6 @@ component MsgPack_Object_Decode_Integer
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_Object_Decode_Integer_Stream                                  --
------------------------------------------------------------------------------------
-component MsgPack_Object_Decode_Integer_Stream
-    -------------------------------------------------------------------------------
-    -- Generic Parameters
-    -------------------------------------------------------------------------------
-    generic (
-        CODE_WIDTH      :  positive := 1;
-        VALUE_BITS      :  integer range 1 to 64;
-        VALUE_SIGN      :  boolean  := FALSE;
-        QUEUE_SIZE      :  integer  := 0;
-        CHECK_RANGE     :  boolean  := TRUE ;
-        ENABLE64        :  boolean  := TRUE
-    );
-    port (
-    -------------------------------------------------------------------------------
-    -- Clock and Reset Signals
-    -------------------------------------------------------------------------------
-        CLK             : in  std_logic; 
-        RST             : in  std_logic;
-        CLR             : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- MessagePack Object Code Input Interface
-    -------------------------------------------------------------------------------
-        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        I_LAST          : in  std_logic;
-        I_VALID         : in  std_logic;
-        I_ERROR         : out std_logic;
-        I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    -- Integer Value Data and Address Output
-    -------------------------------------------------------------------------------
-        O_START         : out std_logic;
-        O_BUSY          : out std_logic;
-        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
-        O_SIGN          : out std_logic;
-        O_LAST          : out std_logic;
-        O_VALID         : out std_logic;
-        O_READY         : in  std_logic
-    );
-end component;
------------------------------------------------------------------------------------
 --! @brief MsgPack_Object_Decode_Integer_Array                                   --
 -----------------------------------------------------------------------------------
 component MsgPack_Object_Decode_Integer_Array
@@ -582,6 +543,49 @@ component MsgPack_Object_Decode_Integer_Array
         O_BUSY          : out std_logic;
         O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        O_SIGN          : out std_logic;
+        O_LAST          : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Decode_Integer_Stream                                  --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Decode_Integer_Stream
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0;
+        CHECK_RANGE     :  boolean  := TRUE ;
+        ENABLE64        :  boolean  := TRUE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Integer Value Data and Address Output
+    -------------------------------------------------------------------------------
+        O_START         : out std_logic;
+        O_BUSY          : out std_logic;
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
         O_VALID         : out std_logic;
@@ -718,6 +722,8 @@ component MsgPack_Object_Encode_Binary_Array
     -------------------------------------------------------------------------------
     -- Binary/String Data Stream Input Interface
     -------------------------------------------------------------------------------
+        I_START         : out std_logic;
+        I_BUSY          : out std_logic;
         I_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
         I_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
         I_LAST          : out std_logic;
@@ -766,6 +772,8 @@ component MsgPack_Object_Encode_Binary_Stream
     -------------------------------------------------------------------------------
     -- Binary/String Data Stream Input Interface
     -------------------------------------------------------------------------------
+        I_START         : out std_logic;
+        I_BUSY          : out std_logic;
         I_DATA          : in  std_logic_vector(DATA_BITS  -1 downto 0);
         I_STRB          : in  std_logic_vector(DATA_BITS/8-1 downto 0);
         I_LAST          : in  std_logic;
@@ -815,51 +823,6 @@ component MsgPack_Object_Encode_Integer
     );
 end component;
 -----------------------------------------------------------------------------------
---! @brief MsgPack_Object_Encode_Integer_Stream                                  --
------------------------------------------------------------------------------------
-component MsgPack_Object_Encode_Integer_Stream
-    -------------------------------------------------------------------------------
-    -- Generic Parameters
-    -------------------------------------------------------------------------------
-    generic (
-        CODE_WIDTH      :  positive := 1;
-        SIZE_BITS       :  positive := 32;
-        VALUE_BITS      :  integer range 1 to 64;
-        VALUE_SIGN      :  boolean  := FALSE;
-        QUEUE_SIZE      :  integer  := 0
-    );
-    port (
-    -------------------------------------------------------------------------------
-    -- Clock and Reset Signals
-    -------------------------------------------------------------------------------
-        CLK             : in  std_logic; 
-        RST             : in  std_logic;
-        CLR             : in  std_logic;
-    -------------------------------------------------------------------------------
-    -- 
-    -------------------------------------------------------------------------------
-        START           : in  std_logic;
-        SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
-        BUSY            : out std_logic;
-    -------------------------------------------------------------------------------
-    -- Integer Value Input Interface
-    -------------------------------------------------------------------------------
-        I_START         : out std_logic;
-        I_BUSY          : out std_logic;
-        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
-        I_VALID         : in  std_logic;
-        I_READY         : out std_logic;
-    -------------------------------------------------------------------------------
-    -- Array Object Encode Output Interface
-    -------------------------------------------------------------------------------
-        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-        O_LAST          : out std_logic;
-        O_ERROR         : out std_logic;
-        O_VALID         : out std_logic;
-        O_READY         : in  std_logic
-    );
-end component;
------------------------------------------------------------------------------------
 --! @brief MsgPack_Object_Encode_Integer_Array                                   --
 -----------------------------------------------------------------------------------
 component MsgPack_Object_Encode_Integer_Array
@@ -894,6 +857,51 @@ component MsgPack_Object_Encode_Integer_Array
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
         I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        I_VALID         : in  std_logic;
+        I_READY         : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Array Object Encode Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Encode_Integer_Stream                                  --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Encode_Integer_Stream
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  positive := 32;
+        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_SIGN      :  boolean  := FALSE;
+        QUEUE_SIZE      :  integer  := 0
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+        START           : in  std_logic;
+        SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
+        BUSY            : out std_logic;
+    -------------------------------------------------------------------------------
+    -- Integer Value Input Interface
+    -------------------------------------------------------------------------------
+        I_START         : out std_logic;
+        I_BUSY          : out std_logic;
         I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
         I_VALID         : in  std_logic;
         I_READY         : out std_logic;
@@ -1174,6 +1182,90 @@ component MsgPack_Object_Store_Integer_Stream
     );
 end component;
 -----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Store_Binary_Array                                     --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Store_Binary_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        DATA_BITS       :  positive := 4;
+        ADDR_BITS       :  integer  := 8;
+        DECODE_BINARY   :  boolean  := TRUE;
+        DECODE_STRING   :  boolean  := FALSE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Integer Value Data and Address Output
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
+        DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
+        STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Store_Binary_Stream                                    --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Store_Binary_Stream
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        DATA_BITS       :  positive := 4;
+        DECODE_BINARY   :  boolean  := TRUE;
+        DECODE_STRING   :  boolean  := FALSE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Binary/String Data Output
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
+        STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
 --! @brief MsgPack_Object_Query_Stream_Parameter                                 --
 -----------------------------------------------------------------------------------
 component MsgPack_Object_Query_Stream_Parameter
@@ -1347,6 +1439,101 @@ component MsgPack_Object_Query_Integer_Stream
         START           : out std_logic;
         BUSY            : out std_logic;
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Query_Binary_Array                                     --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Query_Binary_Array
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        DATA_BITS       :  positive := 32;
+        ADDR_BITS       :  positive := 32;
+        SIZE_BITS       :  positive := 32;
+        SIZE_MAX        :  positive := 32;
+        ENCODE_BINARY   :  boolean  := TRUE;
+        ENCODE_STRING   :  boolean  := FALSE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Binary/String Data Stream Input Interface
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
+        STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
+        LAST            : out std_logic;
+        DATA            : in  std_logic_vector(DATA_BITS  -1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
+    );
+end component;
+-----------------------------------------------------------------------------------
+--! @brief MsgPack_Object_Query_Binary_Stream                                    --
+-----------------------------------------------------------------------------------
+component MsgPack_Object_Query_Binary_Stream
+    -------------------------------------------------------------------------------
+    -- Generic Parameters
+    -------------------------------------------------------------------------------
+    generic (
+        CODE_WIDTH      :  positive := 1;
+        DATA_BITS       :  positive := 32;
+        SIZE_BITS       :  positive := 32;
+        SIZE_MAX        :  positive := 32;
+        ENCODE_BINARY   :  boolean  := TRUE;
+        ENCODE_STRING   :  boolean  := FALSE
+    );
+    port (
+    -------------------------------------------------------------------------------
+    -- Clock and Reset Signals
+    -------------------------------------------------------------------------------
+        CLK             : in  std_logic; 
+        RST             : in  std_logic;
+        CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Binary/String Data Stream Input Interface
+    -------------------------------------------------------------------------------
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        DATA            : in  std_logic_vector(DATA_BITS  -1 downto 0);
+        STRB            : in  std_logic_vector(DATA_BITS/8-1 downto 0);
+        LAST            : in  std_logic;
         VALID           : in  std_logic;
         READY           : out std_logic
     );

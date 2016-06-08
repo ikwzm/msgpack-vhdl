@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_decode_binary_stream.vhd
---!     @brief   MessagePack Object decode to binary/string stream
+--!     @brief   MessagePack Object Decode to Binary/String Stream
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,6 @@ entity  MsgPack_Object_Decode_Binary_Stream is
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
-        ADDR_BITS       :  integer  := 8;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -66,8 +65,10 @@ entity  MsgPack_Object_Decode_Binary_Stream is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
-    -- Integer Value Output Interface
+    -- Binary/String Data Output Interface
     -------------------------------------------------------------------------------
+        O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
         O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
         O_LAST          : out std_logic;
@@ -96,6 +97,7 @@ architecture RTL of MsgPack_Object_Decode_Binary_Stream is
     constant  INTAKE_BITS       :  integer := CODE_WIDTH * MsgPack_Object.CODE_DATA_BITS;
     constant  INTAKE_BYTES      :  integer := CODE_WIDTH * MsgPack_Object.CODE_DATA_BYTES;
     signal    intake_enable     :  std_logic;
+    signal    intake_busy       :  std_logic;
     signal    intake_valid      :  std_logic;
     signal    intake_last       :  std_logic;
     signal    intake_ready      :  std_logic;
@@ -126,6 +128,7 @@ architecture RTL of MsgPack_Object_Decode_Binary_Stream is
     constant  OUTLET_WORDS      :  integer := OUTLET_BYTES / WORD_BYTES;
     constant  INTAKE_WORDS      :  integer := INTAKE_BYTES / WORD_BYTES;
     constant  outlet_offset     :  std_logic_vector(OUTLET_WORDS-1 downto 0) := (others => '0');
+    signal    outlet_busy       :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
@@ -147,7 +150,8 @@ begin
             I_DONE          => I_DONE            , -- Out :
             I_SHIFT         => I_SHIFT           , -- Out :
             O_ENABLE        => intake_enable     , -- Out :
-            O_START         => open              , -- Out :
+            O_START         => O_START           , -- Out :
+            O_BUSY          => intake_busy       , -- Out :
             O_SIZE          => open              , -- Out :
             O_DATA          => intake_data       , -- Out :
             O_STRB          => intake_strb       , -- Out :
@@ -187,7 +191,7 @@ begin
             OFFSET          => outlet_offset      , -- In  :
             DONE            => '0'                , -- In  :
             FLUSH           => '0'                , -- In  :
-            BUSY            => open               , -- Out :
+            BUSY            => outlet_busy        , -- Out :
             VALID           => open               , -- Out :
         ---------------------------------------------------------------------------
         -- Byte Stream Input Interface
@@ -210,5 +214,6 @@ begin
             O_VAL           => O_VALID            , -- Out :
             O_RDY           => O_READY            , -- In  :
             O_SHIFT         => "0"                  -- In  :
-    );                                              --
+        );                                          --
+    O_BUSY <= '1' when (intake_busy = '1' or outlet_busy = '1') else '0';
 end RTL;

@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_encode_binary_array.vhd
---!     @brief   MessagePack Object encode to binary/string array
+--!     @brief   MessagePack Object Encode to Binary/String Array
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -75,6 +75,8 @@ entity  MsgPack_Object_Encode_Binary_Array is
     -------------------------------------------------------------------------------
     -- Binary/String Data Stream Input Interface
     -------------------------------------------------------------------------------
+        I_START         : out std_logic;
+        I_BUSY          : out std_logic;
         I_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
         I_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
         I_LAST          : out std_logic;
@@ -226,6 +228,8 @@ begin
         -------------------------------------------------------------------------------
         -- Binary/String Data Stream Input Interface
         -------------------------------------------------------------------------------
+            I_START         => I_START            , -- Out :
+            I_BUSY          => I_BUSY             , -- Out :
             I_DATA          => I_DATA             , -- In  :
             I_STRB          => intake_strb        , -- In  :
             I_LAST          => intake_last        , -- In  :

@@ -2,11 +2,11 @@
 --!     @file    msgpack_object_decode_binary_core.vhd
 --!     @brief   MessagePack Object decode to binary/string core module
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -68,6 +68,7 @@ entity  MsgPack_Object_Decode_Binary_Core is
     -------------------------------------------------------------------------------
         O_ENABLE        : out std_logic;
         O_START         : out std_logic;
+        O_BUSY          : out std_logic;
         O_SIZE          : out std_logic_vector(MsgPack_Object.CODE_DATA_BITS           -1 downto 0);
         O_DATA          : out std_logic_vector(MsgPack_Object.CODE_DATA_BITS*CODE_WIDTH-1 downto 0);
         O_STRB          : out std_logic_vector(MsgPack_Object.CODE_STRB_BITS*CODE_WIDTH-1 downto 0);
@@ -273,5 +274,6 @@ begin
     O_DATA   <= outlet_data;
     O_STRB   <= outlet_strb;
     O_LAST   <= outlet_last;
+    O_BUSY   <= '1' when (curr_state /= IDLE_STATE) else '0';
     outlet_ready <= O_READY;
 end RTL;

@@ -164,18 +164,25 @@ module MsgPack_RPC_Interface::Standard
 
     class  Memory   < Base
 
-      attr_reader :generator, :port_rdata, :port_wdata, :port_we, :port_waddr, :port_raddr, :addr_type, :size, :arbitor
+      attr_reader :generator, :port_rdata, :port_wdata, :port_we, :port_wstrb, :port_waddr, :port_raddr, :addr_type, :size, :width, :arbitor
       
       def initialize(registory)
         super(registory)
-        @addr_type = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => 32})))
-        @size      = registory.fetch("size", 2**@addr_type.width)
+        if  registory.key?("size") then
+          @size = registory["size"]
+          @addr_type = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => Math::log2(@size).ceil})))
+        else
+          @addr_type = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => 32})))
+          @size      = 2**@addr_type.width
+        end
+        @width     = registory.fetch("width", 1)
         if    @read == true  and @write == true  then
           @port_raddr = @port_name + "_raddr"
           @port_rdata = @port_name + "_rdata"
           @port_waddr = @port_name + "_waddr"
           @port_wdata = @port_name + "_wdata"
           @port_we    = @port_name + "_we"
+          @port_wstrb = @port_name + "_strb"
           if registory.key?("port") then
             port_regs = registory["port"]
             @port_raddr = port_regs.fetch("raddr", @port_raddr)
@@ -183,6 +190,7 @@ module MsgPack_RPC_Interface::Standard
             @port_waddr = port_regs.fetch("waddr", @port_waddr)
             @port_wdata = port_regs.fetch("wdata", @port_wdata)
             @port_we    = port_regs.fetch("we"   , @port_we   )
+            @port_wstrb = port_regs.fetch("wstrb", @port_wstrb)
             @port_raddr = port_regs.fetch("addr" , @port_raddr)
             @port_waddr = port_regs.fetch("addr" , @port_waddr)
           end
@@ -192,6 +200,7 @@ module MsgPack_RPC_Interface::Standard
           @port_waddr = nil
           @port_wdata = nil
           @port_we    = nil
+          @port_wstrb = nil
           if registory.key?("port") then
             port_regs = registory["port"]
             @port_raddr = port_regs.fetch("addr", @port_raddr)
@@ -203,11 +212,13 @@ module MsgPack_RPC_Interface::Standard
           @port_waddr = @port_name + "_addr"
           @port_wdata = @port_name + "_data"
           @port_we    = @port_name + "_we"
+          @port_wstrb = @port_name + "_wstrb"
           if registory.key?("port") then
             port_regs = registory["port"]
             @port_waddr = port_regs.fetch("addr" , @port_waddr)
             @port_wdata = port_regs.fetch("data" , @port_wdata)
             @port_we    = port_regs.fetch("we"   , @port_we   )
+            @port_wstrb = port_regs.fetch("we"   , @port_wstrb)
           end
         else
           @port_raddr = nil
@@ -215,6 +226,7 @@ module MsgPack_RPC_Interface::Standard
           @port_waddr = nil
           @port_wdata = nil
           @port_we    = nil
+          @port_wstrb = nil
         end 
         @generator = MsgPack_RPC_Interface::VHDL::Memory.const_get(@msg_class.class.to_s.split('::').last)
         if @port_raddr == @port_waddr then
@@ -237,18 +249,18 @@ module MsgPack_RPC_Interface::Standard
       
       def generate_vhdl_body_store(indent, registory)
         new_regs = registory.dup
-        new_regs[:size] = @size
+        new_regs[:size       ] = @size
+        new_regs[:width      ] = @width
+        new_regs[:write_data ] = registory.fetch(:write_data, @port_wdata)
+        new_regs[:write_strb ] = registory.fetch(:write_strb, @port_wstrb)
+        new_regs[:write_valid] = registory.fetch(:write_ena , @port_we   )
         if @port_raddr == @port_waddr then
-          new_regs[:write_addr ] = @arbitor.registory[:write_addr]
-          new_regs[:write_data ] = registory.fetch(:write_data, @port_wdata)
-          new_regs[:write_valid] = registory.fetch(:write_ena , @port_we   )
+          new_regs[:write_addr ] = @arbitor.registory[:write_addr ]
           new_regs[:write_ready] = @arbitor.registory[:write_ready]
           new_regs[:write_start] = @arbitor.registory[:write_start]
           new_regs[:write_busy ] = @arbitor.registory[:write_busy ]
         else
           new_regs[:write_addr ] = registory.fetch(:write_addr, @port_waddr)
-          new_regs[:write_data ] = registory.fetch(:write_data, @port_wdata)
-          new_regs[:write_valid] = registory.fetch(:write_ena , @port_we   )
           new_regs[:write_ready] = "'1'"
         end
         return @generator::Store.generate_body(indent, @name, @type, @addr_type, @kvmap, new_regs)
@@ -256,16 +268,16 @@ module MsgPack_RPC_Interface::Standard
 
       def generate_vhdl_body_query(indent, registory)
         new_regs = registory.dup
-        new_regs[:size] = @size
+        new_regs[:size      ] = @size
+        new_regs[:width     ] = @width
+        new_regs[:read_data ] = registory.fetch(:read_data , @port_rdata)
         if @port_raddr == @port_waddr then
           new_regs[:read_addr ] = @arbitor.registory[:read_addr ]
-          new_regs[:read_data ] = registory.fetch(:read_data , @port_rdata)
           new_regs[:read_valid] = @arbitor.registory[:read_valid]
           new_regs[:read_start] = @arbitor.registory[:read_start]
           new_regs[:read_busy ] = @arbitor.registory[:read_busy ]
         else
           new_regs[:read_addr ] = registory.fetch(:read_addr , @port_raddr)
-          new_regs[:read_data ] = registory.fetch(:read_data , @port_rdata)
           new_regs[:read_valid] =  "'1'"
         end
         return @generator::Query.generate_body(indent, @name, @type, @addr_type, @kvmap, new_regs)
@@ -273,10 +285,12 @@ module MsgPack_RPC_Interface::Standard
 
       def generate_vhdl_port_list(master)
         registory  = Hash.new
-        registory[:size] = @size
+        registory[:size       ] = @size
+        registory[:width      ] = @width
         registory[:write_addr ] = @port_waddr if @write == true
         registory[:write_data ] = @port_wdata if @write == true
         registory[:write_ena  ] = @port_we    if @write == true
+        registory[:write_strb ] = @port_wstrb if @write == true
         registory[:read_addr  ] = @port_raddr if @read  == true
         registory[:read_data  ] = @port_rdata if @read  == true
         return Set.new(@generator.generate_port_list(master, @type, @addr_type, @kvmap, registory)).to_a
@@ -348,6 +362,7 @@ module MsgPack_RPC_Interface::Standard
     class Integer < Base
       attr_reader :width, :sign
       def initialize(registory)
+        super(registory)
         @width = registory.fetch("width", 32  )
         @sign  = registory.fetch("sign" , true)
       end
@@ -362,6 +377,7 @@ module MsgPack_RPC_Interface::Standard
     class Unsigned < Base
       attr_reader :width, :sign
       def initialize(registory)
+        super(registory)
         @width = registory.fetch("width", 32  )
         @sign  = false
       end
@@ -376,6 +392,7 @@ module MsgPack_RPC_Interface::Standard
     class Signed < Base
       attr_reader :width, :sign
       def initialize(registory)
+        super(registory)
         @width = registory.fetch("width", 32  )
         @sign  = true
       end
@@ -389,6 +406,7 @@ module MsgPack_RPC_Interface::Standard
 
     class Logic   < Base
       def initialize(registory)
+        super(registory)
       end
       def generate_vhdl_type
         return "std_logic"
@@ -401,6 +419,7 @@ module MsgPack_RPC_Interface::Standard
     class Logic_Vector < Base
       attr_reader :width
       def initialize(registory)
+        super(registory)
         @width = registory.fetch("width", nil)
       end
       def generate_vhdl_type
@@ -408,6 +427,28 @@ module MsgPack_RPC_Interface::Standard
       end
     end
 
+    class Binary < Base
+      attr_reader :width
+      def initialize(registory)
+        super(registory)
+        @width = registory.fetch("width", nil)
+      end
+      def generate_vhdl_type
+        return "std_logic_vector(8*#{@width}-1 downto 0)"
+      end
+    end
+    
+    class String < Base
+      attr_reader :width
+      def initialize(registory)
+        super(registory)
+        @width = registory.fetch("width", nil)
+      end
+      def generate_vhdl_type
+        return "std_logic_vector(8*#{@width}-1 downto 0)"
+      end
+    end
+    
     class Boolean < Base
       def initialize(registory)
       end

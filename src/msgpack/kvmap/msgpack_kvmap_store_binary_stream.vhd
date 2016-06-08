@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_kvmap_store_binary_stream.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Store Binary Stream Module :
---!     @version 0.1.0
---!     @date    2016/5/18
+--!     @version 0.2.0
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,8 +46,9 @@ entity  MsgPack_KVMap_Store_Binary_Stream is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
-        ADDR_BITS       :  integer  := 8;
-        DATA_BITS       :  positive := 8
+        DATA_BITS       :  positive := 8;
+        DECODE_BINARY   :  boolean  := TRUE;
+        DECODE_STRING   :  boolean  := FALSE
     );
     port (
     -------------------------------------------------------------------------------
@@ -74,14 +75,15 @@ entity  MsgPack_KVMap_Store_Binary_Stream is
         MATCH_NOT       : out std_logic;
         MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
-    -- Binary Data and Address Output
+    -- Binary/String Data Output
     -------------------------------------------------------------------------------
-        O_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
-        O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
-        O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
-        O_LAST          : out std_logic;
-        O_VALID         : out std_logic;
-        O_READY         : in  std_logic
+        START           : out std_logic;
+        BUSY            : out std_logic;
+        DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
+        STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
+        LAST            : out std_logic;
+        VALID           : out std_logic;
+        READY           : in  std_logic
     );
 end  MsgPack_KVMap_Store_Binary_Stream;
 -----------------------------------------------------------------------------------
@@ -92,7 +94,7 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Binary;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Store_Binary_Stream;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_KVMap_Store_Binary_Stream is
 begin
@@ -118,13 +120,12 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE: MsgPack_Object_Decode_Binary         -- 
+    STORE: MsgPack_Object_Store_Binary_Stream    -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             DATA_BITS       => DATA_BITS       , --
-            ADDR_BITS       => ADDR_BITS       , --
-            DECODE_BINARY   => TRUE            , --
-            DECODE_STRING   => FALSE             -- 
+            DECODE_BINARY   => DECODE_BINARY   , --
+            DECODE_STRING   => DECODE_STRING     -- 
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
@@ -136,11 +137,12 @@ begin
             I_ERROR         => I_ERROR         , -- Out :
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
-            O_ADDR          => O_ADDR          , -- Out :
-            O_DATA          => O_DATA          , -- Out :
-            O_STRB          => O_STRB          , -- Out :
-            O_LAST          => O_LAST          , -- Out :
-            O_VALID         => O_VALID         , -- Out :
-            O_READY         => O_READY           -- In  :
+            START           => START           , -- Out :
+            BUSY            => BUSY            , -- Out :
+            DATA            => DATA            , -- Out :
+            STRB            => STRB            , -- Out :
+            LAST            => LAST            , -- Out :
+            VALID           => VALID           , -- Out :
+            READY           => READY             -- In  :
         );                                       --
 end RTL;

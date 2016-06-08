@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_encode_integer_array.vhd
---!     @brief   MessagePack Object encode to integer array
+--!     @brief   MessagePack Object Encode to Integer Array
 --!     @version 0.2.0
 --!     @date    2016/6/6
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
