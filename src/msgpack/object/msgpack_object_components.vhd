@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/07                                                      --
+--!     @date    2016/06/08                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -1264,6 +1264,7 @@ component MsgPack_Object_Query_Integer_Array
         CODE_WIDTH      :  positive := 1;
         ADDR_BITS       :  positive := 32;
         SIZE_BITS       :  positive := 32;
+        SIZE_MAX        :  positive := 4096;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE
     );

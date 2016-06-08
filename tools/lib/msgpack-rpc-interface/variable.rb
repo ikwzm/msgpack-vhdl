@@ -1,43 +1,3 @@
-#!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
-#---------------------------------------------------------------------------------
-#
-#       Version     :   0.0.2
-#       Created     :   2016/5/24
-#       File name   :   msgpack-rpc-interface/variable.rb
-#       Author      :   Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
-#       Description :   MessagePack RPC Interface Variable
-#
-#---------------------------------------------------------------------------------
-#
-#       Copyright (C) 2016 Ichiro Kawazome
-#       All rights reserved.
-# 
-#       Redistribution and use in source and binary forms, with or without
-#       modification, are permitted provided that the following conditions
-#       are met:
-# 
-#         1. Redistributions of source code must retain the above copyright
-#            notice, this list of conditions and the following disclaimer.
-# 
-#         2. Redistributions in binary form must reproduce the above copyright
-#            notice, this list of conditions and the following disclaimer in
-#            the documentation and/or other materials provided with the
-#            distribution.
-# 
-#       THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-#       "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-#       LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-#       A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
-#       OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-#       SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-#       LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-#       DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-#       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-#       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-#       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# 
-#---------------------------------------------------------------------------------
 module MsgPack_RPC_Interface
 
   module Variable 
@@ -79,25 +39,10 @@ module MsgPack_RPC_Interface
       return (@interface.write)? [self] : []
     end
 
-    def make_class(registory)
-      if registory.class == Hash then
-        name = registory["name"]
-      else
-        name = registory
-        registory = {"name" => name}
-      end
-
-      if Standard::Type.const_defined?(name) then
-        return Standard::Type.const_get(name).new(registory)
-      else
-        abort "Undefined Type::#{name}"
-      end
-    end
-
     def make_type(varibale_regs)
       aliases   = varibale_regs.fetch("aliases"   , {})
       type_regs = resolve_alias(varibale_regs["type"     ], aliases)
-      return make_class(type_regs)
+      return Standard::Type.new(type_regs)
     end
 
     def make_interface(varibale_regs)
@@ -117,7 +62,7 @@ module MsgPack_RPC_Interface
       end
 
       if interface_regs.key?("type") then
-        interface_type = make_class(interface_regs["type"])
+        interface_type = Standard::Type.new(interface_regs["type"])
       else
         interface_type = @type
       end

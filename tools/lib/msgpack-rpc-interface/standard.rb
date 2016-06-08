@@ -164,11 +164,12 @@ module MsgPack_RPC_Interface::Standard
 
     class  Memory   < Base
 
-      attr_reader :generator, :port_rdata, :port_wdata, :port_we, :port_waddr, :port_raddr, :addr_type, :arbitor
+      attr_reader :generator, :port_rdata, :port_wdata, :port_we, :port_waddr, :port_raddr, :addr_type, :size, :arbitor
       
       def initialize(registory)
         super(registory)
-        @addr_type = Type::Unsigned.new(Hash({"width" => 32}))
+        @addr_type = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => 32})))
+        @size      = registory.fetch("size", 2**@addr_type.width)
         if    @read == true  and @write == true  then
           @port_raddr = @port_name + "_raddr"
           @port_rdata = @port_name + "_rdata"
@@ -236,6 +237,7 @@ module MsgPack_RPC_Interface::Standard
       
       def generate_vhdl_body_store(indent, registory)
         new_regs = registory.dup
+        new_regs[:size] = @size
         if @port_raddr == @port_waddr then
           new_regs[:write_addr ] = @arbitor.registory[:write_addr]
           new_regs[:write_data ] = registory.fetch(:write_data, @port_wdata)
@@ -254,6 +256,7 @@ module MsgPack_RPC_Interface::Standard
 
       def generate_vhdl_body_query(indent, registory)
         new_regs = registory.dup
+        new_regs[:size] = @size
         if @port_raddr == @port_waddr then
           new_regs[:read_addr ] = @arbitor.registory[:read_addr ]
           new_regs[:read_data ] = registory.fetch(:read_data , @port_rdata)
@@ -270,6 +273,7 @@ module MsgPack_RPC_Interface::Standard
 
       def generate_vhdl_port_list(master)
         registory  = Hash.new
+        registory[:size] = @size
         registory[:write_addr ] = @port_waddr if @write == true
         registory[:write_data ] = @port_wdata if @write == true
         registory[:write_ena  ] = @port_we    if @write == true
@@ -315,6 +319,23 @@ module MsgPack_RPC_Interface::Standard
   end
 
   module Type
+
+    def new(registory)
+      if registory.class == Hash then
+        name = registory["name"]
+      else
+        name = registory
+        registory = {"name" => name}
+      end
+
+      if self.const_defined?(name) then
+        return self.const_get(name).new(registory)
+      else
+        abort "Undefined Type::#{name}"
+      end
+    end
+
+    module_function :new
 
     class Base
       def to_s

@@ -46,6 +46,7 @@ entity  MsgPack_Object_Query_Integer_Array is
         CODE_WIDTH      :  positive := 1;
         ADDR_BITS       :  positive := 32;
         SIZE_BITS       :  positive := 32;
+        SIZE_MAX        :  positive := 4096;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE
     );
@@ -165,7 +166,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             SIZE_BITS       => SIZE_BITS       , --
-            SIZE_MAX        => 2**ADDR_BITS      --
+            SIZE_MAX        => SIZE_MAX          --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :

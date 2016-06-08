@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_query_integer_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Queary Integer Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/8
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -48,6 +48,7 @@ entity  MsgPack_KVMap_Query_Integer_Array is
         MATCH_PHASE     :  positive := 8;
         ADDR_BITS       :  positive := 32;
         SIZE_BITS       :  positive := 32;
+        SIZE_MAX        :  positive := 4096;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE
     );
@@ -105,30 +106,6 @@ use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Integer_Array;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_KVMap_Query_Integer_Array is
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    signal    param_code    :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    param_valid   :  std_logic;
-    signal    param_last    :  std_logic;
-    signal    param_error   :  std_logic;
-    signal    param_done    :  std_logic;
-    signal    param_shift   :  std_logic_vector          (CODE_WIDTH-1 downto 0);
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    signal    value_code    :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    value_valid   :  std_logic;
-    signal    value_last    :  std_logic;
-    signal    value_error   :  std_logic;
-    signal    value_ready   :  std_logic;
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    signal    encode_addr   :  std_logic_vector          ( ADDR_BITS-1 downto 0);
-    signal    encode_start  :  std_logic;
-    signal    encode_busy   :  std_logic;
-    signal    encode_size   :  std_logic_vector          ( SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
@@ -157,6 +134,7 @@ begin
             CODE_WIDTH      => CODE_WIDTH      , --
             ADDR_BITS       => ADDR_BITS       , --
             SIZE_BITS       => SIZE_BITS       , -- 
+            SIZE_MAX        => SIZE_MAX        , -- 
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN        --
         )                                        -- 

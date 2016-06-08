@@ -39,9 +39,11 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
     read_busy    = registory.fetch(:read_busy  , "open")
     read_valid   = registory.fetch(:read_valid , "'1'" )
     read_ready   = registory.fetch(:read_ready , "open")
+    memory_size  = registory.fetch(:size       , 2**addr_type.width)
     value_bits   = data_type.width
     value_sign   = data_type.sign
     addr_bits    = addr_type.width
+    size_bits    = 32
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
       vhdl_lines = string_to_lines(
@@ -52,6 +54,8 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
                   MATCH_PHASE         => #{sprintf("%-28s", registory[:match_phase])} , --
                   ADDR_BITS           => #{sprintf("%-28s", addr_bits              )} , --
+                  SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
+                  SIZE_MAX            => #{sprintf("%-28s", memory_size            )} , --
                   VALUE_BITS          => #{sprintf("%-28s", value_bits             )} , --
                   VALUE_SIGN          => #{sprintf("%-28s", value_sign             )}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
@@ -91,6 +95,8 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
               generic map (              #{sprintf("%-28s", ""                     )}   -- 
                   CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
                   ADDR_BITS           => #{sprintf("%-28s", addr_bits              )} , --
+                  SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
+                  SIZE_MAX            => #{sprintf("%-28s", memory_size            )} , --
                   VALUE_BITS          => #{sprintf("%-28s", value_bits             )} , --
                   VALUE_SIGN          => #{sprintf("%-28s", value_sign             )}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
