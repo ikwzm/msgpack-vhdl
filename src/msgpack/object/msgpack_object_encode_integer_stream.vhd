@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_integer_stream.vhd
 --!     @brief   MessagePack Object encode to integer stream
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -67,6 +67,7 @@ entity  MsgPack_Object_Encode_Integer_Stream is
     -------------------------------------------------------------------------------
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
+        I_SIZE          : out std_logic_vector( SIZE_BITS-1 downto 0);
         I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
         I_VALID         : in  std_logic;
         I_READY         : out std_logic;
@@ -255,4 +256,5 @@ begin
     BUSY    <= '1' when (curr_state = RUN_STATE    or queue_busy = '1') else '0';
     I_START <= '1' when (curr_state = START_STATE and curr_count >  0 ) else '0';
     I_BUSY  <= '1' when (curr_state = RUN_STATE) else '0';
+    I_SIZE  <= std_logic_vector(curr_count);
 end RTL;

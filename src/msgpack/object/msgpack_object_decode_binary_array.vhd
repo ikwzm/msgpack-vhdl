@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_decode_binary_array.vhd
 --!     @brief   MessagePack Object Decode to Binary/String Array
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,6 +46,7 @@ entity  MsgPack_Object_Decode_Binary_Array is
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -71,6 +72,7 @@ entity  MsgPack_Object_Decode_Binary_Array is
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
+        O_SIZE          : out std_logic_vector(SIZE_BITS  -1 downto 0);
         O_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
         O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
         O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
@@ -124,6 +126,7 @@ architecture RTL of MsgPack_Object_Decode_Binary_Array is
     signal    intake_ready      :  std_logic;
     signal    intake_strb       :  std_logic_vector(INTAKE_BYTES-1 downto 0);
     signal    intake_data       :  std_logic_vector(INTAKE_BITS -1 downto 0);
+    signal    intake_size       :  std_logic_vector(SIZE_BITS   -1 downto 0);
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -135,6 +138,7 @@ begin
     CORE: MsgPack_Object_Decode_Binary_Core        -- 
         generic map (                              -- 
             CODE_WIDTH      => CODE_WIDTH        , --
+            SIZE_BITS       => SIZE_BITS         , --
             DECODE_BINARY   => DECODE_BINARY     , --
             DECODE_STRING   => DECODE_STRING       --
         )                                          -- 
@@ -151,7 +155,7 @@ begin
             O_ENABLE        => intake_enable     , -- Out :
             O_START         => intake_start      , -- Out :
             O_BUSY          => intake_busy       , -- Out :
-            O_SIZE          => open              , -- Out :
+            O_SIZE          => intake_size       , -- Out :
             O_DATA          => intake_data       , -- Out :
             O_STRB          => intake_strb       , -- Out :
             O_LAST          => intake_last       , -- Out :
@@ -162,13 +166,11 @@ begin
     --
     -------------------------------------------------------------------------------
     OUTLET_BYTES_1: if (OUTLET_BYTES = 1) generate
-        O_START       <= intake_start;
         outlet_start  <= '0';
         outlet_offset <= (others => '0');
         outlet_size   <= 1;
     end generate;
     OUTLET_BYTES_2: if (OUTLET_BYTES > 1) generate
-        O_START       <= intake_start;
         outlet_start  <= intake_start;
         ---------------------------------------------------------------------------
         -- outlet_offset
@@ -293,6 +295,11 @@ begin
             O_RDY           => O_READY            , -- In  :
             O_SHIFT         => "0"                  -- In  :
     );                                              --
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    O_START <= intake_start;                        -- 
+    O_SIZE  <= intake_size;                         -- 
     O_VALID <= outlet_valid;                        --
     O_STRB  <= outlet_strb;                         --
     O_ADDR  <= curr_addr;                           --

@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_binary_array.vhd
 --!     @brief   MessagePack Object Encode to Binary/String Array
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,7 +46,7 @@ entity  MsgPack_Object_Encode_Binary_Array is
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 1;
         ADDR_BITS       :  positive := 1;
-        SIZE_BITS       :  positive := 1;
+        SIZE_BITS       :  positive := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -77,6 +77,7 @@ entity  MsgPack_Object_Encode_Binary_Array is
     -------------------------------------------------------------------------------
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
+        I_SIZE          : out std_logic_vector(SIZE_BITS  -1 downto 0);
         I_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
         I_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
         I_LAST          : out std_logic;
@@ -230,6 +231,7 @@ begin
         -------------------------------------------------------------------------------
             I_START         => I_START            , -- Out :
             I_BUSY          => I_BUSY             , -- Out :
+            I_SIZE          => I_SIZE             , -- Out :
             I_DATA          => I_DATA             , -- In  :
             I_STRB          => intake_strb        , -- In  :
             I_LAST          => intake_last        , -- In  :

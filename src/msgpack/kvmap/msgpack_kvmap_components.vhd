@@ -2,7 +2,7 @@
 --!     @file    kvmap/msgpack_kvmap_components.vhd                              --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/09                                                      --
+--!     @date    2016/06/10                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -260,6 +260,7 @@ component MsgPack_KVMap_Store_Integer_Array
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -285,7 +286,7 @@ component MsgPack_KVMap_Store_Integer_Array
     -------------------------------------------------------------------------------
     -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
-        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_REQ       : in  std_logic_vector(MATCH_PHASE-1 downto 0);
         MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         MATCH_OK        : out std_logic;
         MATCH_NOT       : out std_logic;
@@ -295,6 +296,7 @@ component MsgPack_KVMap_Store_Integer_Array
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
@@ -314,6 +316,7 @@ component MsgPack_KVMap_Store_Integer_Stream
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -349,6 +352,7 @@ component MsgPack_KVMap_Store_Integer_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
         LAST            : out std_logic;
@@ -368,6 +372,7 @@ component MsgPack_KVMap_Store_Binary_Array
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DATA_BITS       :  positive := 8;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
@@ -401,6 +406,7 @@ component MsgPack_KVMap_Store_Binary_Array
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
         DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
@@ -420,6 +426,7 @@ component MsgPack_KVMap_Store_Binary_Stream
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DATA_BITS       :  positive := 8;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
@@ -453,6 +460,7 @@ component MsgPack_KVMap_Store_Binary_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : out std_logic;
@@ -683,6 +691,7 @@ component MsgPack_KVMap_Query_Integer_Array
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
@@ -742,6 +751,7 @@ component MsgPack_KVMap_Query_Integer_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
         READY           : out std_logic
@@ -759,7 +769,7 @@ component MsgPack_KVMap_Query_Binary_Array
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         DATA_BITS       :  positive := 1;
-        ADDR_BITS       :  positive := 1;
+        ADDR_BITS       :  positive := 32;
         SIZE_BITS       :  positive := 32;
         SIZE_MAX        :  positive := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
@@ -792,7 +802,7 @@ component MsgPack_KVMap_Query_Binary_Array
     -------------------------------------------------------------------------------
     -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
-        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_REQ       : in  std_logic_vector(MATCH_PHASE-1 downto 0);
         MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         MATCH_OK        : out std_logic;
         MATCH_NOT       : out std_logic;
@@ -802,6 +812,7 @@ component MsgPack_KVMap_Query_Binary_Array
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : out std_logic;
@@ -845,7 +856,7 @@ component MsgPack_KVMap_Query_Binary_Stream
     -------------------------------------------------------------------------------
     -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
-        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_REQ       : in  std_logic_vector(MATCH_PHASE-1 downto 0);
         MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         MATCH_OK        : out std_logic;
         MATCH_NOT       : out std_logic;
@@ -855,6 +866,7 @@ component MsgPack_KVMap_Query_Binary_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         DATA            : in  std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : in  std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : in  std_logic;

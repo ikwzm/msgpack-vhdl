@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_integer_stream.vhd
 --!     @brief   MessagePack Object Query Integer Stream Module :
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -78,6 +78,7 @@ entity  MsgPack_Object_Query_Integer_Stream is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
         READY           : out std_logic
@@ -141,6 +142,7 @@ begin
             BUSY            => param_busy      , -- Out :
             I_START         => START           , -- Out :
             I_BUSY          => BUSY            , -- Out :
+            I_SIZE          => SIZE            , -- Out :
             I_VALUE         => VALUE           , -- In  :
             I_VALID         => VALID           , -- In  :
             I_READY         => READY           , -- Out :

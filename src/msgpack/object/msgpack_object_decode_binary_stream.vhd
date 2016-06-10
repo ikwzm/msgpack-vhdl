@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_decode_binary_stream.vhd
 --!     @brief   MessagePack Object Decode to Binary/String Stream
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -45,6 +45,7 @@ entity  MsgPack_Object_Decode_Binary_Stream is
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -69,6 +70,7 @@ entity  MsgPack_Object_Decode_Binary_Stream is
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
+        O_SIZE          : out std_logic_vector(SIZE_BITS  -1 downto 0);
         O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
         O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
         O_LAST          : out std_logic;
@@ -136,6 +138,7 @@ begin
     CORE: MsgPack_Object_Decode_Binary_Core        -- 
         generic map (                              -- 
             CODE_WIDTH      => CODE_WIDTH        , --
+            SIZE_BITS       => SIZE_BITS         , --
             DECODE_BINARY   => DECODE_BINARY     , --
             DECODE_STRING   => DECODE_STRING       --
         )                                          -- 
@@ -152,7 +155,7 @@ begin
             O_ENABLE        => intake_enable     , -- Out :
             O_START         => O_START           , -- Out :
             O_BUSY          => intake_busy       , -- Out :
-            O_SIZE          => open              , -- Out :
+            O_SIZE          => O_SIZE            , -- Out :
             O_DATA          => intake_data       , -- Out :
             O_STRB          => intake_strb       , -- Out :
             O_LAST          => intake_last       , -- Out :

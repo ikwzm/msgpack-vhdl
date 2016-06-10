@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_query_integer_stream.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Query Integer Stream Module :
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -88,6 +88,7 @@ entity  MsgPack_KVMap_Query_Integer_Stream is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
         READY           : out std_logic
@@ -152,6 +153,7 @@ begin
             O_READY         => O_READY         , -- In  :
             START           => START           , -- Out :
             BUSY            => BUSY            , -- Out :
+            SIZE            => SIZE            , -- Out :
             VALUE           => VALUE           , -- In  :
             VALID           => VALID           , -- In  :
             READY           => READY             -- Out :

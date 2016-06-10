@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_query_binary_stream.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Query Binary/String Stream Module :
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -70,7 +70,7 @@ entity  MsgPack_KVMap_Query_Binary_Stream is
     -------------------------------------------------------------------------------
     -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
-        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_REQ       : in  std_logic_vector(MATCH_PHASE-1 downto 0);
         MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         MATCH_OK        : out std_logic;
         MATCH_NOT       : out std_logic;
@@ -80,6 +80,7 @@ entity  MsgPack_KVMap_Query_Binary_Stream is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         DATA            : in  std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : in  std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : in  std_logic;
@@ -141,6 +142,7 @@ begin
             O_READY         => O_READY         , -- In  :
             START           => START           , -- Out :
             BUSY            => BUSY            , -- Out :
+            SIZE            => SIZE            , -- Out :
             DATA            => DATA            , -- In  :
             STRB            => STRB            , -- In  :
             LAST            => LAST            , -- In  :

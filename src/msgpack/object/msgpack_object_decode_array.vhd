@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_decode_array.vhd
 --!     @brief   MessagePack Object decode to array
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -43,7 +43,8 @@ entity  MsgPack_Object_Decode_Array is
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        CODE_WIDTH      :  positive := 1
+        CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS
     );
     port (
     -------------------------------------------------------------------------------
@@ -65,13 +66,14 @@ entity  MsgPack_Object_Decode_Array is
     -- 
     -------------------------------------------------------------------------------
         ARRAY_START     : out std_logic;
-        ARRAY_SIZE      : out std_logic_vector(31 downto 0);
+        ARRAY_SIZE      : out std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
         ENTRY_START     : out std_logic;
         ENTRY_BUSY      : out std_logic;
         ENTRY_LAST      : out std_logic;
+        ENTRY_SIZE      : out std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -93,7 +95,7 @@ use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
 architecture RTL of MsgPack_Object_Decode_Array is
-    signal    array_count       :  std_logic_vector(31 downto 0);
+    signal    array_count       :  std_logic_vector(SIZE_BITS-1 downto 0);
     signal    array_count_zero  :  boolean;
     type      STATE_TYPE        is (IDLE_STATE, START_STATE, VALUE_STATE);
     signal    curr_state        :  STATE_TYPE;
@@ -112,6 +114,22 @@ architecture RTL of MsgPack_Object_Decode_Array is
             end if;
         end loop;
         return shift;
+    end function;
+    -------------------------------------------------------------------------------
+    -- resize
+    -------------------------------------------------------------------------------
+    function  resize(VEC: std_logic_vector; LEN: integer) return std_logic_vector is
+        variable r_vec :  std_logic_vector(       LEN-1 downto 0);
+        alias    i_vec :  std_logic_vector(VEC'length-1 downto 0) is VEC;
+    begin
+        for i in r_vec'range loop
+            if (i <= i_vec'high) then
+                r_vec(i) := i_vec(i);
+            else
+                r_vec(i) := '0';
+            end if;
+        end loop;
+        return r_vec;
     end function;
 begin 
     -------------------------------------------------------------------------------
@@ -259,9 +277,9 @@ begin
                 array_count_zero <= TRUE;
             else
                 if (curr_state = IDLE_STATE) then
-                    next_count := unsigned(I_CODE(0).data);
+                    next_count := unsigned(resize(I_CODE(0).data, SIZE_BITS));
                 else
-                    next_count := unsigned(array_count   );
+                    next_count := unsigned(array_count);
                 end if;
                 if (curr_state = START_STATE) or
                    (curr_state = VALUE_STATE and VALUE_DONE = '1') then
@@ -275,12 +293,13 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ARRAY_SIZE  <= I_CODE(0).data;
+    ARRAY_SIZE  <= resize(I_CODE(0).data, SIZE_BITS);
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     ENTRY_BUSY  <= '1' when (curr_state = VALUE_STATE) else '0';
     ENTRY_LAST  <= '1' when (array_count_zero) else '0';
+    ENTRY_SIZE  <= array_count;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

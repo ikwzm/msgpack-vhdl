@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_store_integer_array.vhd
 --!     @brief   MessagePack Object Store Integer Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -45,6 +45,7 @@ entity  MsgPack_Object_Store_Integer_Array is
     generic (
         CODE_WIDTH      :  positive := 1;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         CHECK_RANGE     :  boolean  := TRUE ;
@@ -71,6 +72,7 @@ entity  MsgPack_Object_Store_Integer_Array is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
@@ -135,6 +137,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             ADDR_BITS       => ADDR_BITS       , -- 
+            SIZE_BITS       => SIZE_BITS       , -- 
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
             CHECK_RANGE     => CHECK_RANGE     , --
@@ -153,6 +156,7 @@ begin
             I_SHIFT         => param_shift     , -- Out :
             O_START         => START           , -- Out :
             O_BUSY          => BUSY            , -- Out :
+            O_SIZE          => SIZE            , -- Out :
             O_ADDR          => ADDR            , -- Out :
             O_VALUE         => VALUE           , -- Out :
             O_SIGN          => SIGN            , -- Out :

@@ -2,7 +2,7 @@
 --!     @file    msgpack_rpc_server_kvmap_set_value.vhd
 --!     @brief   MessagePack-RPC Server Key Value Map Set Value Module :
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -228,7 +228,8 @@ begin
     -------------------------------------------------------------------------------
     DECODE_ARRAY: MsgPack_Object_Decode_Array            -- 
         generic map (                                    -- 
-            CODE_WIDTH      => I_PARAM_WIDTH             -- 
+            CODE_WIDTH      => I_PARAM_WIDTH           , --
+            SIZE_BITS       => 32                        -- 
         )                                                -- 
         port map (                                       -- 
             CLK             => CLK                     , -- In  :
@@ -245,6 +246,7 @@ begin
             ENTRY_START     => open                    , -- Out :
             ENTRY_BUSY      => open                    , -- Out :
             ENTRY_LAST      => open                    , -- Out :
+            ENTRY_SIZE      => open                    , -- Out :
             VALUE_START     => open                    , -- Out :
             VALUE_CODE      => set_kvmap_code          , -- Out :
             VALUE_LAST      => set_kvmap_last          , -- Out :

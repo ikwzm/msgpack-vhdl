@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_integer_array.vhd
 --!     @brief   MessagePack Object Queary Integer Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -79,6 +79,7 @@ entity  MsgPack_Object_Query_Integer_Array is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
@@ -209,6 +210,7 @@ begin
             O_READY         => value_ready     , -- In  :
             I_START         => START           , -- Out :
             I_BUSY          => BUSY            , -- Out :
+            I_SIZE          => SIZE            , -- Out :
             I_ADDR          => ADDR            , -- Out :
             I_VALUE         => VALUE           , -- In  :
             I_VALID         => VALID           , -- In  :

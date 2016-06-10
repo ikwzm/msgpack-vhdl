@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_store_integer_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Store Integer Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -47,6 +47,7 @@ entity  MsgPack_KVMap_Store_Integer_Array is
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -72,7 +73,7 @@ entity  MsgPack_KVMap_Store_Integer_Array is
     -------------------------------------------------------------------------------
     -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
-        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_REQ       : in  std_logic_vector(MATCH_PHASE-1 downto 0);
         MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         MATCH_OK        : out std_logic;
         MATCH_NOT       : out std_logic;
@@ -82,6 +83,7 @@ entity  MsgPack_KVMap_Store_Integer_Array is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
@@ -138,6 +140,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             ADDR_BITS       => ADDR_BITS       , -- 
+            SIZE_BITS       => SIZE_BITS       , -- 
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
             CHECK_RANGE     => CHECK_RANGE     , --
@@ -155,6 +158,7 @@ begin
             I_SHIFT         => I_SHIFT         , -- Out :
             START           => START           , -- Out :
             BUSY            => BUSY            , -- Out :
+            SIZE            => SIZE            , -- Out :
             ADDR            => ADDR            , -- Out :
             VALUE           => VALUE           , -- Out :
             SIGN            => SIGN            , -- Out :

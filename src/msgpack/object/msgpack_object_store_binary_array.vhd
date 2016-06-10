@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_store_binary_array.vhd
 --!     @brief   MessagePack Object Store Binary/String Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,6 +46,7 @@ entity  MsgPack_Object_Store_Binary_Array is
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -70,6 +71,7 @@ entity  MsgPack_Object_Store_Binary_Array is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
         DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
@@ -134,6 +136,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             ADDR_BITS       => ADDR_BITS       , -- 
+            SIZE_BITS       => SIZE_BITS       , --
             DATA_BITS       => DATA_BITS       , --
             DECODE_BINARY   => DECODE_BINARY   , --
             DECODE_STRING   => DECODE_STRING     --
@@ -151,6 +154,7 @@ begin
             I_SHIFT         => param_shift     , -- Out :
             O_START         => START           , -- Out :
             O_BUSY          => BUSY            , -- Out :
+            O_SIZE          => SIZE            , -- Out :
             O_ADDR          => ADDR            , -- Out :
             O_DATA          => DATA            , -- Out :
             O_STRB          => STRB            , -- Out :

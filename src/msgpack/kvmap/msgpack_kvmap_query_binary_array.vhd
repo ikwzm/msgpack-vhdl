@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_query_binary_array.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Query Binary/String Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -47,7 +47,7 @@ entity  MsgPack_KVMap_Query_Binary_Array is
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         DATA_BITS       :  positive := 1;
-        ADDR_BITS       :  positive := 1;
+        ADDR_BITS       :  positive := 32;
         SIZE_BITS       :  positive := 32;
         SIZE_MAX        :  positive := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
@@ -80,7 +80,7 @@ entity  MsgPack_KVMap_Query_Binary_Array is
     -------------------------------------------------------------------------------
     -- MessagePack Key Match Interface
     -------------------------------------------------------------------------------
-        MATCH_REQ       : in  std_logic_vector        (MATCH_PHASE-1 downto 0);
+        MATCH_REQ       : in  std_logic_vector(MATCH_PHASE-1 downto 0);
         MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         MATCH_OK        : out std_logic;
         MATCH_NOT       : out std_logic;
@@ -90,6 +90,7 @@ entity  MsgPack_KVMap_Query_Binary_Array is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : out std_logic;
@@ -159,6 +160,7 @@ begin
             O_READY         => O_READY         , -- In  :
             START           => START           , -- Out :
             BUSY            => BUSY            , -- Out :
+            SIZE            => SIZE            , -- Out :
             ADDR            => ADDR            , -- Out :
             STRB            => STRB            , -- Out :
             LAST            => LAST            , -- Out :

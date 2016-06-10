@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_binary_stream.vhd
 --!     @brief   MessagePack Object Encode to Binary/String Stream
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -77,6 +77,7 @@ entity  MsgPack_Object_Encode_Binary_Stream is
     -------------------------------------------------------------------------------
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
+        I_SIZE          : out std_logic_vector(SIZE_BITS  -1 downto 0);
         I_DATA          : in  std_logic_vector(DATA_BITS  -1 downto 0);
         I_STRB          : in  std_logic_vector(DATA_BITS/8-1 downto 0);
         I_LAST          : in  std_logic;
@@ -308,4 +309,5 @@ begin
     -------------------------------------------------------------------------------
     I_START       <= '1' when (curr_state = SIZE_STATE and outlet_ready = '1' and size_zero = '0') else '0';
     I_BUSY        <= '1' when (curr_state = DATA_STATE) else '0';
+    I_SIZE        <= std_logic_vector(curr_size);
 end RTL;

@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_decode_binary_core.vhd
 --!     @brief   MessagePack Object decode to binary/string core module
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -44,6 +44,7 @@ entity  MsgPack_Object_Decode_Binary_Core is
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -62,14 +63,14 @@ entity  MsgPack_Object_Decode_Binary_Core is
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Integer Value Output Interface
     -------------------------------------------------------------------------------
         O_ENABLE        : out std_logic;
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
-        O_SIZE          : out std_logic_vector(MsgPack_Object.CODE_DATA_BITS           -1 downto 0);
+        O_SIZE          : out std_logic_vector(SIZE_BITS-1 downto 0);
         O_DATA          : out std_logic_vector(MsgPack_Object.CODE_DATA_BITS*CODE_WIDTH-1 downto 0);
         O_STRB          : out std_logic_vector(MsgPack_Object.CODE_STRB_BITS*CODE_WIDTH-1 downto 0);
         O_LAST          : out std_logic;
@@ -125,6 +126,22 @@ architecture RTL of MsgPack_Object_Decode_Binary_Core is
             end if;
         end loop;
         return shift;
+    end function;
+    -------------------------------------------------------------------------------
+    -- resize
+    -------------------------------------------------------------------------------
+    function  resize(VEC: std_logic_vector; LEN: integer) return std_logic_vector is
+        variable r_vec :  std_logic_vector(       LEN-1 downto 0);
+        alias    i_vec :  std_logic_vector(VEC'length-1 downto 0) is VEC;
+    begin
+        for i in r_vec'range loop
+            if (i <= i_vec'high) then
+                r_vec(i) := i_vec(i);
+            else
+                r_vec(i) := '0';
+            end if;
+        end loop;
+        return r_vec;
     end function;
 begin
     -------------------------------------------------------------------------------
@@ -267,7 +284,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    O_SIZE   <= I_CODE(0).data;
+    O_SIZE   <= resize(I_CODE(0).data, SIZE_BITS);
     O_START  <= outlet_start;
     O_ENABLE <= outlet_enable;
     O_VALID  <= outlet_valid;

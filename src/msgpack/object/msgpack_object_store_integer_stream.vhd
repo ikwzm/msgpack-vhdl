@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_store_integer_stream.vhd
 --!     @brief   MessagePack Object Store Integer Stream Module :
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -44,6 +44,7 @@ entity  MsgPack_Object_Store_Integer_Stream is
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         CHECK_RANGE     :  boolean  := TRUE ;
@@ -70,6 +71,7 @@ entity  MsgPack_Object_Store_Integer_Stream is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
         LAST            : out std_logic;
@@ -94,6 +96,7 @@ begin
     DECODE: MsgPack_Object_Decode_Integer_Stream -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
+            SIZE_BITS       => SIZE_BITS       , --
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
             CHECK_RANGE     => CHECK_RANGE     , --
@@ -111,6 +114,7 @@ begin
             I_SHIFT         => I_SHIFT         , -- Out :
             O_START         => START           , -- Out :
             O_BUSY          => BUSY            , -- Out :
+            O_SIZE          => SIZE            , -- Out :
             O_VALUE         => VALUE           , -- Out :
             O_SIGN          => SIGN            , -- Out :
             O_LAST          => LAST            , -- Out :

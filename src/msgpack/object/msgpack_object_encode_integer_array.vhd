@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_integer_array.vhd
 --!     @brief   MessagePack Object Encode to Integer Array
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -69,6 +69,7 @@ entity  MsgPack_Object_Encode_Integer_Array is
     -------------------------------------------------------------------------------
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
+        I_SIZE          : out std_logic_vector( SIZE_BITS-1 downto 0);
         I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
         I_VALID         : in  std_logic;
@@ -129,6 +130,7 @@ begin
         ---------------------------------------------------------------------------
             I_START         => I_START             , -- Out :
             I_BUSY          => I_BUSY              , -- Out :
+            I_SIZE          => I_SIZE              , -- Out :
             I_VALUE         => I_VALUE             , -- In  :
             I_VALID         => I_VALID             , -- In  :
             I_READY         => intake_ready        , -- Out :

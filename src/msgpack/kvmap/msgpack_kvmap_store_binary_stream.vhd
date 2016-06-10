@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_store_binary_stream.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Store Binary Stream Module :
 --!     @version 0.2.0
---!     @date    2016/6/8
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,6 +46,7 @@ entity  MsgPack_KVMap_Store_Binary_Stream is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DATA_BITS       :  positive := 8;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
@@ -79,6 +80,7 @@ entity  MsgPack_KVMap_Store_Binary_Stream is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : out std_logic;
@@ -124,6 +126,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             DATA_BITS       => DATA_BITS       , --
+            SIZE_BITS       => SIZE_BITS       , --
             DECODE_BINARY   => DECODE_BINARY   , --
             DECODE_STRING   => DECODE_STRING     -- 
         )                                        -- 
@@ -139,6 +142,7 @@ begin
             I_SHIFT         => I_SHIFT         , -- Out :
             START           => START           , -- Out :
             BUSY            => BUSY            , -- Out :
+            SIZE            => SIZE            , -- Out :
             DATA            => DATA            , -- Out :
             STRB            => STRB            , -- Out :
             LAST            => LAST            , -- Out :

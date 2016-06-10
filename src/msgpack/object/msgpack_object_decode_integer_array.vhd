@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_decode_integer_array.vhd
 --!     @brief   MessagePack Object decode to integer array
 --!     @version 0.2.0
---!     @date    2016/5/18
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -45,6 +45,7 @@ entity  MsgPack_Object_Decode_Integer_Array is
     generic (
         CODE_WIDTH      :  positive := 1;
         ADDR_BITS       :  positive := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -73,8 +74,9 @@ entity  MsgPack_Object_Decode_Integer_Array is
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
-        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_SIZE          : out std_logic_vector( SIZE_BITS-1 downto 0);
         O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
         O_VALID         : out std_logic;
@@ -103,7 +105,8 @@ begin
         -- Generic Parameters
         ---------------------------------------------------------------------------
         generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH          , -- 
+            CODE_WIDTH      => CODE_WIDTH          , --
+            SIZE_BITS       => SIZE_BITS           , -- 
             VALUE_BITS      => VALUE_BITS          , -- 
             VALUE_SIGN      => VALUE_SIGN          , -- 
             QUEUE_SIZE      => QUEUE_SIZE          , -- 
@@ -131,6 +134,7 @@ begin
         ---------------------------------------------------------------------------
             O_START         => start               , -- Out :
             O_BUSY          => O_BUSY              , -- Out :
+            O_SIZE          => O_SIZE              , -- Out :
             O_VALUE         => O_VALUE             , -- Out :
             O_SIGN          => O_SIGN              , -- Out :
             O_LAST          => O_LAST              , -- Out :

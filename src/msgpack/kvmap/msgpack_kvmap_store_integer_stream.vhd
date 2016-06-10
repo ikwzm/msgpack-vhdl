@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_store_integer_stream.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Store Integer Stream Module :
 --!     @version 0.2.0
---!     @date    2016/6/6
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,6 +46,7 @@ entity  MsgPack_KVMap_Store_Integer_Stream is
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -81,6 +82,7 @@ entity  MsgPack_KVMap_Store_Integer_Stream is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
         LAST            : out std_logic;
@@ -125,6 +127,7 @@ begin
     STORE: MsgPack_Object_Store_Integer_Stream   -- 
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
+            SIZE_BITS       => SIZE_BITS       , --
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN      , --
             CHECK_RANGE     => CHECK_RANGE     , --
@@ -142,6 +145,7 @@ begin
             I_SHIFT         => I_SHIFT         , -- Out :
             START           => START           , -- Out :
             BUSY            => BUSY            , -- Out :
+            SIZE            => SIZE            , -- Out :
             VALUE           => VALUE           , -- Out :
             SIGN            => SIGN            , -- Out :
             LAST            => LAST            , -- Out :

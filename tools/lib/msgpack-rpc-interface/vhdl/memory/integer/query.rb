@@ -39,6 +39,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
     end
     read_start   = registory.fetch(:read_start , "open")
     read_busy    = registory.fetch(:read_busy  , "open")
+    read_size    = registory.fetch(:read_size  , "open")
     read_valid   = registory.fetch(:read_valid , "'1'" )
     read_ready   = registory.fetch(:read_ready , "open")
     memory_size  = registory.fetch(:size       , 2**addr_type.width)
@@ -84,6 +85,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   START               => #{sprintf("%-28s", read_start             )} , -- Out :
                   BUSY                => #{sprintf("%-28s", read_busy              )} , -- Out :
                   ADDR                => #{sprintf("%-28s", read_addr              )} , -- Out :
+                  SIZE                => #{sprintf("%-28s", read_size              )} , -- Out :
                   VALUE               => #{sprintf("%-28s", read_data              )} , -- In  :
                   VALID               => #{sprintf("%-28s", read_valid             )} , -- In  :
                   READY               => #{sprintf("%-28s", read_ready             )}   -- Out :
@@ -120,6 +122,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   START               => #{sprintf("%-28s", read_start             )} , -- Out :
                   BUSY                => #{sprintf("%-28s", read_busy              )} , -- Out :
                   ADDR                => #{sprintf("%-28s", read_addr              )} , -- Out :
+                  SIZE                => #{sprintf("%-28s", read_size              )} , -- Out :
                   VALUE               => #{sprintf("%-28s", read_data              )} , -- In  :
                   VALID               => #{sprintf("%-28s", read_valid             )} , -- In  :
                   READY               => #{sprintf("%-28s", read_ready             )}   -- Out :

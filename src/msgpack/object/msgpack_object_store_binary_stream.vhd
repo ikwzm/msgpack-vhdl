@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_store_binary_stream.vhd
 --!     @brief   MessagePack Object Store Binary/String Stream Module :
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/10
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -45,6 +45,7 @@ entity  MsgPack_Object_Store_Binary_Stream is
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -69,6 +70,7 @@ entity  MsgPack_Object_Store_Binary_Stream is
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : out std_logic;
@@ -94,6 +96,7 @@ begin
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
             DATA_BITS       => DATA_BITS       , --
+            SIZE_BITS       => SIZE_BITS       , --
             DECODE_BINARY   => DECODE_BINARY   , -- 
             DECODE_STRING   => DECODE_STRING     --
         )                                        -- 
@@ -109,6 +112,7 @@ begin
             I_SHIFT         => I_SHIFT         , -- Out :
             O_START         => START           , -- Out :
             O_BUSY          => BUSY            , -- Out :
+            O_SIZE          => SIZE            , -- Out :
             O_DATA          => DATA            , -- Out :
             O_STRB          => STRB            , -- Out :
             O_LAST          => LAST            , -- Out :

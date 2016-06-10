@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/09                                                      --
+--!     @date    2016/06/10                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -239,7 +239,8 @@ component MsgPack_Object_Decode_Array
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        CODE_WIDTH      :  positive := 1
+        CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS
     );
     port (
     -------------------------------------------------------------------------------
@@ -261,13 +262,14 @@ component MsgPack_Object_Decode_Array
     -- 
     -------------------------------------------------------------------------------
         ARRAY_START     : out std_logic;
-        ARRAY_SIZE      : out std_logic_vector(31 downto 0);
+        ARRAY_SIZE      : out std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
         ENTRY_START     : out std_logic;
         ENTRY_BUSY      : out std_logic;
         ENTRY_LAST      : out std_logic;
+        ENTRY_SIZE      : out std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -289,6 +291,7 @@ component MsgPack_Object_Decode_Binary_Core
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -307,14 +310,14 @@ component MsgPack_Object_Decode_Binary_Core
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
     -- Integer Value Output Interface
     -------------------------------------------------------------------------------
         O_ENABLE        : out std_logic;
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
-        O_SIZE          : out std_logic_vector(MsgPack_Object.CODE_DATA_BITS           -1 downto 0);
+        O_SIZE          : out std_logic_vector(SIZE_BITS-1 downto 0);
         O_DATA          : out std_logic_vector(MsgPack_Object.CODE_DATA_BITS*CODE_WIDTH-1 downto 0);
         O_STRB          : out std_logic_vector(MsgPack_Object.CODE_STRB_BITS*CODE_WIDTH-1 downto 0);
         O_LAST          : out std_logic;
@@ -333,6 +336,7 @@ component MsgPack_Object_Decode_Binary_Array
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -358,6 +362,7 @@ component MsgPack_Object_Decode_Binary_Array
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
+        O_SIZE          : out std_logic_vector(SIZE_BITS  -1 downto 0);
         O_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
         O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
         O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
@@ -376,6 +381,7 @@ component MsgPack_Object_Decode_Binary_Stream
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -400,6 +406,7 @@ component MsgPack_Object_Decode_Binary_Stream
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
+        O_SIZE          : out std_logic_vector(SIZE_BITS  -1 downto 0);
         O_DATA          : out std_logic_vector(DATA_BITS  -1 downto 0);
         O_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
         O_LAST          : out std_logic;
@@ -513,6 +520,7 @@ component MsgPack_Object_Decode_Integer_Array
     generic (
         CODE_WIDTH      :  positive := 1;
         ADDR_BITS       :  positive := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -541,8 +549,9 @@ component MsgPack_Object_Decode_Integer_Array
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
-        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
+        O_SIZE          : out std_logic_vector( SIZE_BITS-1 downto 0);
         O_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
+        O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
         O_VALID         : out std_logic;
@@ -558,6 +567,7 @@ component MsgPack_Object_Decode_Integer_Stream
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -585,6 +595,7 @@ component MsgPack_Object_Decode_Integer_Stream
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
         O_BUSY          : out std_logic;
+        O_SIZE          : out std_logic_vector( SIZE_BITS-1 downto 0);
         O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
@@ -693,7 +704,7 @@ component MsgPack_Object_Encode_Binary_Array
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 1;
         ADDR_BITS       :  positive := 1;
-        SIZE_BITS       :  positive := 1;
+        SIZE_BITS       :  positive := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -724,6 +735,7 @@ component MsgPack_Object_Encode_Binary_Array
     -------------------------------------------------------------------------------
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
+        I_SIZE          : out std_logic_vector(SIZE_BITS  -1 downto 0);
         I_ADDR          : out std_logic_vector(ADDR_BITS  -1 downto 0);
         I_STRB          : out std_logic_vector(DATA_BITS/8-1 downto 0);
         I_LAST          : out std_logic;
@@ -774,6 +786,7 @@ component MsgPack_Object_Encode_Binary_Stream
     -------------------------------------------------------------------------------
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
+        I_SIZE          : out std_logic_vector(SIZE_BITS  -1 downto 0);
         I_DATA          : in  std_logic_vector(DATA_BITS  -1 downto 0);
         I_STRB          : in  std_logic_vector(DATA_BITS/8-1 downto 0);
         I_LAST          : in  std_logic;
@@ -856,6 +869,7 @@ component MsgPack_Object_Encode_Integer_Array
     -------------------------------------------------------------------------------
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
+        I_SIZE          : out std_logic_vector( SIZE_BITS-1 downto 0);
         I_ADDR          : out std_logic_vector( ADDR_BITS-1 downto 0);
         I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
         I_VALID         : in  std_logic;
@@ -902,6 +916,7 @@ component MsgPack_Object_Encode_Integer_Stream
     -------------------------------------------------------------------------------
         I_START         : out std_logic;
         I_BUSY          : out std_logic;
+        I_SIZE          : out std_logic_vector( SIZE_BITS-1 downto 0);
         I_VALUE         : in  std_logic_vector(VALUE_BITS-1 downto 0);
         I_VALID         : in  std_logic;
         I_READY         : out std_logic;
@@ -1105,6 +1120,7 @@ component MsgPack_Object_Store_Integer_Array
     generic (
         CODE_WIDTH      :  positive := 1;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         CHECK_RANGE     :  boolean  := TRUE ;
@@ -1131,6 +1147,7 @@ component MsgPack_Object_Store_Integer_Array
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
@@ -1148,6 +1165,7 @@ component MsgPack_Object_Store_Integer_Stream
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         CHECK_RANGE     :  boolean  := TRUE ;
@@ -1174,6 +1192,7 @@ component MsgPack_Object_Store_Integer_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         VALUE           : out std_logic_vector(VALUE_BITS-1 downto 0);
         SIGN            : out std_logic;
         LAST            : out std_logic;
@@ -1192,6 +1211,7 @@ component MsgPack_Object_Store_Binary_Array
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
         ADDR_BITS       :  integer  := 8;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -1216,6 +1236,7 @@ component MsgPack_Object_Store_Binary_Array
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
         DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
@@ -1234,6 +1255,7 @@ component MsgPack_Object_Store_Binary_Stream
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 4;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         DECODE_BINARY   :  boolean  := TRUE;
         DECODE_STRING   :  boolean  := FALSE
     );
@@ -1258,6 +1280,7 @@ component MsgPack_Object_Store_Binary_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         DATA            : out std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : out std_logic;
@@ -1389,6 +1412,7 @@ component MsgPack_Object_Query_Integer_Array
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         ADDR            : out std_logic_vector( ADDR_BITS-1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
@@ -1438,6 +1462,7 @@ component MsgPack_Object_Query_Integer_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
         READY           : out std_logic
@@ -1488,6 +1513,7 @@ component MsgPack_Object_Query_Binary_Array
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         ADDR            : out std_logic_vector(ADDR_BITS  -1 downto 0);
         STRB            : out std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : out std_logic;
@@ -1531,6 +1557,7 @@ component MsgPack_Object_Query_Binary_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
+        SIZE            : out std_logic_vector(SIZE_BITS  -1 downto 0);
         DATA            : in  std_logic_vector(DATA_BITS  -1 downto 0);
         STRB            : in  std_logic_vector(DATA_BITS/8-1 downto 0);
         LAST            : in  std_logic;
