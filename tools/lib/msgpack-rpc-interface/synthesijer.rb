@@ -10,6 +10,8 @@ module MsgPack_RPC_Interface::Synthesijer
     end
     class  Interface::Memory         < MsgPack_RPC_Interface::Standard::Variable::Interface::Memory
     end
+    class  Interface::Stream         < MsgPack_RPC_Interface::Standard::Variable::Interface::Stream
+    end
   end
   module Procedure
     module Interface

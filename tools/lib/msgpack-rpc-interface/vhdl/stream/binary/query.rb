@@ -1,65 +1,39 @@
-module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
+module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
   extend MsgPack_RPC_Interface::VHDL::Util
 
   def generate_decl(indent, name, data_type, kvmap, registory)
-    addr_type  = registory[:addr_type]
-    vhdl_lines = Array.new
-    if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-      vhdl_lines.concat(string_to_lines(indent, <<"        EOT"
-        signal    proc_1_data      :  std_logic_vector(#{data_type.width-1} downto 0);
-        EOT
-      ))
-    end
-    if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-      vhdl_lines.concat(string_to_lines(indent, <<"        EOT"
-        signal    proc_1_addr      :  std_logic_vector(#{addr_type.width-1} downto 0);
-        EOT
-      ))
-    end
-    return vhdl_lines
+    return []
   end
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
-    addr_type  = registory[:addr_type]
-    if data_type.generate_vhdl_type.match(/^std_logic_vector/) and
-       addr_type.generate_vhdl_type.match(/^std_logic_vector/) then
-      instance_name = registory.fetch(:instance_name, "PROC_QUERY_" + name.upcase)
-    else
-      instance_name = "PROC_1"
-    end
-    if data_type.generate_vhdl_type.match(/^std_logic_vector/) then
-      read_data  = registory[:read_data]
-    else
-      read_data  = "proc_1_data"
-    end
-    if addr_type.generate_vhdl_type.match(/^std_logic_vector/) then
-      read_addr  = registory[:read_addr]
-    else
-      read_addr  = "proc_1_addr"
-    end
-    read_start   = registory.fetch(:read_start , "open")
-    read_busy    = registory.fetch(:read_busy  , "open")
-    read_valid   = registory.fetch(:read_valid , "'1'" )
-    read_ready   = registory.fetch(:read_ready , "open")
-    memory_size  = registory.fetch(:size       , 2**addr_type.width)
-    value_bits   = data_type.width
-    value_sign   = data_type.sign
-    addr_bits    = addr_type.width
-    size_bits    = 32
+    class_name    = self.name.to_s.split("::")[-2]
+    encode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
+    encode_string = (class_name == "String") ? "TRUE" : "FALSE"
+    instance_name = registory.fetch(:instance_name, "PROC_QUERY_" + name.upcase)
+    read_data     = registory[:read_data]
+    read_strb     = registory.fetch(:read_strb  , '"' + Array.new(registory[:width],1).join + '"')
+    read_last     = registory.fetch(:read_last  , "'1'" )
+    read_start    = registory.fetch(:read_start , "open")
+    read_busy     = registory.fetch(:read_busy  , "open")
+    read_valid    = registory.fetch(:read_valid , "'1'" )
+    read_ready    = registory.fetch(:read_ready , "open")
+    max_size      = registory[:max_size]
+    data_bits     = registory[:width]*8
+    size_bits     = 32
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
       vhdl_lines = string_to_lines(
         indent, <<"        EOT"
-          #{instance_name} : MsgPack_KVMap_Query_Integer_Array   -- 
+          #{instance_name} : MsgPack_KVMap_Query_Binary_Stream   -- 
               generic map (              #{sprintf("%-28s", ""                     )}   -- 
                   KEY                 => #{sprintf("%-28s", key_string             )} , --
-                  CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
                   MATCH_PHASE         => #{sprintf("%-28s", registory[:match_phase])} , --
-                  ADDR_BITS           => #{sprintf("%-28s", addr_bits              )} , --
+                  CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
+                  DATA_BITS           => #{sprintf("%-28s", data_bits              )} , --
                   SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
-                  SIZE_MAX            => #{sprintf("%-28s", memory_size            )} , --
-                  VALUE_BITS          => #{sprintf("%-28s", value_bits             )} , --
-                  VALUE_SIGN          => #{sprintf("%-28s", value_sign             )}   --
+                  SIZE_MAX            => #{sprintf("%-28s", max_size            )} , --
+                  ENCODE_BINARY       => #{sprintf("%-28s", encode_binary          )} , --
+                  ENCODE_STRING       => #{sprintf("%-28s", encode_string          )}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
               port map (                 #{sprintf("%-28s", ""                     )}   -- 
                   CLK                 => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
@@ -83,24 +57,25 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   MATCH_SHIFT         => #{sprintf("%-28s", registory[:match_shift])} , -- Out :
                   START               => #{sprintf("%-28s", read_start             )} , -- Out :
                   BUSY                => #{sprintf("%-28s", read_busy              )} , -- Out :
-                  ADDR                => #{sprintf("%-28s", read_addr              )} , -- Out :
-                  VALUE               => #{sprintf("%-28s", read_data              )} , -- In  :
+                  DATA                => #{sprintf("%-28s", read_data              )} , -- In  :
+                  STRB                => #{sprintf("%-28s", read_strb              )} , -- In  :
+                  LAST                => #{sprintf("%-28s", read_last              )} , -- In  :
                   VALID               => #{sprintf("%-28s", read_valid             )} , -- In  :
                   READY               => #{sprintf("%-28s", read_ready             )}   -- Out :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
     else
-      vhdl_lines  = string_to_lines(
+      vhdl_lines = string_to_lines(
         indent, <<"        EOT"
-          #{instance_name} : MsgPack_Object_Query_Integer_Array   -- 
+          #{instance_name} : MsgPack_Object_Query_Binary_Stream   -- 
               generic map (              #{sprintf("%-28s", ""                     )}   -- 
                   CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
-                  ADDR_BITS           => #{sprintf("%-28s", addr_bits              )} , --
+                  DATA_BITS           => #{sprintf("%-28s", data_bits              )} , --
                   SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
-                  SIZE_MAX            => #{sprintf("%-28s", memory_size            )} , --
-                  VALUE_BITS          => #{sprintf("%-28s", value_bits             )} , --
-                  VALUE_SIGN          => #{sprintf("%-28s", value_sign             )}   --
+                  SIZE_MAX            => #{sprintf("%-28s", max_size               )} , --
+                  ENCODE_BINARY       => #{sprintf("%-28s", encode_binary          )} , --
+                  ENCODE_STRING       => #{sprintf("%-28s", encode_string          )}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
               port map (                 #{sprintf("%-28s", ""                     )}   -- 
                   CLK                 => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
@@ -119,52 +94,27 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   O_READY             => #{sprintf("%-28s", registory[:value_ready])} , -- In  :
                   START               => #{sprintf("%-28s", read_start             )} , -- Out :
                   BUSY                => #{sprintf("%-28s", read_busy              )} , -- Out :
-                  ADDR                => #{sprintf("%-28s", read_addr              )} , -- Out :
-                  VALUE               => #{sprintf("%-28s", read_data              )} , -- In  :
+                  DATA                => #{sprintf("%-28s", read_data              )} , -- In  :
+                  STRB                => #{sprintf("%-28s", read_strb              )} , -- In  :
+                  LAST                => #{sprintf("%-28s", read_last              )} , -- In  :
                   VALID               => #{sprintf("%-28s", read_valid             )} , -- In  :
                   READY               => #{sprintf("%-28s", read_ready             )}   -- Out :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
     end
-    if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-      vhdl_lines.concat(string_to_lines(indent, <<"        EOT"
-        proc_1_data <= std_logic_vector(#{registory[:read_data]});
-        EOT
-      ))
-    end
-    if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-      converted_addr = addr_type.generate_vhdl_convert("proc_1_addr")
-      vhdl_lines.concat(string_to_lines(indent, <<"        EOT"
-        #{registory[:read_addr]} <= #{converted_addr};
-        EOT
-      ))
-    end
     return vhdl_lines
   end
-
+  
   def generate_body(indent, name, data_type, kvmap, registory)
-    addr_type = registory[:addr_type]
-    if data_type.generate_vhdl_type.match(/^std_logic_vector/) and
-       addr_type.generate_vhdl_type.match(/^std_logic_vector/) then
-      return generate_stmt(indent, name, data_type, kvmap, registory)
-    else
-      block_name = registory.fetch(:instance_name, "PROC_QUERY_" + name.upcase)
-      decl_lines = generate_decl(indent + "    ", name, data_type, kvmap, registory)
-      stmt_lines = generate_stmt(indent + "    ", name, data_type, kvmap, registory)
-      return ["#{indent}#{block_name}: block"] + 
-             decl_lines + 
-             ["#{indent}begin"] +
-             stmt_lines +
-             ["#{indent}end block;"]
-    end
+    return generate_stmt(indent, name, data_type, kvmap, registory)
   end
-
+  
   def use_package_list(kvmap)
     if kvmap == true then
-      return ["MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Query_Integer_Array"]
+      return ["MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Query_Binary_Stream"]
     else
-      return ["MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Integer_Array"]
+      return ["MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Binary_Stream"]
     end
   end
 

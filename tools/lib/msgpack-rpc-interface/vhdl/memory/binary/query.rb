@@ -1,12 +1,13 @@
 module MsgPack_RPC_Interface::VHDL::Memory::Binary::Query
   extend MsgPack_RPC_Interface::VHDL::Util
 
-  def generate_decl(indent, name, data_type, addr_type, kvmap, registory)
+  def generate_decl(indent, name, type, kvmap, registory)
     return []
   end
 
-  def generate_stmt(indent, name, data_type, addr_type, kvmap, registory)
+  def generate_stmt(indent, name, type, kvmap, registory)
     class_name    = self.name.to_s.split("::")[-2]
+    addr_type     = registory[:addr_type]
     encode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
     encode_string = (class_name == "String") ? "TRUE" : "FALSE"
     instance_name = registory.fetch(:instance_name, "PROC_QUERY_" + name.upcase)
@@ -106,8 +107,8 @@ module MsgPack_RPC_Interface::VHDL::Memory::Binary::Query
     return vhdl_lines
   end
   
-  def generate_body(indent, name, data_type, addr_type, kvmap, registory)
-    return generate_stmt(indent, name, data_type, addr_type, kvmap, registory)
+  def generate_body(indent, name, type, kvmap, registory)
+    return generate_stmt(indent, name, type, kvmap, registory)
   end
   
   def use_package_list(kvmap)

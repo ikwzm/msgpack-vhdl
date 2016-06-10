@@ -17,6 +17,7 @@ module MsgPack_RPC_Interface::Standard
   class  Variable::Interface
     class Base
       attr_reader :name, :msg_class, :type, :read, :write, :kvmap, :full_name, :port_name, :blocks
+      attr_reader :generator, :registory
 
       def initialize(registory)
         @debug     = registory.fetch("debug", false)
@@ -29,52 +30,21 @@ module MsgPack_RPC_Interface::Standard
         @write     = registory.fetch("write"    , true)
         @kvmap     = registory.fetch("kvmap"    , true)
         @blocks    = []
+        @registory = Hash.new
       end
 
-      def to_s
-        return "#{self.class.name}: {name: #{@name}, full_name: #{@full_name}, class: #{@msg_class.to_s}, type: #{@type.to_s}, kvmap: #{kvmap}, read: #{@read}, write: #{@write}}"
-      end
-
-    end
-
-    class  Register < Base
-
-      attr_reader :generator, :port_rdata, :port_wdata, :port_we
-
-      def initialize(registory)
-        super(registory)
-        @port_rdata = @port_name + "_rdata"
-        @port_wdata = @port_name + "_wdata"
-        @port_we    = @port_name + "_we"
-        if registory.key?("port") then
-          port_regs = registory["port"]
-          @port_rdata = port_regs.fetch("rdata", @port_rdata)
-          @port_wdata = port_regs.fetch("wdata", @port_wdata)
-          @port_we    = port_regs.fetch("we"   , @port_we   )
-        end
-        @generator = MsgPack_RPC_Interface::VHDL::Register.const_get(@msg_class.class.to_s.split('::').last)
-        puts to_s if @debug
-      end
-      
       def generate_vhdl_body_store(indent, registory)
-        new_regs = registory.dup
-        new_regs[:write_value] = registory.fetch(:write_value, @port_wdata)
-        new_regs[:write_valid] = registory.fetch(:write_valid, @port_we   )
+        new_regs = @registory.dup.update(registory).delete_if{|key,val| val == nil}
         return @generator::Store.generate_body(indent, @name, @type, @kvmap, new_regs)
       end
 
       def generate_vhdl_body_query(indent, registory)
-        new_regs = registory.dup
-        new_regs[:read_value]  = registory.fetch(:read_value , @port_rdata)
+        new_regs = @registory.dup.update(registory).delete_if{|key,val| val == nil}
         return @generator::Query.generate_body(indent, @name, @type, @kvmap, new_regs)
       end
 
       def generate_vhdl_port_list(master)
-        new_regs = Hash.new
-        new_regs[:read_value ] = @port_rdata if @read  == true
-        new_regs[:write_value] = @port_wdata if @write == true
-        new_regs[:write_valid] = @port_we    if @write == true
-        return @generator.generate_port_list(master, @type, @kvmap, new_regs)
+        return Set.new(@generator.generate_port_list(master, @type, @kvmap, @registory)).to_a
       end
 
       def use_package_list
@@ -89,151 +59,142 @@ module MsgPack_RPC_Interface::Standard
       end
 
       def to_s
-        return super + " port_rdata: #{port_rdata}, port_wdata: #{port_wdata}, port_we: #{port_we}"
+        return "#{self.class.name}: {name: #{@name}, full_name: #{@full_name}, class: #{@msg_class.to_s}, type: #{@type.to_s}, kvmap: #{kvmap}, read: #{@read}, write: #{@write}}, regisotry: #{@registory}"
       end
+
     end
 
-    class  Signal   < Base
-
-      attr_reader :generator, :port_rdata, :port_wdata, :port_we
+    class  Register < Base
 
       def initialize(registory)
         super(registory)
         if    @read == true  and @write == true  then
-          @port_rdata = @port_name + "_rdata"
-          @port_wdata = @port_name + "_wdata"
-          @port_we    = @port_name + "_we"
+          @registory[:read_value ] = @port_name + "_rdata"
+          @registory[:write_value] = @port_name + "_wdata"
+          @registory[:write_valid] = @port_name + "_we"
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
+            @registory[:write_value] = port_regs.fetch("wdata", @registory[:write_value])
+            @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
+          end
         elsif @read == true  and @write == false then
-          @port_rdata = @port_name
-          @port_wdata = nil
-          @port_we    = nil
+          @registory[:read_value ] = @port_name
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:read_value ] = port_regs.fetch("data" , @registory[:read_value ])
+            @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
+          end
         elsif @read == false and @write == true  then
-          @port_rdata = nil
-          @port_wdata = @port_name
-          @port_we    = @port_name + "_we"
-        else
-          @port_rdata = nil
-          @port_wdata = nil
-          @port_we    = nil
-        end
-        if registory.key?("port") then
-          if @read  == true then
-            @port_rdata = registory["port"].fetch("rdata", @port_rdata)
-          end
-          if @write == true then
-            @port_wdata = registory["port"].fetch("wdata", @port_wdata)
-            @port_we    = registory["port"].fetch("we"   , @port_we   )
+          @registory[:write_value] = @port_name
+          @registory[:write_valid] = @port_name + "_we"
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:write_value] = port_regs.fetch("data" , @registory[:write_value])
+            @registory[:write_value] = port_regs.fetch("wdata", @registory[:write_value])
+            @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
           end
         end
-        @generator = MsgPack_RPC_Interface::VHDL::Signal.const_get(@msg_class.class.to_s.split('::').last)
+        @registory.delete_if{|key,val| val == nil}
+        @generator = MsgPack_RPC_Interface::VHDL::Register.const_get(@msg_class.class.to_s.split('::').last)
         puts to_s if @debug
       end
+      
+    end
 
-      def generate_vhdl_body_store(indent, registory)
-        new_regs = registory.dup
-        new_regs[:write_value] = registory.fetch(:write_value, @port_wdata)
-        return @generator::Store.generate_body(indent, @name, @type, @kvmap, new_regs)
-      end
+    class  Signal   < Base
 
-      def generate_vhdl_body_query(indent, registory)
-        new_regs = registory.dup
-        new_regs[:read_value]  = registory.fetch(:read_value , @port_rdata)
-        return @generator::Query.generate_body(indent, @name, @type, @kvmap, new_regs)
-      end
-
-      def generate_vhdl_port_list(master)
-        new_regs = Hash.new
-        new_regs[:read_value ] = @port_rdata if @read  == true
-        new_regs[:write_value] = @port_wdata if @write == true
-        return @generator.generate_port_list(master, @type, @kvmap, new_regs)
-      end
-
-      def use_package_list
-        use_list = Array.new
-        if @read then
-          use_list.concat(@generator::Query.use_package_list(@kvmap))
+      def initialize(registory)
+        super(registory)
+        if    @read == true  and @write == true  then
+          @registory[:read_value ] = @port_name + "_rdata"
+          @registory[:write_value] = @port_name + "_wdata"
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
+            @registory[:write_value] = port_regs.fetch("wdata", @registory[:write_value])
+          end
+        elsif @read == true  and @write == false then
+          @registory[:read_value ] = @port_name
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:read_value ] = port_regs.fetch("data" , @registory[:read_value ])
+            @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
+          end
+        elsif @read == false and @write == true  then
+          @registory[:write_value] = @port_name
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:write_value] = port_regs.fetch("data" , @registory[:write_value])
+            @registory[:write_value] = port_regs.fetch("wdata", @registory[:write_value])
+          end
         end
-        if @write then
-          use_list.concat(@generator::Store.use_package_list(@kvmap))
-        end
-        puts "=== #{use_list}"
-        return use_list
+        @registory.delete_if{|key,val| val == nil}
+        @generator = MsgPack_RPC_Interface::VHDL::Signal.const_get(@msg_class.class.to_s.split('::').last)
+        puts to_s if @debug
       end
 
     end
 
     class  Memory   < Base
 
-      attr_reader :generator, :port_rdata, :port_wdata, :port_we, :port_wstrb, :port_waddr, :port_raddr, :addr_type, :size, :width, :arbitor
+      attr_reader :arbitor
       
       def initialize(registory)
         super(registory)
         if  registory.key?("size") then
-          @size = registory["size"]
-          @addr_type = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => Math::log2(@size).ceil})))
+          @registory[:size     ] = registory["size"]
+          @registory[:addr_type] = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => Math::log2(@registory[:size]).ceil})))
         else
-          @addr_type = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => 32})))
-          @size      = 2**@addr_type.width
+          @registory[:addr_type] = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => 32})))
+          @registory[:size     ] = 2**(@registory[:addr_type].width)
         end
-        @width     = registory.fetch("width", 1)
+        @registory[:width] = registory.fetch("width", 1)
         if    @read == true  and @write == true  then
-          @port_raddr = @port_name + "_raddr"
-          @port_rdata = @port_name + "_rdata"
-          @port_waddr = @port_name + "_waddr"
-          @port_wdata = @port_name + "_wdata"
-          @port_we    = @port_name + "_we"
-          @port_wstrb = @port_name + "_strb"
+          @registory[:read_addr  ] = @port_name + "_raddr"
+          @registory[:read_data  ] = @port_name + "_rdata"
+          @registory[:write_addr ] = @port_name + "_waddr"
+          @registory[:write_data ] = @port_name + "_wdata"
+          @registory[:write_valid] = @port_name + "_we"
+          @registory[:write_strb ] = @port_name + "_strb"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @port_raddr = port_regs.fetch("raddr", @port_raddr)
-            @port_rdata = port_regs.fetch("rdata", @port_rdata)
-            @port_waddr = port_regs.fetch("waddr", @port_waddr)
-            @port_wdata = port_regs.fetch("wdata", @port_wdata)
-            @port_we    = port_regs.fetch("we"   , @port_we   )
-            @port_wstrb = port_regs.fetch("wstrb", @port_wstrb)
-            @port_raddr = port_regs.fetch("addr" , @port_raddr)
-            @port_waddr = port_regs.fetch("addr" , @port_waddr)
+            @registory[:read_addr  ] = port_regs.fetch("raddr", @registory[:read_addr  ])
+            @registory[:read_data  ] = port_regs.fetch("rdata", @registory[:read_data  ])
+            @registory[:write_addr ] = port_regs.fetch("waddr", @registory[:write_addr ])
+            @registory[:write_data ] = port_regs.fetch("wdata", @registory[:write_data ])
+            @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
+            @registory[:write_strb ] = port_regs.fetch("wstrb", @registory[:write_strb ])
+            @registory[:read_addr  ] = port_regs.fetch("addr" , @registory[:read_addr  ])
+            @registory[:write_addr ] = port_regs.fetch("addr" , @registory[:write_addr ])
           end
         elsif @read == true  and @write == false then
-          @port_raddr = @port_name + "_addr"
-          @port_rdata = @port_name + "_data"
-          @port_waddr = nil
-          @port_wdata = nil
-          @port_we    = nil
-          @port_wstrb = nil
+          @registory[:read_addr  ] = @port_name + "_addr"
+          @registory[:read_data  ] = @port_name + "_data"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @port_raddr = port_regs.fetch("addr", @port_raddr)
-            @port_rdata = port_regs.fetch("data", @port_rdata)
+            @registory[:read_addr  ] = port_regs.fetch("addr" , @registory[:read_addr ])
+            @registory[:read_data  ] = port_regs.fetch("data" , @registory[:read_data ])
           end
         elsif @read == false and @write == true  then
-          @port_raddr = nil
-          @port_rdata = nil
-          @port_waddr = @port_name + "_addr"
-          @port_wdata = @port_name + "_data"
-          @port_we    = @port_name + "_we"
-          @port_wstrb = @port_name + "_wstrb"
+          @registory[:write_addr ] = @port_name + "_addr"
+          @registory[:write_data ] = @port_name + "_data"
+          @registory[:write_valid] = @port_name + "_we"
+          @registory[:write_strb ] = @port_name + "_strb"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @port_waddr = port_regs.fetch("addr" , @port_waddr)
-            @port_wdata = port_regs.fetch("data" , @port_wdata)
-            @port_we    = port_regs.fetch("we"   , @port_we   )
-            @port_wstrb = port_regs.fetch("we"   , @port_wstrb)
+            @registory[:write_addr ] = port_regs.fetch("addr" , @registory[:write_addr ])
+            @registory[:write_data ] = port_regs.fetch("data" , @registory[:write_data ])
+            @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
+            @registory[:write_strb ] = port_regs.fetch("strb" , @registory[:write_strb ])
           end
-        else
-          @port_raddr = nil
-          @port_rdata = nil
-          @port_waddr = nil
-          @port_wdata = nil
-          @port_we    = nil
-          @port_wstrb = nil
         end 
         @generator = MsgPack_RPC_Interface::VHDL::Memory.const_get(@msg_class.class.to_s.split('::').last)
         if @port_raddr == @port_waddr then
           arb_regs = Hash.new
           arb_regs[:name       ] = @port_name
-          arb_regs[:addr       ] = @port_raddr
-          arb_regs[:addr_type  ] = @addr_type
+          arb_regs[:addr       ] = @registory[:read_addr]
+          arb_regs[:addr_type  ] = @registory[:addr_type]
           arb_regs[:write_addr ] = "proc_#{@port_name}_waddr"
           arb_regs[:write_ready] = "proc_#{@port_name}_wready"
           arb_regs[:write_start] = "proc_#{@port_name}_wstart"
@@ -244,67 +205,34 @@ module MsgPack_RPC_Interface::Standard
           arb_regs[:read_busy  ] = "proc_#{@port_name}_rbusy"
           @arbitor = Arbitor.new(arb_regs)
           @blocks << @arbitor
-        end        
+        end
+        @registory.delete_if{|key,val| val == nil}
       end
-      
+
       def generate_vhdl_body_store(indent, registory)
         new_regs = registory.dup
-        new_regs[:size       ] = @size
-        new_regs[:width      ] = @width
-        new_regs[:write_data ] = registory.fetch(:write_data, @port_wdata)
-        new_regs[:write_strb ] = registory.fetch(:write_strb, @port_wstrb)
-        new_regs[:write_valid] = registory.fetch(:write_ena , @port_we   )
-        if @port_raddr == @port_waddr then
+        if @arbitor != nil then
           new_regs[:write_addr ] = @arbitor.registory[:write_addr ]
           new_regs[:write_ready] = @arbitor.registory[:write_ready]
           new_regs[:write_start] = @arbitor.registory[:write_start]
           new_regs[:write_busy ] = @arbitor.registory[:write_busy ]
         else
-          new_regs[:write_addr ] = registory.fetch(:write_addr, @port_waddr)
           new_regs[:write_ready] = "'1'"
         end
-        return @generator::Store.generate_body(indent, @name, @type, @addr_type, @kvmap, new_regs)
+        return super(indent, new_regs)
       end
 
       def generate_vhdl_body_query(indent, registory)
         new_regs = registory.dup
-        new_regs[:size      ] = @size
-        new_regs[:width     ] = @width
-        new_regs[:read_data ] = registory.fetch(:read_data , @port_rdata)
-        if @port_raddr == @port_waddr then
-          new_regs[:read_addr ] = @arbitor.registory[:read_addr ]
-          new_regs[:read_valid] = @arbitor.registory[:read_valid]
-          new_regs[:read_start] = @arbitor.registory[:read_start]
-          new_regs[:read_busy ] = @arbitor.registory[:read_busy ]
+        if @arbitor != nil then
+          new_regs[:read_addr  ] = @arbitor.registory[:read_addr  ]
+          new_regs[:read_valid ] = @arbitor.registory[:read_valid ]
+          new_regs[:read_start ] = @arbitor.registory[:read_start ]
+          new_regs[:read_busy  ] = @arbitor.registory[:read_busy  ]
         else
-          new_regs[:read_addr ] = registory.fetch(:read_addr , @port_raddr)
-          new_regs[:read_valid] =  "'1'"
+          new_regs[:read_valid ] =  "'1'"
         end
-        return @generator::Query.generate_body(indent, @name, @type, @addr_type, @kvmap, new_regs)
-      end
-
-      def generate_vhdl_port_list(master)
-        registory  = Hash.new
-        registory[:size       ] = @size
-        registory[:width      ] = @width
-        registory[:write_addr ] = @port_waddr if @write == true
-        registory[:write_data ] = @port_wdata if @write == true
-        registory[:write_ena  ] = @port_we    if @write == true
-        registory[:write_strb ] = @port_wstrb if @write == true
-        registory[:read_addr  ] = @port_raddr if @read  == true
-        registory[:read_data  ] = @port_rdata if @read  == true
-        return Set.new(@generator.generate_port_list(master, @type, @addr_type, @kvmap, registory)).to_a
-      end
-
-      def use_package_list
-        use_list   = Array.new
-        if @read then
-          use_list.concat(@generator::Query.use_package_list(@kvmap))
-        end
-        if @write then
-          use_list.concat(@generator::Store.use_package_list(@kvmap))
-        end
-        return use_list
+        return super(indent, new_regs)
       end
 
       class Arbitor
@@ -327,6 +255,91 @@ module MsgPack_RPC_Interface::Standard
           new_regs[:clear] = registory[:clear]
           return MsgPack_RPC_Interface::VHDL::Memory::Arbitor.generate_stmt(indent, @name, new_regs)
         end
+      end
+
+    end
+
+    class  Stream   < Base
+
+      attr_reader :generator, :registory
+
+      def initialize(registory)
+        super(registory)
+        @registory = Hash.new
+        @registory[:max_size] = registory.fetch("max_size", 4096)
+        @registory[:width   ] = registory.fetch("width"   , 1   )
+        if    @read == true  and @write == true  then
+          @registory[:write_start] = nil
+          @registory[:write_busy ] = nil
+          @registory[:write_data ] = @port_name + "_wdata"
+          @registory[:write_strb ] = @port_name + "_wstrb"  
+          @registory[:write_last ] = @port_name + "_wlast"  
+          @registory[:write_valid] = @port_name + "_wvalid" 
+          @registory[:write_ready] = @port_name + "_wready" 
+          @registory[:read_start ] = nil
+          @registory[:read_busy  ] = nil
+          @registory[:read_data  ] = @port_name + "_rdata"
+          @registory[:read_strb  ] = @port_name + "_rstrb"  
+          @registory[:read_last  ] = @port_name + "_rlast"  
+          @registory[:read_valid ] = @port_name + "_rvalid" 
+          @registory[:read_ready ] = @port_name + "_rready" 
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:write_start] = port_regs.fetch("wstart", @registory[:write_start])
+            @registory[:write_busy ] = port_regs.fetch("wbusy" , @registory[:write_busy ])
+            @registory[:write_data ] = port_regs.fetch("wdata" , @registory[:write_data ])
+            @registory[:write_strb ] = port_regs.fetch("wstrb" , @registory[:write_strb ])
+            @registory[:write_last ] = port_regs.fetch("wlast" , @registory[:write_last ])
+            @registory[:write_valid] = port_regs.fetch("wvalid", @registory[:write_valid])
+            @registory[:write_ready] = port_regs.fetch("wready", @registory[:write_ready])
+            @registory[:read_start ] = port_regs.fetch("rstart", @registory[:read_start ])
+            @registory[:read_busy  ] = port_regs.fetch("rbusy" , @registory[:read_busy  ])
+            @registory[:read_data  ] = port_regs.fetch("rdata" , @registory[:read_data  ])
+            @registory[:read_strb  ] = port_regs.fetch("rstrb" , @registory[:read_strb  ])
+            @registory[:read_last  ] = port_regs.fetch("rlast" , @registory[:read_last  ])
+            @registory[:read_valid ] = port_regs.fetch("rvalid", @registory[:read_valid ])
+            @registory[:read_ready ] = port_regs.fetch("rready", @registory[:read_ready ])
+          end
+        elsif @read == true  and @write == false then
+          @registory[:read_start ] = nil
+          @registory[:read_busy  ] = nil
+          @registory[:read_data  ] = @port_name + "_data"
+          @registory[:read_strb  ] = @port_name + "_strb"  
+          @registory[:read_last  ] = @port_name + "_last"  
+          @registory[:read_valid ] = @port_name + "_valid" 
+          @registory[:read_ready ] = @port_name + "_ready" 
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:read_start ] = port_regs.fetch("start", @registory[:read_start ])
+            @registory[:read_busy  ] = port_regs.fetch("busy" , @registory[:read_busy  ])
+            @registory[:read_data  ] = port_regs.fetch("data" , @registory[:read_data  ])
+            @registory[:read_strb  ] = port_regs.fetch("strb" , @registory[:read_strb  ])
+            @registory[:read_last  ] = port_regs.fetch("last" , @registory[:read_last  ])
+            @registory[:read_valid ] = port_regs.fetch("valid", @registory[:read_valid ])
+            @registory[:read_ready ] = port_regs.fetch("ready", @registory[:read_ready ])
+          end
+        elsif @read == false and @write == true  then
+          @registory[:write_start] = nil
+          @registory[:write_busy ] = nil
+          @registory[:write_data ] = @port_name + "_data"
+          @registory[:write_strb ] = @port_name + "_strb"  
+          @registory[:write_last ] = @port_name + "_last"  
+          @registory[:write_valid] = @port_name + "_valid" 
+          @registory[:write_ready] = @port_name + "_ready" 
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @registory[:write_start] = port_regs.fetch("start", @registory[:write_start])
+            @registory[:write_busy ] = port_regs.fetch("busy" , @registory[:write_busy ])
+            @registory[:write_data ] = port_regs.fetch("data" , @registory[:write_data ])
+            @registory[:write_strb ] = port_regs.fetch("strb" , @registory[:write_strb ])
+            @registory[:write_last ] = port_regs.fetch("last" , @registory[:write_last ])
+            @registory[:write_valid] = port_regs.fetch("valid", @registory[:write_valid])
+            @registory[:write_ready] = port_regs.fetch("ready", @registory[:write_ready])
+          end
+        else
+        end
+        @registory.delete_if{|key,val| val == nil}
+        @generator = MsgPack_RPC_Interface::VHDL::Stream.const_get(@msg_class.class.to_s.split('::').last)
       end
 
     end

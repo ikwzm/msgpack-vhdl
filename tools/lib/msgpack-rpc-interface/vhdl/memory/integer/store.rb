@@ -1,7 +1,8 @@
 module MsgPack_RPC_Interface::VHDL::Memory::Integer::Store
   extend MsgPack_RPC_Interface::VHDL::Util
 
-  def generate_decl(indent, name, data_type, addr_type, kvmap, registory)
+  def generate_decl(indent, name, data_type, kvmap, registory)
+    addr_type  = registory[:addr_type]
     vhdl_lines = Array.new
     if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
       vhdl_lines.concat(string_to_lines(indent, <<"        EOT"
@@ -18,7 +19,8 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Store
     return vhdl_lines
   end
 
-  def generate_stmt(indent, name, data_type, addr_type, kvmap, registory)
+  def generate_stmt(indent, name, data_type, kvmap, registory)
+    addr_type  = registory[:addr_type]
     if data_type.generate_vhdl_type.match(/^std_logic_vector/) and
        addr_type.generate_vhdl_type.match(/^std_logic_vector/) then
       instance_name = registory.fetch(:instance_name, "PROC_STORE_" + name.upcase)
@@ -138,14 +140,15 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Store
     return vhdl_lines
   end
 
-  def generate_body(indent, name, data_type, addr_type, kvmap, registory)
+  def generate_body(indent, name, data_type, kvmap, registory)
+    addr_type = registory[:addr_type]
     if data_type.generate_vhdl_type.match(/^std_logic_vector/) and
        addr_type.generate_vhdl_type.match(/^std_logic_vector/) then
-      return generate_stmt(indent, name, data_type, addr_type, kvmap, registory)
+      return generate_stmt(indent, name, data_type, kvmap, registory)
     else
       block_name = registory.fetch(:instance_name, "PROC_STORE_" + name.upcase)
-      decl_lines = generate_decl(indent + "    ", name, data_type, addr_type, kvmap, registory)
-      stmt_lines = generate_stmt(indent + "    ", name, data_type, addr_type, kvmap, registory)
+      decl_lines = generate_decl(indent + "    ", name, data_type, kvmap, registory)
+      stmt_lines = generate_stmt(indent + "    ", name, data_type, kvmap, registory)
       return ["#{indent}#{block_name}: block"] + 
              decl_lines + 
              ["#{indent}begin"] +
