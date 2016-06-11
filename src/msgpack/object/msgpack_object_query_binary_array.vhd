@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_binary_array.vhd
 --!     @brief   MessagePack Object Query to Binary/String Array
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -46,8 +46,7 @@ entity  MsgPack_Object_Query_Binary_Array is
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 32;
         ADDR_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -59,6 +58,10 @@ entity  MsgPack_Object_Query_Binary_Array is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
+    -------------------------------------------------------------------------------
     -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
@@ -66,7 +69,7 @@ entity  MsgPack_Object_Query_Binary_Array is
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -169,13 +172,13 @@ begin
     PARAM: MsgPack_Object_Query_Stream_Parameter --
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            SIZE_BITS       => SIZE_BITS       , --
-            SIZE_MAX        => SIZE_MAX          --
+            SIZE_BITS       => SIZE_BITS         --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
+            DEFAULT_SIZE    => DEFAULT_SIZE    , -- In  :
             I_CODE          => param_code      , -- In  :
             I_LAST          => param_last      , -- In  :
             I_VALID         => param_valid     , -- In  :

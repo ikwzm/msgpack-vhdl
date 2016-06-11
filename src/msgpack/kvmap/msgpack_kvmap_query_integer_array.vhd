@@ -47,9 +47,8 @@ entity  MsgPack_KVMap_Query_Integer_Array is
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         ADDR_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 4096;
-        VALUE_BITS      :  integer range 1 to 64;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
+        VALUE_BITS      :  integer range 1 to 64 := 32;
         VALUE_SIGN      :  boolean  := FALSE
     );
     port (
@@ -59,6 +58,10 @@ entity  MsgPack_KVMap_Query_Integer_Array is
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector( SIZE_BITS-1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -135,7 +138,6 @@ begin
             CODE_WIDTH      => CODE_WIDTH      , --
             ADDR_BITS       => ADDR_BITS       , --
             SIZE_BITS       => SIZE_BITS       , -- 
-            SIZE_MAX        => SIZE_MAX        , -- 
             VALUE_BITS      => VALUE_BITS      , --
             VALUE_SIGN      => VALUE_SIGN        --
         )                                        -- 
@@ -143,6 +145,7 @@ begin
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
+            DEFAULT_SIZE    => DEFAULT_SIZE    , -- In  :
             I_CODE          => I_CODE          , -- In  :
             I_LAST          => I_LAST          , -- In  :
             I_VALID         => I_VALID         , -- In  :

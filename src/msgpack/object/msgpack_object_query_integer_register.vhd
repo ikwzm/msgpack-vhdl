@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_integer_register.vhd
 --!     @brief   MessagePack Object Query Integer Register Module :
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -44,7 +44,7 @@ entity  MsgPack_Object_Query_Integer_Register is
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64 := 32;
         VALUE_SIGN      :  boolean  := FALSE
     );
     port (
@@ -90,9 +90,10 @@ use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Stream_Parameter;
 architecture RTL of MsgPack_Object_Query_Integer_Register is
-    signal    start    :  std_logic;
-    signal    busy     :  std_logic;
-    signal    size     :  std_logic_vector(0 downto 0);
+    signal    start        :  std_logic;
+    signal    busy         :  std_logic;
+    signal    size         :  std_logic_vector(0 downto 0);
+    constant  default_size :  std_logic_vector(0 downto 0) := "1";
 begin
     -------------------------------------------------------------------------------
     --
@@ -100,13 +101,13 @@ begin
     PARAM: MsgPack_Object_Query_Stream_Parameter --
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            SIZE_BITS       => 1               , --
-            SIZE_MAX        => 1                 --
+            SIZE_BITS       => 1                 --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
+            DEFAULT_SIZE    => default_size    , -- In  :
             I_CODE          => I_CODE          , -- In  :
             I_LAST          => I_LAST          , -- In  :
             I_VALID         => I_VALID         , -- In  :

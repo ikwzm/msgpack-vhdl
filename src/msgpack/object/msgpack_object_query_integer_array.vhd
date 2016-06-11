@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_integer_array.vhd
 --!     @brief   MessagePack Object Queary Integer Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -45,9 +45,8 @@ entity  MsgPack_Object_Query_Integer_Array is
     generic (
         CODE_WIDTH      :  positive := 1;
         ADDR_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 4096;
-        VALUE_BITS      :  integer range 1 to 64;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
+        VALUE_BITS      :  integer range 1 to 64 := 32;
         VALUE_SIGN      :  boolean  := FALSE
     );
     port (
@@ -57,6 +56,10 @@ entity  MsgPack_Object_Query_Integer_Array is
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector( SIZE_BITS-1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -166,13 +169,13 @@ begin
     PARAM: MsgPack_Object_Query_Stream_Parameter --
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            SIZE_BITS       => SIZE_BITS       , --
-            SIZE_MAX        => SIZE_MAX          --
+            SIZE_BITS       => SIZE_BITS         --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
+            DEFAULT_SIZE    => DEFAULT_SIZE    , -- In  :
             I_CODE          => param_code      , -- In  :
             I_LAST          => param_last      , -- In  :
             I_VALID         => param_valid     , -- In  :

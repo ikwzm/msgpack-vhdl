@@ -2,7 +2,7 @@
 --!     @file    kvmap/msgpack_kvmap_components.vhd                              --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/10                                                      --
+--!     @date    2016/06/11                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -649,9 +649,8 @@ component MsgPack_KVMap_Query_Integer_Array
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         ADDR_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 4096;
-        VALUE_BITS      :  integer range 1 to 64;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
+        VALUE_BITS      :  integer range 1 to 64 := 32;
         VALUE_SIGN      :  boolean  := FALSE
     );
     port (
@@ -661,6 +660,10 @@ component MsgPack_KVMap_Query_Integer_Array
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector( SIZE_BITS-1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -709,9 +712,8 @@ component MsgPack_KVMap_Query_Integer_Stream
         KEY             :  STRING;
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
-        VALUE_BITS      :  integer range 1 to 64;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
+        VALUE_BITS      :  integer range 1 to 64 := 32;
         VALUE_SIGN      :  boolean  := FALSE
     );
     port (
@@ -721,6 +723,10 @@ component MsgPack_KVMap_Query_Integer_Stream
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector( SIZE_BITS-1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -751,7 +757,7 @@ component MsgPack_KVMap_Query_Integer_Stream
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
-        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
+        SIZE            : out std_logic_vector( SIZE_BITS-1 downto 0);
         VALUE           : in  std_logic_vector(VALUE_BITS-1 downto 0);
         VALID           : in  std_logic;
         READY           : out std_logic
@@ -770,8 +776,7 @@ component MsgPack_KVMap_Query_Binary_Array
         MATCH_PHASE     :  positive := 8;
         DATA_BITS       :  positive := 1;
         ADDR_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -783,6 +788,10 @@ component MsgPack_KVMap_Query_Binary_Array
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
+    -------------------------------------------------------------------------------
     -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
@@ -790,7 +799,7 @@ component MsgPack_KVMap_Query_Binary_Array
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -806,7 +815,7 @@ component MsgPack_KVMap_Query_Binary_Array
         MATCH_CODE      : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         MATCH_OK        : out std_logic;
         MATCH_NOT       : out std_logic;
-        MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH-1 downto 0);
+        MATCH_SHIFT     : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
     -- Binary/String Data Stream Input Interface
     -------------------------------------------------------------------------------
@@ -833,8 +842,7 @@ component MsgPack_KVMap_Query_Binary_Stream
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         DATA_BITS       :  positive := 1;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -845,6 +853,10 @@ component MsgPack_KVMap_Query_Binary_Stream
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------

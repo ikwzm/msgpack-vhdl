@@ -45,8 +45,7 @@ entity  MsgPack_Object_Query_Binary_Stream is
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -57,6 +56,10 @@ entity  MsgPack_Object_Query_Binary_Stream is
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -99,13 +102,13 @@ begin
     PARAM: MsgPack_Object_Query_Stream_Parameter --
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            SIZE_BITS       => SIZE_BITS       , --
-            SIZE_MAX        => SIZE_MAX          --
+            SIZE_BITS       => SIZE_BITS         --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
+            DEFAULT_SIZE    => DEFAULT_SIZE    , -- In  :
             I_CODE          => I_CODE          , -- In  :
             I_LAST          => I_LAST          , -- In  :
             I_VALID         => I_VALID         , -- In  :

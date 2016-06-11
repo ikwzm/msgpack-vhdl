@@ -46,7 +46,8 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
     value_bits   = data_type.width
     value_sign   = data_type.sign
     addr_bits    = addr_type.width
-    size_bits    = 32
+    size_bits    = Math::log2(memory_size+1).ceil
+    default_size = '"' + Array.new(size_bits){|n| (memory_size >> (size_bits-1-n)) & 1}.join + '"'
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
       vhdl_lines = string_to_lines(
@@ -58,7 +59,6 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   MATCH_PHASE         => #{sprintf("%-28s", registory[:match_phase])} , --
                   ADDR_BITS           => #{sprintf("%-28s", addr_bits              )} , --
                   SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
-                  SIZE_MAX            => #{sprintf("%-28s", memory_size            )} , --
                   VALUE_BITS          => #{sprintf("%-28s", value_bits             )} , --
                   VALUE_SIGN          => #{sprintf("%-28s", value_sign             )}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
@@ -66,6 +66,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   CLK                 => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
                   RST                 => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
                   CLR                 => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
+                  DEFAULT_SIZE        => #{sprintf("%-28s", default_size           )} , -- In  :
                   I_CODE              => #{sprintf("%-28s", registory[:param_code ])} , -- In  :
                   I_LAST              => #{sprintf("%-28s", registory[:param_last ])} , -- In  :
                   I_VALID             => #{sprintf("%-28s", registory[:param_valid])} , -- In  :
@@ -100,7 +101,6 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
                   ADDR_BITS           => #{sprintf("%-28s", addr_bits              )} , --
                   SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
-                  SIZE_MAX            => #{sprintf("%-28s", memory_size            )} , --
                   VALUE_BITS          => #{sprintf("%-28s", value_bits             )} , --
                   VALUE_SIGN          => #{sprintf("%-28s", value_sign             )}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
@@ -108,6 +108,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
                   CLK                 => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
                   RST                 => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
                   CLR                 => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
+                  DEFAULT_SIZE        => #{sprintf("%-28s", default_size           )} , -- In  :
                   I_CODE              => #{sprintf("%-28s", registory[:param_code ])} , -- In  :
                   I_LAST              => #{sprintf("%-28s", registory[:param_last ])} , -- In  :
                   I_VALID             => #{sprintf("%-28s", registory[:param_valid])} , -- In  :

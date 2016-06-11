@@ -19,7 +19,8 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
     read_ready    = registory.fetch(:read_ready , "open")
     max_size      = registory[:max_size]
     data_bits     = registory[:width]*8
-    size_bits     = 32
+    size_bits     = Math::log2(max_size+1).ceil
+    default_size  = '"' + Array.new(size_bits){|n| (max_size >> (size_bits-1-n)) & 1}.join + '"'
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
       vhdl_lines = string_to_lines(
@@ -31,7 +32,6 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
                   DATA_BITS           => #{sprintf("%-28s", data_bits              )} , --
                   SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
-                  SIZE_MAX            => #{sprintf("%-28s", max_size            )} , --
                   ENCODE_BINARY       => #{sprintf("%-28s", encode_binary          )} , --
                   ENCODE_STRING       => #{sprintf("%-28s", encode_string          )}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
@@ -73,7 +73,6 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
                   DATA_BITS           => #{sprintf("%-28s", data_bits              )} , --
                   SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
-                  SIZE_MAX            => #{sprintf("%-28s", max_size               )} , --
                   ENCODE_BINARY       => #{sprintf("%-28s", encode_binary          )} , --
                   ENCODE_STRING       => #{sprintf("%-28s", encode_string          )}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 

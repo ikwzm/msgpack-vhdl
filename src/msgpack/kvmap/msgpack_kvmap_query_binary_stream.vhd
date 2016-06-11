@@ -47,8 +47,7 @@ entity  MsgPack_KVMap_Query_Binary_Stream is
         CODE_WIDTH      :  positive := 1;
         MATCH_PHASE     :  positive := 8;
         DATA_BITS       :  positive := 1;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -59,6 +58,10 @@ entity  MsgPack_KVMap_Query_Binary_Stream is
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -127,7 +130,6 @@ begin
             CODE_WIDTH      => CODE_WIDTH      , --
             DATA_BITS       => DATA_BITS       , --
             SIZE_BITS       => SIZE_BITS       , --
-            SIZE_MAX        => SIZE_MAX        , --
             ENCODE_BINARY   => ENCODE_BINARY   , --
             ENCODE_STRING   => ENCODE_STRING     --
         )                                        -- 
@@ -135,6 +137,7 @@ begin
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
+            DEFAULT_SIZE    => DEFAULT_SIZE    , -- In  :
             O_CODE          => O_CODE          , -- Out :
             O_LAST          => O_LAST          , -- Out :
             O_ERROR         => O_ERROR         , -- Out :

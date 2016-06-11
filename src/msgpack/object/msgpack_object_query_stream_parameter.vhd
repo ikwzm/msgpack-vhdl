@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_stream_parameter.vhd
 --!     @brief   MessagePack Object Query Stream Parameter Module :
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -44,8 +44,7 @@ entity  MsgPack_Object_Query_Stream_Parameter is
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        SIZE_BITS       :  positive := 32;  
-        SIZE_MAX        :  positive := 1
+        SIZE_BITS       :  integer range 1 to 32 := 32
     );
     port (
     -------------------------------------------------------------------------------
@@ -54,6 +53,10 @@ entity  MsgPack_Object_Query_Stream_Parameter is
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS -1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -95,9 +98,9 @@ begin
             CODE_WIDTH      => CODE_WIDTH          , --
             VALUE_BITS      => SIZE_BITS           , --
             VALUE_SIGN      => FALSE               , --
-            QUEUE_SIZE      => 0                   , -- Must 0 !
-            CHECK_RANGE     => FALSE               , --
-            ENABLE64        => FALSE                 --
+            QUEUE_SIZE      => 0                   , -- Must 0     !
+            CHECK_RANGE     => TRUE                , -- Must TRUE  !
+            ENABLE64        => FALSE                 -- Must FALSE !
         )                                            -- 
         port map (                                   -- 
             CLK             => CLK                 , -- In  :
@@ -118,10 +121,11 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (I_VALID, I_CODE, BUSY, integer_i_error, integer_i_done, integer_i_shift, integer_value, integer_valid) begin
+    process (I_VALID, I_CODE, BUSY, DEFAULT_SIZE,
+             integer_i_error, integer_i_done, integer_i_shift, integer_value, integer_valid) begin
         if (I_VALID = '1' and I_CODE(0).valid = '1' and BUSY = '0') then
             if    (I_CODE(0).class = MsgPack_Object.CLASS_NIL) then
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
+                SIZE      <= DEFAULT_SIZE;
                 START     <= '1';
                 I_ERROR   <= '0';
                 I_DONE    <= '1';
@@ -133,14 +137,14 @@ begin
                 I_DONE    <= '1';
                 I_SHIFT   <= integer_i_shift;
             else
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
+                SIZE      <= integer_value;
                 START     <= '0';
                 I_ERROR   <= '1';
                 I_DONE    <= '1';
                 I_SHIFT   <= (others => '0');
             end if;
         else
-                SIZE      <= std_logic_vector(to_unsigned(SIZE_MAX, SIZE_BITS));
+                SIZE      <= DEFAULT_SIZE;
                 START     <= '0';
                 I_ERROR   <= '0';
                 I_DONE    <= '0';

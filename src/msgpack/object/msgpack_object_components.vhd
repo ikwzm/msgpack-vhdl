@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/10                                                      --
+--!     @date    2016/06/11                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -1297,8 +1297,7 @@ component MsgPack_Object_Query_Stream_Parameter
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        SIZE_BITS       :  positive := 32;  
-        SIZE_MAX        :  positive := 1
+        SIZE_BITS       :  integer range 1 to 32 := 32
     );
     port (
     -------------------------------------------------------------------------------
@@ -1307,6 +1306,10 @@ component MsgPack_Object_Query_Stream_Parameter
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS -1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -1333,7 +1336,7 @@ component MsgPack_Object_Query_Integer_Register
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        VALUE_BITS      :  integer range 1 to 64;
+        VALUE_BITS      :  integer range 1 to 64 := 32;
         VALUE_SIGN      :  boolean  := FALSE
     );
     port (
@@ -1378,9 +1381,8 @@ component MsgPack_Object_Query_Integer_Array
     generic (
         CODE_WIDTH      :  positive := 1;
         ADDR_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 4096;
-        VALUE_BITS      :  integer range 1 to 64;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
+        VALUE_BITS      :  integer range 1 to 64 := 32;
         VALUE_SIGN      :  boolean  := FALSE
     );
     port (
@@ -1390,6 +1392,10 @@ component MsgPack_Object_Query_Integer_Array
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector( SIZE_BITS-1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -1428,9 +1434,8 @@ component MsgPack_Object_Query_Integer_Stream
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
-        VALUE_BITS      :  integer range 1 to 64;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
+        VALUE_BITS      :  integer range 1 to 64 := 32;
         VALUE_SIGN      :  boolean  := FALSE
     );
     port (
@@ -1440,6 +1445,10 @@ component MsgPack_Object_Query_Integer_Stream
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS-1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -1479,8 +1488,7 @@ component MsgPack_Object_Query_Binary_Array
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 32;
         ADDR_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -1492,6 +1500,10 @@ component MsgPack_Object_Query_Binary_Array
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
+    -------------------------------------------------------------------------------
     -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
@@ -1499,7 +1511,7 @@ component MsgPack_Object_Query_Binary_Array
         I_VALID         : in  std_logic;
         I_ERROR         : out std_logic;
         I_DONE          : out std_logic;
-        I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -1532,8 +1544,7 @@ component MsgPack_Object_Query_Binary_Stream
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 32;
-        SIZE_BITS       :  positive := 32;
-        SIZE_MAX        :  positive := 32;
+        SIZE_BITS       :  integer range 1 to 32 := 32;
         ENCODE_BINARY   :  boolean  := TRUE;
         ENCODE_STRING   :  boolean  := FALSE
     );
@@ -1544,6 +1555,10 @@ component MsgPack_Object_Query_Binary_Stream
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
