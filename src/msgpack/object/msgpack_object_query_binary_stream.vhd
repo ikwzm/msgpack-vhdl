@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_binary_stream.vhd
 --!     @brief   MessagePack Object Query to Binary/String Stream
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -60,6 +60,15 @@ entity  MsgPack_Object_Query_Binary_Stream is
     -- Default(when parameter == nil) Query Size 
     -------------------------------------------------------------------------------
         DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------

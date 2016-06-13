@@ -266,11 +266,20 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         @registory = Hash.new
-        @registory[:max_size] = registory.fetch("max_size", 4096)
-        @registory[:width   ] = registory.fetch("width"   , 1   )
+        @registory[:width] = registory.fetch("width", 1)
+        if registory.key?("max_size") then
+          max_size  = registory["max_size"]
+          size_bits = Math::log2(max_size+1).ceil
+          @registory[:max_size ] = max_size
+          @registory[:size_type] = Type.new(registory.fetch("size_type", Hash({"name" => "Logic_Vector", "width" => size_bits})))
+        else
+          @registory[:size_type] = Type.new(registory.fetch("size_type", Hash({"name" => "Logic_Vector", "width" => 32})))
+          @registory[:max_size ] = 2**(@registory[:size_type].width-1)
+        end
         if    @read == true  and @write == true  then
           @registory[:write_start] = nil
           @registory[:write_busy ] = nil
+          @registory[:write_size ] = nil
           @registory[:write_data ] = @port_name + "_wdata"
           @registory[:write_strb ] = @port_name + "_wstrb"  
           @registory[:write_last ] = @port_name + "_wlast"  
@@ -278,6 +287,8 @@ module MsgPack_RPC_Interface::Standard
           @registory[:write_ready] = @port_name + "_wready" 
           @registory[:read_start ] = nil
           @registory[:read_busy  ] = nil
+          @registory[:read_size  ] = nil
+          @registory[:read_dsize ] = nil
           @registory[:read_data  ] = @port_name + "_rdata"
           @registory[:read_strb  ] = @port_name + "_rstrb"  
           @registory[:read_last  ] = @port_name + "_rlast"  
@@ -287,6 +298,7 @@ module MsgPack_RPC_Interface::Standard
             port_regs = registory["port"]
             @registory[:write_start] = port_regs.fetch("wstart", @registory[:write_start])
             @registory[:write_busy ] = port_regs.fetch("wbusy" , @registory[:write_busy ])
+            @registory[:write_size ] = port_regs.fetch("wsize" , @registory[:write_size ])
             @registory[:write_data ] = port_regs.fetch("wdata" , @registory[:write_data ])
             @registory[:write_strb ] = port_regs.fetch("wstrb" , @registory[:write_strb ])
             @registory[:write_last ] = port_regs.fetch("wlast" , @registory[:write_last ])
@@ -294,6 +306,8 @@ module MsgPack_RPC_Interface::Standard
             @registory[:write_ready] = port_regs.fetch("wready", @registory[:write_ready])
             @registory[:read_start ] = port_regs.fetch("rstart", @registory[:read_start ])
             @registory[:read_busy  ] = port_regs.fetch("rbusy" , @registory[:read_busy  ])
+            @registory[:read_size  ] = port_regs.fetch("rsize" , @registory[:read_size  ])
+            @registory[:read_dsize ] = port_regs.fetch("rdsize", @registory[:read_dsize ])
             @registory[:read_data  ] = port_regs.fetch("rdata" , @registory[:read_data  ])
             @registory[:read_strb  ] = port_regs.fetch("rstrb" , @registory[:read_strb  ])
             @registory[:read_last  ] = port_regs.fetch("rlast" , @registory[:read_last  ])
@@ -303,6 +317,8 @@ module MsgPack_RPC_Interface::Standard
         elsif @read == true  and @write == false then
           @registory[:read_start ] = nil
           @registory[:read_busy  ] = nil
+          @registory[:read_size  ] = nil
+          @registory[:read_dsize ] = nil
           @registory[:read_data  ] = @port_name + "_data"
           @registory[:read_strb  ] = @port_name + "_strb"  
           @registory[:read_last  ] = @port_name + "_last"  
@@ -312,6 +328,8 @@ module MsgPack_RPC_Interface::Standard
             port_regs = registory["port"]
             @registory[:read_start ] = port_regs.fetch("start", @registory[:read_start ])
             @registory[:read_busy  ] = port_regs.fetch("busy" , @registory[:read_busy  ])
+            @registory[:read_size  ] = port_regs.fetch("size" , @registory[:read_size  ])
+            @registory[:read_dsize ] = port_regs.fetch("dsize", @registory[:read_dsize ])
             @registory[:read_data  ] = port_regs.fetch("data" , @registory[:read_data  ])
             @registory[:read_strb  ] = port_regs.fetch("strb" , @registory[:read_strb  ])
             @registory[:read_last  ] = port_regs.fetch("last" , @registory[:read_last  ])
@@ -321,6 +339,7 @@ module MsgPack_RPC_Interface::Standard
         elsif @read == false and @write == true  then
           @registory[:write_start] = nil
           @registory[:write_busy ] = nil
+          @registory[:write_size ] = nil
           @registory[:write_data ] = @port_name + "_data"
           @registory[:write_strb ] = @port_name + "_strb"  
           @registory[:write_last ] = @port_name + "_last"  
@@ -330,6 +349,7 @@ module MsgPack_RPC_Interface::Standard
             port_regs = registory["port"]
             @registory[:write_start] = port_regs.fetch("start", @registory[:write_start])
             @registory[:write_busy ] = port_regs.fetch("busy" , @registory[:write_busy ])
+            @registory[:write_size ] = port_regs.fetch("size" , @registory[:write_size ])
             @registory[:write_data ] = port_regs.fetch("data" , @registory[:write_data ])
             @registory[:write_strb ] = port_regs.fetch("strb" , @registory[:write_strb ])
             @registory[:write_last ] = port_regs.fetch("last" , @registory[:write_last ])

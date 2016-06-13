@@ -1560,6 +1560,15 @@ component MsgPack_Object_Query_Binary_Stream
     -------------------------------------------------------------------------------
         DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
     -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
+    -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
         O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);

@@ -7,6 +7,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
     class_name    = self.name.to_s.split("::")[-2]
+    size_type     = registory[:size_type]
     encode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
     encode_string = (class_name == "String") ? "TRUE" : "FALSE"
     instance_name = registory.fetch(:instance_name, "PROC_QUERY_" + name.upcase)
@@ -15,12 +16,13 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
     read_last     = registory.fetch(:read_last  , "'1'" )
     read_start    = registory.fetch(:read_start , "open")
     read_busy     = registory.fetch(:read_busy  , "open")
+    read_size     = registory.fetch(:read_size  , "open")
     read_valid    = registory.fetch(:read_valid , "'1'" )
     read_ready    = registory.fetch(:read_ready , "open")
     max_size      = registory[:max_size]
     data_bits     = registory[:width]*8
-    size_bits     = Math::log2(max_size+1).ceil
-    default_size  = '"' + Array.new(size_bits){|n| (max_size >> (size_bits-1-n)) & 1}.join + '"'
+    size_bits     = size_type.width
+    default_size  = registory.fetch(:read_dsize , '"' + Array.new(size_bits){|n| (registory[:width] >> (size_bits-1-n)) & 1}.join + '"')
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
       vhdl_lines = string_to_lines(
@@ -39,6 +41,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   CLK                 => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
                   RST                 => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
                   CLR                 => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
+                  DEFAULT_SIZE        => #{sprintf("%-28s", default_size           )} , -- In  :
                   I_CODE              => #{sprintf("%-28s", registory[:param_code ])} , -- In  :
                   I_LAST              => #{sprintf("%-28s", registory[:param_last ])} , -- In  :
                   I_VALID             => #{sprintf("%-28s", registory[:param_valid])} , -- In  :
@@ -57,6 +60,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   MATCH_SHIFT         => #{sprintf("%-28s", registory[:match_shift])} , -- Out :
                   START               => #{sprintf("%-28s", read_start             )} , -- Out :
                   BUSY                => #{sprintf("%-28s", read_busy              )} , -- Out :
+                  SIZE                => #{sprintf("%-28s", read_size              )} , -- In  :
                   DATA                => #{sprintf("%-28s", read_data              )} , -- In  :
                   STRB                => #{sprintf("%-28s", read_strb              )} , -- In  :
                   LAST                => #{sprintf("%-28s", read_last              )} , -- In  :
@@ -80,6 +84,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   CLK                 => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
                   RST                 => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
                   CLR                 => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
+                  DEFAULT_SIZE        => #{sprintf("%-28s", default_size           )} , -- In  :
                   I_CODE              => #{sprintf("%-28s", registory[:param_code ])} , -- In  :
                   I_LAST              => #{sprintf("%-28s", registory[:param_last ])} , -- In  :
                   I_VALID             => #{sprintf("%-28s", registory[:param_valid])} , -- In  :
@@ -93,6 +98,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   O_READY             => #{sprintf("%-28s", registory[:value_ready])} , -- In  :
                   START               => #{sprintf("%-28s", read_start             )} , -- Out :
                   BUSY                => #{sprintf("%-28s", read_busy              )} , -- Out :
+                  SIZE                => #{sprintf("%-28s", read_size              )} , -- In  :
                   DATA                => #{sprintf("%-28s", read_data              )} , -- In  :
                   STRB                => #{sprintf("%-28s", read_strb              )} , -- In  :
                   LAST                => #{sprintf("%-28s", read_last              )} , -- In  :

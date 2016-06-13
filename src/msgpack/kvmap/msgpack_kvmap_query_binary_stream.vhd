@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_query_binary_stream.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Query Binary/String Stream Module :
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/11
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -62,6 +62,15 @@ entity  MsgPack_KVMap_Query_Binary_Stream is
     -- Default(when parameter == nil) Query Size 
     -------------------------------------------------------------------------------
         DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS  -1 downto 0) := (others => '1');
+    -------------------------------------------------------------------------------
+    -- MessagePack Object Code Input Interface
+    -------------------------------------------------------------------------------
+        I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        I_LAST          : in  std_logic;
+        I_VALID         : in  std_logic;
+        I_ERROR         : out std_logic;
+        I_DONE          : out std_logic;
+        I_SHIFT         : out std_logic_vector(CODE_WIDTH -1 downto 0);
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -138,6 +147,12 @@ begin
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
             DEFAULT_SIZE    => DEFAULT_SIZE    , -- In  :
+            I_CODE          => I_CODE          , -- In  :
+            I_LAST          => I_LAST          , -- In  :
+            I_VALID         => I_VALID         , -- In  :
+            I_ERROR         => I_ERROR         , -- Out :
+            I_DONE          => I_DONE          , -- Out :
+            I_SHIFT         => I_SHIFT         , -- Out :
             O_CODE          => O_CODE          , -- Out :
             O_LAST          => O_LAST          , -- Out :
             O_ERROR         => O_ERROR         , -- Out :
