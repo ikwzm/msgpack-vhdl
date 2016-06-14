@@ -84,10 +84,6 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Store
     return vhdl_lines + generate_stmt_post(indent, name, data_type, kvmap, registory)
   end
   
-  def generate_body(indent, name, data_type, kvmap, registory)
-    return generate_stmt(indent, name, data_type, kvmap, registory)
-  end
-  
   def use_package_list(kvmap)
     if kvmap == true then
       return ["MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Store_Binary_Stream"]

@@ -1,27 +1,16 @@
 module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
-  extend MsgPack_RPC_Interface::VHDL::Util
-
-  def generate_decl(indent, name, data_type, kvmap, registory)
-    return []
-  end
+  extend  MsgPack_RPC_Interface::VHDL::Util
+  include MsgPack_RPC_Interface::VHDL::Util::Query
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
+    instance_name = instance_name(name, data_type, registory)
+    query_sig     = internal_signals(data_type, registory)
     class_name    = self.name.to_s.split("::")[-2]
-    size_type     = registory[:size_type]
     encode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
     encode_string = (class_name == "String") ? "TRUE" : "FALSE"
-    instance_name = registory.fetch(:instance_name, "PROC_QUERY_" + name.upcase)
-    read_data     = registory[:read_data]
-    read_strb     = registory.fetch(:read_strb  , '"' + Array.new(registory[:width],1).join + '"')
-    read_last     = registory.fetch(:read_last  , "'1'" )
-    read_start    = registory.fetch(:read_start , "open")
-    read_busy     = registory.fetch(:read_busy  , "open")
-    read_size     = registory.fetch(:read_size  , "open")
-    read_valid    = registory.fetch(:read_valid , "'1'" )
-    read_ready    = registory.fetch(:read_ready , "open")
     max_size      = registory[:max_size]
     data_bits     = registory[:width]*8
-    size_bits     = size_type.width
+    size_bits     = query_sig[:size_bits]
     default_size  = registory.fetch(:read_dsize , '"' + Array.new(size_bits){|n| (registory[:width] >> (size_bits-1-n)) & 1}.join + '"')
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
@@ -58,14 +47,14 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   MATCH_OK            => #{sprintf("%-28s", registory[:match_ok   ])} , -- Out :
                   MATCH_NOT           => #{sprintf("%-28s", registory[:match_not  ])} , -- Out :
                   MATCH_SHIFT         => #{sprintf("%-28s", registory[:match_shift])} , -- Out :
-                  START               => #{sprintf("%-28s", read_start             )} , -- Out :
-                  BUSY                => #{sprintf("%-28s", read_busy              )} , -- Out :
-                  SIZE                => #{sprintf("%-28s", read_size              )} , -- In  :
-                  DATA                => #{sprintf("%-28s", read_data              )} , -- In  :
-                  STRB                => #{sprintf("%-28s", read_strb              )} , -- In  :
-                  LAST                => #{sprintf("%-28s", read_last              )} , -- In  :
-                  VALID               => #{sprintf("%-28s", read_valid             )} , -- In  :
-                  READY               => #{sprintf("%-28s", read_ready             )}   -- Out :
+                  START               => #{sprintf("%-28s", query_sig[:start      ])} , -- Out :
+                  BUSY                => #{sprintf("%-28s", query_sig[:busy       ])} , -- Out :
+                  SIZE                => #{sprintf("%-28s", query_sig[:size       ])} , -- Out :
+                  DATA                => #{sprintf("%-28s", query_sig[:data       ])} , -- In  :
+                  STRB                => #{sprintf("%-28s", query_sig[:strb       ])} , -- In  :
+                  LAST                => #{sprintf("%-28s", query_sig[:last       ])} , -- In  :
+                  VALID               => #{sprintf("%-28s", query_sig[:valid      ])} , -- In  :
+                  READY               => #{sprintf("%-28s", query_sig[:ready      ])}   -- Out :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
@@ -96,23 +85,19 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   O_VALID             => #{sprintf("%-28s", registory[:value_valid])} , -- Out :
                   O_ERROR             => #{sprintf("%-28s", registory[:value_error])} , -- Out :
                   O_READY             => #{sprintf("%-28s", registory[:value_ready])} , -- In  :
-                  START               => #{sprintf("%-28s", read_start             )} , -- Out :
-                  BUSY                => #{sprintf("%-28s", read_busy              )} , -- Out :
-                  SIZE                => #{sprintf("%-28s", read_size              )} , -- In  :
-                  DATA                => #{sprintf("%-28s", read_data              )} , -- In  :
-                  STRB                => #{sprintf("%-28s", read_strb              )} , -- In  :
-                  LAST                => #{sprintf("%-28s", read_last              )} , -- In  :
-                  VALID               => #{sprintf("%-28s", read_valid             )} , -- In  :
-                  READY               => #{sprintf("%-28s", read_ready             )}   -- Out :
+                  START               => #{sprintf("%-28s", query_sig[:start      ])} , -- Out :
+                  BUSY                => #{sprintf("%-28s", query_sig[:busy       ])} , -- Out :
+                  SIZE                => #{sprintf("%-28s", query_sig[:size       ])} , -- Out :
+                  DATA                => #{sprintf("%-28s", query_sig[:data       ])} , -- In  :
+                  STRB                => #{sprintf("%-28s", query_sig[:strb       ])} , -- In  :
+                  LAST                => #{sprintf("%-28s", query_sig[:last       ])} , -- In  :
+                  VALID               => #{sprintf("%-28s", query_sig[:valid      ])} , -- In  :
+                  READY               => #{sprintf("%-28s", query_sig[:ready      ])}   -- Out :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
     end
-    return vhdl_lines
-  end
-  
-  def generate_body(indent, name, data_type, kvmap, registory)
-    return generate_stmt(indent, name, data_type, kvmap, registory)
+    return vhdl_lines + generate_stmt_post(indent, name, data_type, kvmap, registory)
   end
   
   def use_package_list(kvmap)
@@ -123,8 +108,12 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
     end
   end
 
+  module_function :instance_name
+  module_function :internal_signals
+  module_function :sub_block?
   module_function :generate_body
   module_function :generate_decl
   module_function :generate_stmt
+  module_function :generate_stmt_post
   module_function :use_package_list
 end

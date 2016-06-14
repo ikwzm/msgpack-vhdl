@@ -1,29 +1,12 @@
 module MsgPack_RPC_Interface::VHDL::Register::Integer::Query
-  extend MsgPack_RPC_Interface::VHDL::Util
+  extend  MsgPack_RPC_Interface::VHDL::Util
+  include MsgPack_RPC_Interface::VHDL::Util::Query
 
-  def generate_decl(indent, name, type, kvmap, registory)
-    if type.generate_vhdl_type.match(/^std_logic_vector/) then
-      return []
-    else
-      return string_to_lines(indent, <<"        EOT"
-        signal    proc_1_value      :  std_logic_vector(#{type.width-1} downto 0);
-        EOT
-      )
-    end
-  end
-
-  def generate_stmt(indent, name, type, kvmap, registory)
-    if type.generate_vhdl_type.match(/^std_logic_vector/) then
-      instance_name = registory.fetch(:instance_name, "PROC_QUERY_" + name.upcase)
-      i_value       = registory[:read_value]
-    else
-      instance_name = "PROC_1"
-      i_value       = "proc_1_value"
-    end
-    i_valid       = registory.fetch(:read_valid , "'1'" )
-    i_ready       = registory.fetch(:read_ready , "open")
-    value_bits    = type.width
-    value_sign    = type.sign
+  def generate_stmt(indent, name, data_type, kvmap, registory)
+    instance_name = instance_name(name, data_type, registory)
+    query_sig     = internal_signals(data_type, registory)
+    value_bits    = data_type.width
+    value_sign    = data_type.sign
     if kvmap == true then
       key_string  = "STRING'(\"" + name + "\")"
       vhdl_lines  = string_to_lines(
@@ -56,9 +39,9 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Query
                   MATCH_OK            => #{sprintf("%-28s", registory[:match_ok   ])} , -- Out :
                   MATCH_NOT           => #{sprintf("%-28s", registory[:match_not  ])} , -- Out :
                   MATCH_SHIFT         => #{sprintf("%-28s", registory[:match_shift])} , -- Out :
-                  VALUE               => #{sprintf("%-28s", i_value                )} , -- In  :
-                  VALID               => #{sprintf("%-28s", i_valid                )} , -- In  :
-                  READY               => #{sprintf("%-28s", i_ready                )}   -- Out :
+                  VALUE               => #{sprintf("%-28s", query_sig[:data       ])} , -- In  :
+                  VALID               => #{sprintf("%-28s", query_sig[:valid      ])} , -- In  :
+                  READY               => #{sprintf("%-28s", query_sig[:ready      ])}   -- Out :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
@@ -86,36 +69,14 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Query
                   O_VALID             => #{sprintf("%-28s", registory[:value_valid])} , -- Out :
                   O_ERROR             => #{sprintf("%-28s", registory[:value_error])} , -- Out :
                   O_READY             => #{sprintf("%-28s", registory[:value_ready])} , -- In  :
-                  VALUE               => #{sprintf("%-28s", i_value                )} , -- In  :
-                  VALID               => #{sprintf("%-28s", i_valid                )} , -- In  :
-                  READY               => #{sprintf("%-28s", i_ready                )}   -- Out :
+                  VALUE               => #{sprintf("%-28s", query_sig[:data       ])} , -- In  :
+                  VALID               => #{sprintf("%-28s", query_sig[:valid      ])} , -- In  :
+                  READY               => #{sprintf("%-28s", query_sig[:ready      ])}   -- Out :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
     end
-    if type.generate_vhdl_type.match(/^std_logic_vector/) then
-      return vhdl_lines
-    else
-      return vhdl_lines.concat(string_to_lines(indent, <<"        EOT"
-        proc_1_value <= std_logic_vector(#{registory[:read_value]});
-        EOT
-      ))
-    end
-  end
-
-  def generate_body(indent, name, type, kvmap, registory)
-    if type.generate_vhdl_type.match(/^std_logic_vector/) then
-      return generate_stmt(indent, name, type, kvmap, registory)
-    else
-      block_name = registory.fetch(:instance_name, "PROC_QUERY_" + name.upcase)
-      decl_lines = generate_decl(indent + "    ", name, type, kvmap, registory)
-      stmt_lines = generate_stmt(indent + "    ", name, type, kvmap, registory)
-      return ["#{indent}#{block_name}: block"] + 
-             decl_lines + 
-             ["#{indent}begin"] +
-             stmt_lines +
-             ["#{indent}end block;"]
-    end
+    return vhdl_lines + generate_stmt_post(indent, name, data_type, kvmap, registory)
   end
 
   def use_package_list(kvmap)
@@ -126,8 +87,12 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Query
     end
   end
 
+  module_function :instance_name
+  module_function :internal_signals
+  module_function :sub_block?
   module_function :generate_body
   module_function :generate_decl
   module_function :generate_stmt
+  module_function :generate_stmt_post
   module_function :use_package_list
 end

@@ -69,21 +69,21 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         if    @read == true  and @write == true  then
-          @registory[:read_value ] = @port_name + "_rdata"
+          @registory[:read_data  ] = @port_name + "_rdata"
           @registory[:write_data ] = @port_name + "_wdata"
           @registory[:write_valid] = @port_name + "_we"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
+            @registory[:read_data  ] = port_regs.fetch("rdata", @registory[:read_data  ])
             @registory[:write_data ] = port_regs.fetch("wdata", @registory[:write_data ])
             @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
           end
         elsif @read == true  and @write == false then
-          @registory[:read_value ] = @port_name
+          @registory[:read_data ] = @port_name
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_value ] = port_regs.fetch("data" , @registory[:read_value ])
-            @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
+            @registory[:read_data ] = port_regs.fetch("data" , @registory[:read_data ])
+            @registory[:read_data ] = port_regs.fetch("rdata", @registory[:read_data ])
           end
         elsif @read == false and @write == true  then
           @registory[:write_data ] = @port_name
@@ -95,6 +95,7 @@ module MsgPack_RPC_Interface::Standard
             @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
           end
         end
+        @registory[:width] = 1
         @registory.delete_if{|key,val| val == nil}
         @generator = MsgPack_RPC_Interface::VHDL::Register.const_get(@msg_class.class.to_s.split('::').last)
         puts to_s if @debug
@@ -107,19 +108,19 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         if    @read == true  and @write == true  then
-          @registory[:read_value ] = @port_name + "_rdata"
-          @registory[:write_data ] = @port_name + "_wdata"
+          @registory[:read_data ] = @port_name + "_rdata"
+          @registory[:write_data] = @port_name + "_wdata"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_value] = port_regs.fetch("rdata", @registory[:read_value])
+            @registory[:read_data] = port_regs.fetch("rdata", @registory[:read_data])
             @registory[:write_data] = port_regs.fetch("wdata", @registory[:write_data])
           end
         elsif @read == true  and @write == false then
-          @registory[:read_value ] = @port_name
+          @registory[:read_data ] = @port_name
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_value] = port_regs.fetch("data" , @registory[:read_value ])
-            @registory[:read_value] = port_regs.fetch("rdata", @registory[:read_value ])
+            @registory[:read_data] = port_regs.fetch("data" , @registory[:read_data ])
+            @registory[:read_data] = port_regs.fetch("rdata", @registory[:read_data ])
           end
         elsif @read == false and @write == true  then
           @registory[:write_data] = @port_name
@@ -129,6 +130,7 @@ module MsgPack_RPC_Interface::Standard
             @registory[:write_data] = port_regs.fetch("wdata", @registory[:write_data])
           end
         end
+        @registory[:width] = 1
         @registory.delete_if{|key,val| val == nil}
         @generator = MsgPack_RPC_Interface::VHDL::Signal.const_get(@msg_class.class.to_s.split('::').last)
         puts to_s if @debug
