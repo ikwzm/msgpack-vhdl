@@ -4,13 +4,13 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
-    query_sig     = interface_signals(data_type, registory)
+    interface     = interface_signals(data_type, registory)
     class_name    = self.name.to_s.split("::")[-2]
     encode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
     encode_string = (class_name == "String") ? "TRUE" : "FALSE"
     max_size      = registory[:max_size]
     data_bits     = registory[:width]*8
-    size_bits     = query_sig[:size_bits]
+    size_bits     = interface[:size_bits]
     default_size  = registory.fetch(:query_dsize , '"' + Array.new(size_bits){|n| (registory[:width] >> (size_bits-1-n)) & 1}.join + '"')
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
@@ -47,14 +47,14 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   MATCH_OK            => #{sprintf("%-28s", registory[:match_ok   ])} , -- Out :
                   MATCH_NOT           => #{sprintf("%-28s", registory[:match_not  ])} , -- Out :
                   MATCH_SHIFT         => #{sprintf("%-28s", registory[:match_shift])} , -- Out :
-                  START               => #{sprintf("%-28s", query_sig[:start      ])} , -- Out :
-                  BUSY                => #{sprintf("%-28s", query_sig[:busy       ])} , -- Out :
-                  SIZE                => #{sprintf("%-28s", query_sig[:size       ])} , -- Out :
-                  DATA                => #{sprintf("%-28s", query_sig[:data       ])} , -- In  :
-                  STRB                => #{sprintf("%-28s", query_sig[:strb       ])} , -- In  :
-                  LAST                => #{sprintf("%-28s", query_sig[:last       ])} , -- In  :
-                  VALID               => #{sprintf("%-28s", query_sig[:valid      ])} , -- In  :
-                  READY               => #{sprintf("%-28s", query_sig[:ready      ])}   -- Out :
+                  START               => #{sprintf("%-28s", interface[:start      ])} , -- Out :
+                  BUSY                => #{sprintf("%-28s", interface[:busy       ])} , -- Out :
+                  SIZE                => #{sprintf("%-28s", interface[:size       ])} , -- Out :
+                  DATA                => #{sprintf("%-28s", interface[:data       ])} , -- In  :
+                  STRB                => #{sprintf("%-28s", interface[:strb       ])} , -- In  :
+                  LAST                => #{sprintf("%-28s", interface[:last       ])} , -- In  :
+                  VALID               => #{sprintf("%-28s", interface[:valid      ])} , -- In  :
+                  READY               => #{sprintf("%-28s", interface[:ready      ])}   -- Out :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
@@ -85,14 +85,14 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
                   O_VALID             => #{sprintf("%-28s", registory[:value_valid])} , -- Out :
                   O_ERROR             => #{sprintf("%-28s", registory[:value_error])} , -- Out :
                   O_READY             => #{sprintf("%-28s", registory[:value_ready])} , -- In  :
-                  START               => #{sprintf("%-28s", query_sig[:start      ])} , -- Out :
-                  BUSY                => #{sprintf("%-28s", query_sig[:busy       ])} , -- Out :
-                  SIZE                => #{sprintf("%-28s", query_sig[:size       ])} , -- Out :
-                  DATA                => #{sprintf("%-28s", query_sig[:data       ])} , -- In  :
-                  STRB                => #{sprintf("%-28s", query_sig[:strb       ])} , -- In  :
-                  LAST                => #{sprintf("%-28s", query_sig[:last       ])} , -- In  :
-                  VALID               => #{sprintf("%-28s", query_sig[:valid      ])} , -- In  :
-                  READY               => #{sprintf("%-28s", query_sig[:ready      ])}   -- Out :
+                  START               => #{sprintf("%-28s", interface[:start      ])} , -- Out :
+                  BUSY                => #{sprintf("%-28s", interface[:busy       ])} , -- Out :
+                  SIZE                => #{sprintf("%-28s", interface[:size       ])} , -- Out :
+                  DATA                => #{sprintf("%-28s", interface[:data       ])} , -- In  :
+                  STRB                => #{sprintf("%-28s", interface[:strb       ])} , -- In  :
+                  LAST                => #{sprintf("%-28s", interface[:last       ])} , -- In  :
+                  VALID               => #{sprintf("%-28s", interface[:valid      ])} , -- In  :
+                  READY               => #{sprintf("%-28s", interface[:ready      ])}   -- Out :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )

@@ -4,8 +4,8 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Store
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
-    write_sig     = interface_signals(data_type, registory)
-    write_sign    = registory.fetch(:store_sign , "open")
+    interface     = interface_signals(data_type, registory)
+    store_sign    = registory.fetch(:store_sign , "open")
     check_range   = registory.fetch(:check_range, "TRUE")
     enable64      = registory.fetch(:enable64   , "TRUE")
     value_bits    = data_type.width
@@ -39,11 +39,11 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Store
                   MATCH_OK            => #{sprintf("%-28s", registory[:match_ok   ])} , -- Out :
                   MATCH_NOT           => #{sprintf("%-28s", registory[:match_not  ])} , -- Out :
                   MATCH_SHIFT         => #{sprintf("%-28s", registory[:match_shift])} , -- Out :
-                  VALUE               => #{sprintf("%-28s", write_sig[:data       ])} , -- Out :
-                  SIGN                => #{sprintf("%-28s", write_sign             )} , -- Out :
-                  LAST                => #{sprintf("%-28s", write_sig[:last       ])} , -- Out :
-                  VALID               => #{sprintf("%-28s", write_sig[:valid      ])} , -- Out :
-                  READY               => #{sprintf("%-28s", write_sig[:ready      ])}   -- In  :
+                  VALUE               => #{sprintf("%-28s", interface[:data       ])} , -- Out :
+                  SIGN                => #{sprintf("%-28s", store_sign             )} , -- Out :
+                  LAST                => #{sprintf("%-28s", interface[:last       ])} , -- Out :
+                  VALID               => #{sprintf("%-28s", interface[:valid      ])} , -- Out :
+                  READY               => #{sprintf("%-28s", interface[:ready      ])}   -- In  :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
@@ -68,11 +68,11 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Store
                   I_ERROR             => #{sprintf("%-28s", registory[:param_error])} , -- Out :
                   I_DONE              => #{sprintf("%-28s", registory[:param_done ])} , -- Out :
                   I_SHIFT             => #{sprintf("%-28s", registory[:param_shift])} , -- Out :
-                  VALUE               => #{sprintf("%-28s", write_sig[:data       ])} , -- Out :
-                  SIGN                => #{sprintf("%-28s", write_sign             )} , -- Out :
-                  LAST                => #{sprintf("%-28s", write_sig[:last       ])} , -- Out :
-                  VALID               => #{sprintf("%-28s", write_sig[:valid      ])} , -- Out :
-                  READY               => #{sprintf("%-28s", write_sig[:ready      ])}   -- In  :
+                  VALUE               => #{sprintf("%-28s", interface[:data       ])} , -- Out :
+                  SIGN                => #{sprintf("%-28s", store_sign             )} , -- Out :
+                  LAST                => #{sprintf("%-28s", interface[:last       ])} , -- Out :
+                  VALID               => #{sprintf("%-28s", interface[:valid      ])} , -- Out :
+                  READY               => #{sprintf("%-28s", interface[:ready      ])}   -- In  :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
