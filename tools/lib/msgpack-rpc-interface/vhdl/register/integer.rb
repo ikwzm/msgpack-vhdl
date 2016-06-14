@@ -8,14 +8,14 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer
     w_in  = (master) ? "in"  : "out"
     r_in  = (master) ? "in"  : "out"
     r_out = (master) ? "out" : "in"
-    add_port_line(vhdl_lines, registory, :write_data , w_out,  "#{type_name}")
-    add_port_line(vhdl_lines, registory, :write_sign , w_out,  "std_logic"   )
-    add_port_line(vhdl_lines, registory, :write_last , w_out,  "std_logic"   )
-    add_port_line(vhdl_lines, registory, :write_valid, w_out,  "std_logic"   )
-    add_port_line(vhdl_lines, registory, :write_ready, w_in ,  "std_logic"   )
-    add_port_line(vhdl_lines, registory, :read_data  , r_in ,  "#{type_name}")
-    add_port_line(vhdl_lines, registory, :read_valid , r_in ,  "std_logic"   )
-    add_port_line(vhdl_lines, registory, :read_ready , r_out,  "std_logic"   )
+    add_port_line(vhdl_lines, registory, :store_data , w_out,  "#{type_name}")
+    add_port_line(vhdl_lines, registory, :store_sign , w_out,  "std_logic"   )
+    add_port_line(vhdl_lines, registory, :store_last , w_out,  "std_logic"   )
+    add_port_line(vhdl_lines, registory, :store_valid, w_out,  "std_logic"   )
+    add_port_line(vhdl_lines, registory, :store_ready, w_in ,  "std_logic"   )
+    add_port_line(vhdl_lines, registory, :query_data , r_in ,  "#{type_name}")
+    add_port_line(vhdl_lines, registory, :query_valid, r_in ,  "std_logic"   )
+    add_port_line(vhdl_lines, registory, :query_ready, r_out,  "std_logic"   )
     return vhdl_lines
   end
 

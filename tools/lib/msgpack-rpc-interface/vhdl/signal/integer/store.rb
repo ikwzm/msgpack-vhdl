@@ -3,8 +3,8 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
 
   def generate_decl(indent, name, type, kvmap, registory)
     block_regs = registory.dup
-    block_regs[:write_data ] = "proc_0_value"
-    block_regs[:write_valid] = "proc_0_valid"
+    block_regs[:store_data ] = "proc_0_value"
+    block_regs[:store_valid] = "proc_0_valid"
     logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.width, "sign" => type.sign}))
     generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
     return string_to_lines(
@@ -17,8 +17,8 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
 
   def generate_stmt(indent, name, type, kvmap, registory)
     block_regs = registory.dup
-    block_regs[:write_data ] = "proc_0_value"
-    block_regs[:write_valid] = "proc_0_valid"
+    block_regs[:store_data ] = "proc_0_value"
+    block_regs[:store_valid] = "proc_0_valid"
     conv_value = type.generate_vhdl_convert("proc_0_value")
     logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.width, "sign" => type.sign}))
     generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
@@ -26,12 +26,12 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
       indent, <<"      EOT"
              process(#{registory[:clock]}, #{registory[:reset]}) begin
                  if (#{registory[:reset]} = '1') then
-                          #{registory[:write_data]} <= (others => '0');
+                          #{registory[:store_data]} <= (others => '0');
                  elsif (#{registory[:clock]}'event and #{registory[:clock]} = '1') then
                      if    (#{registory[:clear]} = '1') then
-                          #{registory[:write_data]} <= (others => '0');
+                          #{registory[:store_data]} <= (others => '0');
                      elsif (proc_0_valid = '1') then
-                          #{registory[:write_data]} <= #{conv_value};
+                          #{registory[:store_data]} <= #{conv_value};
                      end if;
                  end if;
              end process;

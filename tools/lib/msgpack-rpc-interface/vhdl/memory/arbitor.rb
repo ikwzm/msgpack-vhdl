@@ -4,14 +4,14 @@ module MsgPack_RPC_Interface::VHDL::Memory::Arbitor
   def generate_decl(indent, name, registory)
     addr_type = registory[:addr_type].generate_vhdl_type
     return string_to_lines(indent, <<"      EOT"
-        signal    #{sprintf("%-17s",registory[:write_addr ])} :  #{addr_type};
-        signal    #{sprintf("%-17s",registory[:write_ready])} :  std_logic;
-        signal    #{sprintf("%-17s",registory[:write_start])} :  std_logic;
-        signal    #{sprintf("%-17s",registory[:write_busy ])} :  std_logic;
-        signal    #{sprintf("%-17s",registory[:read_addr  ])} :  #{addr_type};
-        signal    #{sprintf("%-17s",registory[:read_valid ])} :  std_logic;
-        signal    #{sprintf("%-17s",registory[:read_start ])} :  std_logic;
-        signal    #{sprintf("%-17s",registory[:read_busy  ])} :  std_logic;
+        signal    #{sprintf("%-17s",registory[:store_addr ])} :  #{addr_type};
+        signal    #{sprintf("%-17s",registory[:store_ready])} :  std_logic;
+        signal    #{sprintf("%-17s",registory[:store_start])} :  std_logic;
+        signal    #{sprintf("%-17s",registory[:store_busy ])} :  std_logic;
+        signal    #{sprintf("%-17s",registory[:query_addr ])} :  #{addr_type};
+        signal    #{sprintf("%-17s",registory[:query_valid])} :  std_logic;
+        signal    #{sprintf("%-17s",registory[:query_start])} :  std_logic;
+        signal    #{sprintf("%-17s",registory[:query_busy ])} :  std_logic;
       EOT
     )
   end
@@ -31,21 +31,21 @@ module MsgPack_RPC_Interface::VHDL::Memory::Arbitor
                      else
                          case proc_arb_state is
                              when "00" => 
-                                 if    (#{registory[:write_start]} = '1') then
+                                 if    (#{registory[:store_start]} = '1') then
                                      proc_arb_state <= "01";
-                                 elsif (#{registory[:read_start ]} = '1') then
+                                 elsif (#{registory[:query_start]} = '1') then
                                      proc_arb_state <= "10";
                                  else
                                      proc_arb_state <= "00";
                                  end if;
                              when "01" =>
-                                 if    (#{registory[:write_busy ]} = '1') then
+                                 if    (#{registory[:store_busy ]} = '1') then
                                      proc_arb_state <= "01";
                                  else
                                      proc_arb_state <= "00";
                                  end if;
                              when "10" =>
-                                 if    (#{registory[:read_busy  ]} = '1') then
+                                 if    (#{registory[:query_busy ]} = '1') then
                                      proc_arb_state <= "10";
                                  else
                                      proc_arb_state <= "00";
@@ -56,9 +56,9 @@ module MsgPack_RPC_Interface::VHDL::Memory::Arbitor
                      end if;
                  end if;
              end process;
-             #{registory[:write_ready]} <= proc_arb_state(0);
-             #{registory[:read_valid ]} <= proc_arb_state(1);
-             #{registory[:addr       ]} <= #{registory[:write_addr]} when (proc_arb_state(0) = '1') else #{registory[:read_addr]};
+             #{registory[:store_ready]} <= proc_arb_state(0);
+             #{registory[:query_valid]} <= proc_arb_state(1);
+             #{registory[:addr       ]} <= #{registory[:store_addr]} when (proc_arb_state(0) = '1') else #{registory[:query_addr]};
         end block;
       EOT
     )

@@ -9,7 +9,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Integer::Query
     value_sign    = data_type.sign
     size_bits     = query_sig[:size_bits]
     width         = registory.fetch(:width      , 1     )
-    default_size  = registory.fetch(:read_dsize , '"' + Array.new(size_bits){|n| (width >> (size_bits-1-n)) & 1}.join + '"')
+    default_size  = registory.fetch(:query_dsize , '"' + Array.new(size_bits){|n| (width >> (size_bits-1-n)) & 1}.join + '"')
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
       vhdl_lines = string_to_lines(

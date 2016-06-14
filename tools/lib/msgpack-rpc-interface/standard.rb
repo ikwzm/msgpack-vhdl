@@ -69,30 +69,30 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         if    @read == true  and @write == true  then
-          @registory[:read_data  ] = @port_name + "_rdata"
-          @registory[:write_data ] = @port_name + "_wdata"
-          @registory[:write_valid] = @port_name + "_we"
+          @registory[:query_data ] = @port_name + "_rdata"
+          @registory[:store_data ] = @port_name + "_wdata"
+          @registory[:store_valid] = @port_name + "_we"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_data  ] = port_regs.fetch("rdata", @registory[:read_data  ])
-            @registory[:write_data ] = port_regs.fetch("wdata", @registory[:write_data ])
-            @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
+            @registory[:query_data ] = port_regs.fetch("rdata", @registory[:query_data ])
+            @registory[:store_data ] = port_regs.fetch("wdata", @registory[:store_data ])
+            @registory[:store_valid] = port_regs.fetch("we"   , @registory[:store_valid])
           end
         elsif @read == true  and @write == false then
-          @registory[:read_data ] = @port_name
+          @registory[:query_data ] = @port_name
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_data ] = port_regs.fetch("data" , @registory[:read_data ])
-            @registory[:read_data ] = port_regs.fetch("rdata", @registory[:read_data ])
+            @registory[:query_data ] = port_regs.fetch("data" , @registory[:query_data ])
+            @registory[:query_data ] = port_regs.fetch("rdata", @registory[:query_data ])
           end
         elsif @read == false and @write == true  then
-          @registory[:write_data ] = @port_name
-          @registory[:write_valid] = @port_name + "_we"
+          @registory[:store_data ] = @port_name
+          @registory[:store_valid] = @port_name + "_we"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:write_data ] = port_regs.fetch("data" , @registory[:write_data ])
-            @registory[:write_data ] = port_regs.fetch("wdata", @registory[:write_data ])
-            @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
+            @registory[:store_data ] = port_regs.fetch("data" , @registory[:store_data ])
+            @registory[:store_data ] = port_regs.fetch("wdata", @registory[:store_data ])
+            @registory[:store_valid] = port_regs.fetch("we"   , @registory[:store_valid])
           end
         end
         @registory[:width] = 1
@@ -108,26 +108,26 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         if    @read == true  and @write == true  then
-          @registory[:read_data ] = @port_name + "_rdata"
-          @registory[:write_data] = @port_name + "_wdata"
+          @registory[:query_data] = @port_name + "_rdata"
+          @registory[:store_data] = @port_name + "_wdata"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_data] = port_regs.fetch("rdata", @registory[:read_data])
-            @registory[:write_data] = port_regs.fetch("wdata", @registory[:write_data])
+            @registory[:query_data] = port_regs.fetch("rdata", @registory[:query_data])
+            @registory[:store_data] = port_regs.fetch("wdata", @registory[:store_data])
           end
         elsif @read == true  and @write == false then
-          @registory[:read_data ] = @port_name
+          @registory[:query_data ] = @port_name
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_data] = port_regs.fetch("data" , @registory[:read_data ])
-            @registory[:read_data] = port_regs.fetch("rdata", @registory[:read_data ])
+            @registory[:query_data] = port_regs.fetch("data" , @registory[:query_data])
+            @registory[:query_data] = port_regs.fetch("rdata", @registory[:query_data])
           end
         elsif @read == false and @write == true  then
-          @registory[:write_data] = @port_name
+          @registory[:store_data] = @port_name
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:write_data] = port_regs.fetch("data" , @registory[:write_data])
-            @registory[:write_data] = port_regs.fetch("wdata", @registory[:write_data])
+            @registory[:store_data] = port_regs.fetch("data" , @registory[:store_data])
+            @registory[:store_data] = port_regs.fetch("wdata", @registory[:store_data])
           end
         end
         @registory[:width] = 1
@@ -153,58 +153,58 @@ module MsgPack_RPC_Interface::Standard
         end
         @registory[:width] = registory.fetch("width", 1)
         if    @read == true  and @write == true  then
-          @registory[:read_addr  ] = @port_name + "_raddr"
-          @registory[:read_data  ] = @port_name + "_rdata"
-          @registory[:write_addr ] = @port_name + "_waddr"
-          @registory[:write_data ] = @port_name + "_wdata"
-          @registory[:write_valid] = @port_name + "_we"
-          @registory[:write_strb ] = @port_name + "_strb"
+          @registory[:query_addr ] = @port_name + "_raddr"
+          @registory[:query_data ] = @port_name + "_rdata"
+          @registory[:store_addr ] = @port_name + "_waddr"
+          @registory[:store_data ] = @port_name + "_wdata"
+          @registory[:store_valid] = @port_name + "_we"
+          @registory[:store_strb ] = @port_name + "_strb"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_addr  ] = port_regs.fetch("raddr", @registory[:read_addr  ])
-            @registory[:read_data  ] = port_regs.fetch("rdata", @registory[:read_data  ])
-            @registory[:write_addr ] = port_regs.fetch("waddr", @registory[:write_addr ])
-            @registory[:write_data ] = port_regs.fetch("wdata", @registory[:write_data ])
-            @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
-            @registory[:write_strb ] = port_regs.fetch("wstrb", @registory[:write_strb ])
-            @registory[:read_addr  ] = port_regs.fetch("addr" , @registory[:read_addr  ])
-            @registory[:write_addr ] = port_regs.fetch("addr" , @registory[:write_addr ])
+            @registory[:query_addr ] = port_regs.fetch("raddr", @registory[:query_addr ])
+            @registory[:query_data ] = port_regs.fetch("rdata", @registory[:query_data ])
+            @registory[:store_addr ] = port_regs.fetch("waddr", @registory[:store_addr ])
+            @registory[:store_data ] = port_regs.fetch("wdata", @registory[:store_data ])
+            @registory[:store_valid] = port_regs.fetch("we"   , @registory[:store_valid])
+            @registory[:store_strb ] = port_regs.fetch("wstrb", @registory[:store_strb ])
+            @registory[:query_addr ] = port_regs.fetch("addr" , @registory[:query_addr ])
+            @registory[:store_addr ] = port_regs.fetch("addr" , @registory[:store_addr ])
           end
         elsif @read == true  and @write == false then
-          @registory[:read_addr  ] = @port_name + "_addr"
-          @registory[:read_data  ] = @port_name + "_data"
+          @registory[:query_addr ] = @port_name + "_addr"
+          @registory[:query_data ] = @port_name + "_data"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_addr  ] = port_regs.fetch("addr" , @registory[:read_addr ])
-            @registory[:read_data  ] = port_regs.fetch("data" , @registory[:read_data ])
+            @registory[:query_addr ] = port_regs.fetch("addr" , @registory[:query_addr ])
+            @registory[:query_data ] = port_regs.fetch("data" , @registory[:query_data ])
           end
         elsif @read == false and @write == true  then
-          @registory[:write_addr ] = @port_name + "_addr"
-          @registory[:write_data ] = @port_name + "_data"
-          @registory[:write_valid] = @port_name + "_we"
-          @registory[:write_strb ] = @port_name + "_strb"
+          @registory[:store_addr ] = @port_name + "_addr"
+          @registory[:store_data ] = @port_name + "_data"
+          @registory[:store_valid] = @port_name + "_we"
+          @registory[:store_strb ] = @port_name + "_strb"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:write_addr ] = port_regs.fetch("addr" , @registory[:write_addr ])
-            @registory[:write_data ] = port_regs.fetch("data" , @registory[:write_data ])
-            @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
-            @registory[:write_strb ] = port_regs.fetch("strb" , @registory[:write_strb ])
+            @registory[:store_addr ] = port_regs.fetch("addr" , @registory[:store_addr ])
+            @registory[:store_data ] = port_regs.fetch("data" , @registory[:store_data ])
+            @registory[:store_valid] = port_regs.fetch("we"   , @registory[:store_valid])
+            @registory[:store_strb ] = port_regs.fetch("strb" , @registory[:store_strb ])
           end
         end 
         @generator = MsgPack_RPC_Interface::VHDL::Memory.const_get(@msg_class.class.to_s.split('::').last)
         if @port_raddr == @port_waddr then
           arb_regs = Hash.new
           arb_regs[:name       ] = @port_name
-          arb_regs[:addr       ] = @registory[:read_addr]
+          arb_regs[:addr       ] = @registory[:query_addr]
           arb_regs[:addr_type  ] = @registory[:addr_type]
-          arb_regs[:write_addr ] = "proc_#{@port_name}_waddr"
-          arb_regs[:write_ready] = "proc_#{@port_name}_wready"
-          arb_regs[:write_start] = "proc_#{@port_name}_wstart"
-          arb_regs[:write_busy ] = "proc_#{@port_name}_wbusy"
-          arb_regs[:read_addr  ] = "proc_#{@port_name}_raddr"
-          arb_regs[:read_valid ] = "proc_#{@port_name}_rvalid"
-          arb_regs[:read_start ] = "proc_#{@port_name}_rstart"
-          arb_regs[:read_busy  ] = "proc_#{@port_name}_rbusy"
+          arb_regs[:store_addr ] = "proc_#{@port_name}_waddr"
+          arb_regs[:store_ready] = "proc_#{@port_name}_wready"
+          arb_regs[:store_start] = "proc_#{@port_name}_wstart"
+          arb_regs[:store_busy ] = "proc_#{@port_name}_wbusy"
+          arb_regs[:query_addr ] = "proc_#{@port_name}_raddr"
+          arb_regs[:query_valid] = "proc_#{@port_name}_rvalid"
+          arb_regs[:query_start] = "proc_#{@port_name}_rstart"
+          arb_regs[:query_busy ] = "proc_#{@port_name}_rbusy"
           @arbitor = Arbitor.new(arb_regs)
           @blocks << @arbitor
         end
@@ -214,12 +214,12 @@ module MsgPack_RPC_Interface::Standard
       def generate_vhdl_body_store(indent, registory)
         new_regs = registory.dup
         if @arbitor != nil then
-          new_regs[:write_addr ] = @arbitor.registory[:write_addr ]
-          new_regs[:write_ready] = @arbitor.registory[:write_ready]
-          new_regs[:write_start] = @arbitor.registory[:write_start]
-          new_regs[:write_busy ] = @arbitor.registory[:write_busy ]
+          new_regs[:store_addr ] = @arbitor.registory[:store_addr ]
+          new_regs[:store_ready] = @arbitor.registory[:store_ready]
+          new_regs[:store_start] = @arbitor.registory[:store_start]
+          new_regs[:store_busy ] = @arbitor.registory[:store_busy ]
         else
-          new_regs[:write_ready] = "'1'"
+          new_regs[:store_ready] = "'1'"
         end
         return super(indent, new_regs)
       end
@@ -227,12 +227,12 @@ module MsgPack_RPC_Interface::Standard
       def generate_vhdl_body_query(indent, registory)
         new_regs = registory.dup
         if @arbitor != nil then
-          new_regs[:read_addr  ] = @arbitor.registory[:read_addr  ]
-          new_regs[:read_valid ] = @arbitor.registory[:read_valid ]
-          new_regs[:read_start ] = @arbitor.registory[:read_start ]
-          new_regs[:read_busy  ] = @arbitor.registory[:read_busy  ]
+          new_regs[:query_addr  ] = @arbitor.registory[:query_addr  ]
+          new_regs[:query_valid ] = @arbitor.registory[:query_valid ]
+          new_regs[:query_start ] = @arbitor.registory[:query_start ]
+          new_regs[:query_busy  ] = @arbitor.registory[:query_busy  ]
         else
-          new_regs[:read_valid ] =  "'1'"
+          new_regs[:query_valid ] =  "'1'"
         end
         return super(indent, new_regs)
       end
@@ -279,84 +279,84 @@ module MsgPack_RPC_Interface::Standard
           @registory[:max_size ] = 2**(@registory[:size_type].width-1)
         end
         if    @read == true  and @write == true  then
-          @registory[:write_start] = nil
-          @registory[:write_busy ] = nil
-          @registory[:write_size ] = nil
-          @registory[:write_data ] = @port_name + "_wdata"
-          @registory[:write_strb ] = @port_name + "_wstrb"  
-          @registory[:write_last ] = @port_name + "_wlast"  
-          @registory[:write_valid] = @port_name + "_wvalid" 
-          @registory[:write_ready] = @port_name + "_wready" 
-          @registory[:read_start ] = nil
-          @registory[:read_busy  ] = nil
-          @registory[:read_size  ] = nil
-          @registory[:read_dsize ] = nil
-          @registory[:read_data  ] = @port_name + "_rdata"
-          @registory[:read_strb  ] = @port_name + "_rstrb"  
-          @registory[:read_last  ] = @port_name + "_rlast"  
-          @registory[:read_valid ] = @port_name + "_rvalid" 
-          @registory[:read_ready ] = @port_name + "_rready" 
+          @registory[:store_start] = nil
+          @registory[:store_busy ] = nil
+          @registory[:store_size ] = nil
+          @registory[:store_data ] = @port_name + "_wdata"
+          @registory[:store_strb ] = @port_name + "_wstrb"  
+          @registory[:store_last ] = @port_name + "_wlast"  
+          @registory[:store_valid] = @port_name + "_wvalid" 
+          @registory[:store_ready] = @port_name + "_wready" 
+          @registory[:query_start] = nil
+          @registory[:query_busy ] = nil
+          @registory[:query_size ] = nil
+          @registory[:query_dsize] = nil
+          @registory[:query_data ] = @port_name + "_rdata"
+          @registory[:query_strb ] = @port_name + "_rstrb"  
+          @registory[:query_last ] = @port_name + "_rlast"  
+          @registory[:query_valid] = @port_name + "_rvalid" 
+          @registory[:query_ready] = @port_name + "_rready" 
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:write_start] = port_regs.fetch("wstart", @registory[:write_start])
-            @registory[:write_busy ] = port_regs.fetch("wbusy" , @registory[:write_busy ])
-            @registory[:write_size ] = port_regs.fetch("wsize" , @registory[:write_size ])
-            @registory[:write_data ] = port_regs.fetch("wdata" , @registory[:write_data ])
-            @registory[:write_strb ] = port_regs.fetch("wstrb" , @registory[:write_strb ])
-            @registory[:write_last ] = port_regs.fetch("wlast" , @registory[:write_last ])
-            @registory[:write_valid] = port_regs.fetch("wvalid", @registory[:write_valid])
-            @registory[:write_ready] = port_regs.fetch("wready", @registory[:write_ready])
-            @registory[:read_start ] = port_regs.fetch("rstart", @registory[:read_start ])
-            @registory[:read_busy  ] = port_regs.fetch("rbusy" , @registory[:read_busy  ])
-            @registory[:read_size  ] = port_regs.fetch("rsize" , @registory[:read_size  ])
-            @registory[:read_dsize ] = port_regs.fetch("rdsize", @registory[:read_dsize ])
-            @registory[:read_data  ] = port_regs.fetch("rdata" , @registory[:read_data  ])
-            @registory[:read_strb  ] = port_regs.fetch("rstrb" , @registory[:read_strb  ])
-            @registory[:read_last  ] = port_regs.fetch("rlast" , @registory[:read_last  ])
-            @registory[:read_valid ] = port_regs.fetch("rvalid", @registory[:read_valid ])
-            @registory[:read_ready ] = port_regs.fetch("rready", @registory[:read_ready ])
+            @registory[:store_start] = port_regs.fetch("wstart", @registory[:store_start])
+            @registory[:store_busy ] = port_regs.fetch("wbusy" , @registory[:store_busy ])
+            @registory[:store_size ] = port_regs.fetch("wsize" , @registory[:store_size ])
+            @registory[:store_data ] = port_regs.fetch("wdata" , @registory[:store_data ])
+            @registory[:store_strb ] = port_regs.fetch("wstrb" , @registory[:store_strb ])
+            @registory[:store_last ] = port_regs.fetch("wlast" , @registory[:store_last ])
+            @registory[:store_valid] = port_regs.fetch("wvalid", @registory[:store_valid])
+            @registory[:store_ready] = port_regs.fetch("wready", @registory[:store_ready])
+            @registory[:query_start] = port_regs.fetch("rstart", @registory[:query_start ])
+            @registory[:query_busy ] = port_regs.fetch("rbusy" , @registory[:query_busy  ])
+            @registory[:query_size ] = port_regs.fetch("rsize" , @registory[:query_size  ])
+            @registory[:query_dsize] = port_regs.fetch("rdsize", @registory[:query_dsize ])
+            @registory[:query_data ] = port_regs.fetch("rdata" , @registory[:query_data  ])
+            @registory[:query_strb ] = port_regs.fetch("rstrb" , @registory[:query_strb  ])
+            @registory[:query_last ] = port_regs.fetch("rlast" , @registory[:query_last  ])
+            @registory[:query_valid] = port_regs.fetch("rvalid", @registory[:query_valid ])
+            @registory[:query_ready] = port_regs.fetch("rready", @registory[:query_ready ])
           end
         elsif @read == true  and @write == false then
-          @registory[:read_start ] = nil
-          @registory[:read_busy  ] = nil
-          @registory[:read_size  ] = nil
-          @registory[:read_dsize ] = nil
-          @registory[:read_data  ] = @port_name + "_data"
-          @registory[:read_strb  ] = @port_name + "_strb"  
-          @registory[:read_last  ] = @port_name + "_last"  
-          @registory[:read_valid ] = @port_name + "_valid" 
-          @registory[:read_ready ] = @port_name + "_ready" 
+          @registory[:query_start] = nil
+          @registory[:query_busy ] = nil
+          @registory[:query_size ] = nil
+          @registory[:query_dsize] = nil
+          @registory[:query_data ] = @port_name + "_data"
+          @registory[:query_strb ] = @port_name + "_strb"  
+          @registory[:query_last ] = @port_name + "_last"  
+          @registory[:query_valid] = @port_name + "_valid" 
+          @registory[:query_ready] = @port_name + "_ready" 
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_start ] = port_regs.fetch("start", @registory[:read_start ])
-            @registory[:read_busy  ] = port_regs.fetch("busy" , @registory[:read_busy  ])
-            @registory[:read_size  ] = port_regs.fetch("size" , @registory[:read_size  ])
-            @registory[:read_dsize ] = port_regs.fetch("dsize", @registory[:read_dsize ])
-            @registory[:read_data  ] = port_regs.fetch("data" , @registory[:read_data  ])
-            @registory[:read_strb  ] = port_regs.fetch("strb" , @registory[:read_strb  ])
-            @registory[:read_last  ] = port_regs.fetch("last" , @registory[:read_last  ])
-            @registory[:read_valid ] = port_regs.fetch("valid", @registory[:read_valid ])
-            @registory[:read_ready ] = port_regs.fetch("ready", @registory[:read_ready ])
+            @registory[:query_start] = port_regs.fetch("start", @registory[:query_start ])
+            @registory[:query_busy ] = port_regs.fetch("busy" , @registory[:query_busy  ])
+            @registory[:query_size ] = port_regs.fetch("size" , @registory[:query_size  ])
+            @registory[:query_dsize] = port_regs.fetch("dsize", @registory[:query_dsize ])
+            @registory[:query_data ] = port_regs.fetch("data" , @registory[:query_data  ])
+            @registory[:query_strb ] = port_regs.fetch("strb" , @registory[:query_strb  ])
+            @registory[:query_last ] = port_regs.fetch("last" , @registory[:query_last  ])
+            @registory[:query_valid] = port_regs.fetch("valid", @registory[:query_valid ])
+            @registory[:query_ready] = port_regs.fetch("ready", @registory[:query_ready ])
           end
         elsif @read == false and @write == true  then
-          @registory[:write_start] = nil
-          @registory[:write_busy ] = nil
-          @registory[:write_size ] = nil
-          @registory[:write_data ] = @port_name + "_data"
-          @registory[:write_strb ] = @port_name + "_strb"  
-          @registory[:write_last ] = @port_name + "_last"  
-          @registory[:write_valid] = @port_name + "_valid" 
-          @registory[:write_ready] = @port_name + "_ready" 
+          @registory[:store_start] = nil
+          @registory[:store_busy ] = nil
+          @registory[:store_size ] = nil
+          @registory[:store_data ] = @port_name + "_data"
+          @registory[:store_strb ] = @port_name + "_strb"  
+          @registory[:store_last ] = @port_name + "_last"  
+          @registory[:store_valid] = @port_name + "_valid" 
+          @registory[:store_ready] = @port_name + "_ready" 
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:write_start] = port_regs.fetch("start", @registory[:write_start])
-            @registory[:write_busy ] = port_regs.fetch("busy" , @registory[:write_busy ])
-            @registory[:write_size ] = port_regs.fetch("size" , @registory[:write_size ])
-            @registory[:write_data ] = port_regs.fetch("data" , @registory[:write_data ])
-            @registory[:write_strb ] = port_regs.fetch("strb" , @registory[:write_strb ])
-            @registory[:write_last ] = port_regs.fetch("last" , @registory[:write_last ])
-            @registory[:write_valid] = port_regs.fetch("valid", @registory[:write_valid])
-            @registory[:write_ready] = port_regs.fetch("ready", @registory[:write_ready])
+            @registory[:store_start] = port_regs.fetch("start", @registory[:store_start])
+            @registory[:store_busy ] = port_regs.fetch("busy" , @registory[:store_busy ])
+            @registory[:store_size ] = port_regs.fetch("size" , @registory[:store_size ])
+            @registory[:store_data ] = port_regs.fetch("data" , @registory[:store_data ])
+            @registory[:store_strb ] = port_regs.fetch("strb" , @registory[:store_strb ])
+            @registory[:store_last ] = port_regs.fetch("last" , @registory[:store_last ])
+            @registory[:store_valid] = port_regs.fetch("valid", @registory[:store_valid])
+            @registory[:store_ready] = port_regs.fetch("ready", @registory[:store_ready])
           end
         else
         end

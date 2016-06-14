@@ -11,7 +11,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
     max_size      = registory[:max_size]
     data_bits     = registory[:width]*8
     size_bits     = query_sig[:size_bits]
-    default_size  = registory.fetch(:read_dsize , '"' + Array.new(size_bits){|n| (registory[:width] >> (size_bits-1-n)) & 1}.join + '"')
+    default_size  = registory.fetch(:query_dsize , '"' + Array.new(size_bits){|n| (registory[:width] >> (size_bits-1-n)) & 1}.join + '"')
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
       vhdl_lines = string_to_lines(
