@@ -5,11 +5,11 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
     block_regs = registory.dup
     block_regs[:store_data ] = "proc_0_value"
     block_regs[:store_valid] = "proc_0_valid"
-    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.width, "sign" => type.sign}))
+    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.bits, "sign" => type.sign}))
     generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
     return string_to_lines(
       indent, <<"      EOT"
-           signal    proc_0_value   :  std_logic_vector(#{type.width-1} downto 0);
+           signal    proc_0_value   :  std_logic_vector(#{type.bits-1} downto 0);
            signal    proc_0_valid   :  std_logic;
       EOT
     ).concat(generator.generate_decl(indent, name, logic_type, kvmap, block_regs))
@@ -20,7 +20,7 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
     block_regs[:store_data ] = "proc_0_value"
     block_regs[:store_valid] = "proc_0_valid"
     conv_value = type.generate_vhdl_convert("proc_0_value")
-    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.width, "sign" => type.sign}))
+    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.bits, "sign" => type.sign}))
     generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
     return string_to_lines(
       indent, <<"      EOT"

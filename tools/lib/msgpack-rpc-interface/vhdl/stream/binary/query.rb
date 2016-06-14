@@ -9,7 +9,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
     encode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
     encode_string = (class_name == "String") ? "TRUE" : "FALSE"
     max_size      = registory[:max_size]
-    data_bits     = registory[:width]*8
+    data_bits     = interface[:data_bits]
     size_bits     = interface[:size_bits]
     default_size  = registory.fetch(:query_dsize , '"' + Array.new(size_bits){|n| (registory[:width] >> (size_bits-1-n)) & 1}.join + '"')
     if kvmap == true then

@@ -10,7 +10,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Binary::Query
     encode_string = (class_name == "String") ? "TRUE" : "FALSE"
     memory_size   = registory.fetch(:size, 2**interface[:addr_bits])
     addr_bits     = interface[:addr_bits]
-    data_bits     = registory[:width]*8
+    data_bits     = interface[:data_bits]
     size_bits     = Math::log2(memory_size+1).ceil
     default_size  = '"' + Array.new(size_bits){|n| (memory_size >> (size_bits-1-n)) & 1}.join + '"'
     if kvmap == true then

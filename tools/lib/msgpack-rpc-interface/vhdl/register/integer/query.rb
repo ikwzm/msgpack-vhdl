@@ -5,7 +5,7 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Query
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
     interface     = interface_signals(data_type, registory)
-    value_bits    = data_type.width
+    value_bits    = data_type.bits
     value_sign    = data_type.sign
     if kvmap == true then
       key_string  = "STRING'(\"" + name + "\")"

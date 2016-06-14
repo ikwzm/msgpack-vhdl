@@ -5,7 +5,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Store
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
     interface     = interface_signals(data_type, registory)
-    data_bits     = registory[:width]*8
+    data_bits     = interface[:data_bits]
     class_name    = self.name.to_s.split("::")[-2]
     decode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
     decode_string = (class_name == "String") ? "TRUE" : "FALSE"

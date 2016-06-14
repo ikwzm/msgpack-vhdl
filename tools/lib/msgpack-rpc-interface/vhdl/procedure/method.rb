@@ -165,7 +165,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
   end
         
   def self.generate_stmt_method_return_integer(indent, name, return_variable, registory)
-    value_width = return_variable.type.width
+    value_width = return_variable.type.bits
     return_uint = (return_variable.type.sign) ? "FALSE" : "TRUE"
     return_int  = (return_variable.type.sign) ? "TRUE"  : "FALSE"
     return_value= "std_logic_vector(#{registory[:return_name]})"

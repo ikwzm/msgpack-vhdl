@@ -6,7 +6,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Query
     instance_name = instance_name(name, data_type, registory)
     interface     = interface_signals(data_type, registory)
     memory_size   = registory.fetch(:size, 2**interface[:addr_bits])
-    value_bits    = data_type.width
+    value_bits    = data_type.bits
     value_sign    = data_type.sign
     addr_bits     = interface[:addr_bits]
     size_bits     = Math::log2(memory_size+1).ceil

@@ -8,7 +8,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Integer::Store
     store_sign    = registory.fetch(:store_sign , "open")
     check_range   = registory.fetch(:check_range, "TRUE")
     enable64      = registory.fetch(:enable64   , "TRUE")
-    value_bits    = data_type.width
+    value_bits    = data_type.bits
     value_sign    = data_type.sign
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"

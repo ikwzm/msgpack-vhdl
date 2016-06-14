@@ -149,7 +149,7 @@ module MsgPack_RPC_Interface::Standard
           @registory[:addr_type] = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => Math::log2(@registory[:size]).ceil})))
         else
           @registory[:addr_type] = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => 32})))
-          @registory[:size     ] = 2**(@registory[:addr_type].width)
+          @registory[:size     ] = 2**(@registory[:addr_type].bits)
         end
         @registory[:width] = registory.fetch("width", 1)
         if    @read == true  and @write == true  then
@@ -276,7 +276,7 @@ module MsgPack_RPC_Interface::Standard
           @registory[:size_type] = Type.new(registory.fetch("size_type", Hash({"name" => "Logic_Vector", "width" => size_bits})))
         else
           @registory[:size_type] = Type.new(registory.fetch("size_type", Hash({"name" => "Logic_Vector", "width" => 32})))
-          @registory[:max_size ] = 2**(@registory[:size_type].width-1)
+          @registory[:max_size ] = 2**(@registory[:size_type].bits-1)
         end
         if    @read == true  and @write == true  then
           @registory[:store_start] = nil
@@ -387,6 +387,7 @@ module MsgPack_RPC_Interface::Standard
     module_function :new
 
     class Base
+      attr_reader :bits
       def to_s
         return "#{self.class.name}"
       end
@@ -395,14 +396,14 @@ module MsgPack_RPC_Interface::Standard
     end
 
     class Integer < Base
-      attr_reader :width, :sign
+      attr_reader :sign
       def initialize(registory)
         super(registory)
-        @width = registory.fetch("width", 32  )
-        @sign  = registory.fetch("sign" , true)
+        @bits = registory.fetch("width", 32  )
+        @sign = registory.fetch("sign" , true)
       end
       def generate_vhdl_type
-        return "std_logic_vector(#{@width}-1 downto 0)"
+        return "std_logic_vector(#{@bits}-1 downto 0)"
       end
       def generate_vhdl_convert(value)
         return value
@@ -410,14 +411,14 @@ module MsgPack_RPC_Interface::Standard
     end
 
     class Unsigned < Base
-      attr_reader :width, :sign
+      attr_reader :sign
       def initialize(registory)
         super(registory)
-        @width = registory.fetch("width", 32  )
-        @sign  = false
+        @bits = registory.fetch("width", 32  )
+        @sign = false
       end
       def generate_vhdl_type
-        return "unsigned(#{@width}-1 downto 0)"
+        return "unsigned(#{@bits}-1 downto 0)"
       end
       def generate_vhdl_convert(value)
         return "unsigned(#{value})"
@@ -425,14 +426,14 @@ module MsgPack_RPC_Interface::Standard
     end
 
     class Signed < Base
-      attr_reader :width, :sign
+      attr_reader :sign
       def initialize(registory)
         super(registory)
-        @width = registory.fetch("width", 32  )
-        @sign  = true
+        @bits = registory.fetch("width", 32  )
+        @sign = true
       end
       def generate_vhdl_type
-        return "signed(#{@width}-1 downto 0)"
+        return "signed(#{@bits}-1 downto 0)"
       end
       def generate_vhdl_convert(value)
         return "signed(#{value})"
@@ -442,6 +443,7 @@ module MsgPack_RPC_Interface::Standard
     class Logic   < Base
       def initialize(registory)
         super(registory)
+        @bits = 1
       end
       def generate_vhdl_type
         return "std_logic"
@@ -452,40 +454,38 @@ module MsgPack_RPC_Interface::Standard
     end
 
     class Logic_Vector < Base
-      attr_reader :width
       def initialize(registory)
         super(registory)
-        @width = registory.fetch("width", nil)
+        @bits = registory.fetch("width", 1)
       end
       def generate_vhdl_type
-        return "std_logic_vector(#{@width}-1 downto 0)"
+        return "std_logic_vector(#{@bits}-1 downto 0)"
       end
     end
 
     class Binary < Base
-      attr_reader :width
       def initialize(registory)
         super(registory)
-        @width = registory.fetch("width", nil)
+        @bits = 8
       end
       def generate_vhdl_type
-        return "std_logic_vector(8*#{@width}-1 downto 0)"
+        return "std_logic_vector(#{@bits}-1 downto 0)"
       end
     end
     
     class String < Base
-      attr_reader :width
       def initialize(registory)
         super(registory)
-        @width = registory.fetch("width", nil)
+        @bits = 8
       end
       def generate_vhdl_type
-        return "std_logic_vector(8*#{@width}-1 downto 0)"
+        return "std_logic_vector(#{@bits}-1 downto 0)"
       end
     end
     
     class Boolean < Base
       def initialize(registory)
+        @bits = 1
       end
       def generate_vhdl_type
         return "boolean"
