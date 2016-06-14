@@ -4,7 +4,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Binary::Store
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
-    write_sig     = internal_signals(data_type, registory)
+    write_sig     = interface_signals(data_type, registory)
     data_bits     = registory[:width]*8
     class_name    = self.name.to_s.split("::")[-2]
     decode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
@@ -94,7 +94,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Binary::Store
   end
 
   module_function :instance_name
-  module_function :internal_signals
+  module_function :interface_signals
   module_function :sub_block?
   module_function :generate_body
   module_function :generate_decl

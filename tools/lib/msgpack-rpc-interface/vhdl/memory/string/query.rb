@@ -2,7 +2,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::String::Query
   extend  MsgPack_RPC_Interface::VHDL::Util
   include MsgPack_RPC_Interface::VHDL::Memory::Binary::Query
   module_function :instance_name
-  module_function :internal_signals
+  module_function :interface_signals
   module_function :sub_block?
   module_function :generate_body
   module_function :generate_decl

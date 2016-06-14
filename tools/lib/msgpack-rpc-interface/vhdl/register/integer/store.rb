@@ -4,7 +4,7 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Store
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
-    write_sig     = internal_signals(data_type, registory)
+    write_sig     = interface_signals(data_type, registory)
     write_sign    = registory.fetch(:store_sign , "open")
     check_range   = registory.fetch(:check_range, "TRUE")
     enable64      = registory.fetch(:enable64   , "TRUE")
@@ -89,7 +89,7 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer::Store
   end
 
   module_function :instance_name
-  module_function :internal_signals
+  module_function :interface_signals
   module_function :sub_block?
   module_function :generate_body
   module_function :generate_decl

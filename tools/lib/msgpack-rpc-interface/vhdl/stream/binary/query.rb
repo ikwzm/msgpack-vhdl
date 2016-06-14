@@ -4,7 +4,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
-    query_sig     = internal_signals(data_type, registory)
+    query_sig     = interface_signals(data_type, registory)
     class_name    = self.name.to_s.split("::")[-2]
     encode_binary = (class_name == "Binary") ? "TRUE" : "FALSE"
     encode_string = (class_name == "String") ? "TRUE" : "FALSE"
@@ -109,7 +109,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Binary::Query
   end
 
   module_function :instance_name
-  module_function :internal_signals
+  module_function :interface_signals
   module_function :sub_block?
   module_function :generate_body
   module_function :generate_decl

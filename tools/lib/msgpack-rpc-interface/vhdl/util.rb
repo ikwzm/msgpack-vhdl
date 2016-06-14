@@ -39,7 +39,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
     end
 
-    def internal_signals(data_type, registory)
+    def interface_signals(data_type, registory)
       signals = Hash.new
       if registory.key?(:store_data) then
         if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
@@ -188,7 +188,7 @@ module MsgPack_RPC_Interface::VHDL::Util
     end
 
     module_function :instance_name
-    module_function :internal_signals
+    module_function :interface_signals
     module_function :sub_block?
     module_function :generate_decl
     module_function :generate_body
@@ -227,7 +227,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       return sub_block
     end
 
-    def internal_signals(data_type, registory)
+    def interface_signals(data_type, registory)
       signals = Hash.new
       if registory.key?(:query_data) then
         if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
@@ -353,7 +353,7 @@ module MsgPack_RPC_Interface::VHDL::Util
     end
 
     module_function :instance_name
-    module_function :internal_signals
+    module_function :interface_signals
     module_function :sub_block?
     module_function :generate_decl
     module_function :generate_body

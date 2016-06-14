@@ -4,7 +4,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Integer::Query
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
-    query_sig     = internal_signals(data_type, registory)
+    query_sig     = interface_signals(data_type, registory)
     value_bits    = data_type.width
     value_sign    = data_type.sign
     size_bits     = query_sig[:size_bits]
@@ -101,7 +101,7 @@ module MsgPack_RPC_Interface::VHDL::Stream::Integer::Query
   end
 
   module_function :instance_name
-  module_function :internal_signals
+  module_function :interface_signals
   module_function :sub_block?
   module_function :generate_body
   module_function :generate_decl
