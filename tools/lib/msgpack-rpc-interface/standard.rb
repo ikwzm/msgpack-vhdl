@@ -70,12 +70,12 @@ module MsgPack_RPC_Interface::Standard
         super(registory)
         if    @read == true  and @write == true  then
           @registory[:read_value ] = @port_name + "_rdata"
-          @registory[:write_value] = @port_name + "_wdata"
+          @registory[:write_data ] = @port_name + "_wdata"
           @registory[:write_valid] = @port_name + "_we"
           if registory.key?("port") then
             port_regs = registory["port"]
             @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
-            @registory[:write_value] = port_regs.fetch("wdata", @registory[:write_value])
+            @registory[:write_data ] = port_regs.fetch("wdata", @registory[:write_data ])
             @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
           end
         elsif @read == true  and @write == false then
@@ -86,12 +86,12 @@ module MsgPack_RPC_Interface::Standard
             @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
           end
         elsif @read == false and @write == true  then
-          @registory[:write_value] = @port_name
+          @registory[:write_data ] = @port_name
           @registory[:write_valid] = @port_name + "_we"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:write_value] = port_regs.fetch("data" , @registory[:write_value])
-            @registory[:write_value] = port_regs.fetch("wdata", @registory[:write_value])
+            @registory[:write_data ] = port_regs.fetch("data" , @registory[:write_data ])
+            @registory[:write_data ] = port_regs.fetch("wdata", @registory[:write_data ])
             @registory[:write_valid] = port_regs.fetch("we"   , @registory[:write_valid])
           end
         end
@@ -108,25 +108,25 @@ module MsgPack_RPC_Interface::Standard
         super(registory)
         if    @read == true  and @write == true  then
           @registory[:read_value ] = @port_name + "_rdata"
-          @registory[:write_value] = @port_name + "_wdata"
+          @registory[:write_data ] = @port_name + "_wdata"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
-            @registory[:write_value] = port_regs.fetch("wdata", @registory[:write_value])
+            @registory[:read_value] = port_regs.fetch("rdata", @registory[:read_value])
+            @registory[:write_data] = port_regs.fetch("wdata", @registory[:write_data])
           end
         elsif @read == true  and @write == false then
           @registory[:read_value ] = @port_name
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:read_value ] = port_regs.fetch("data" , @registory[:read_value ])
-            @registory[:read_value ] = port_regs.fetch("rdata", @registory[:read_value ])
+            @registory[:read_value] = port_regs.fetch("data" , @registory[:read_value ])
+            @registory[:read_value] = port_regs.fetch("rdata", @registory[:read_value ])
           end
         elsif @read == false and @write == true  then
-          @registory[:write_value] = @port_name
+          @registory[:write_data] = @port_name
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:write_value] = port_regs.fetch("data" , @registory[:write_value])
-            @registory[:write_value] = port_regs.fetch("wdata", @registory[:write_value])
+            @registory[:write_data] = port_regs.fetch("data" , @registory[:write_data])
+            @registory[:write_data] = port_regs.fetch("wdata", @registory[:write_data])
           end
         end
         @registory.delete_if{|key,val| val == nil}

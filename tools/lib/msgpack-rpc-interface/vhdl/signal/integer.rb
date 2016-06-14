@@ -8,7 +8,7 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer
     w_in  = (master) ? "in"  : "out"
     r_in  = (master) ? "in"  : "out"
     r_out = (master) ? "out" : "in"
-    add_port_line(vhdl_lines, registory, :write_value, w_out,  "#{type_name}")
+    add_port_line(vhdl_lines, registory, :write_data , w_out,  "#{type_name}")
     add_port_line(vhdl_lines, registory, :write_sign , w_out,  "std_logic"   )
     add_port_line(vhdl_lines, registory, :write_last , w_out,  "std_logic"   )
     add_port_line(vhdl_lines, registory, :write_valid, w_out,  "std_logic"   )
