@@ -93,7 +93,7 @@ architecture RTL of MsgPack_Object_Query_Integer_Register is
     signal    start        :  std_logic;
     signal    busy         :  std_logic;
     signal    size         :  std_logic_vector(0 downto 0);
-    constant  default_size :  std_logic_vector(0 downto 0) := "1";
+    constant  default_size :  std_logic_vector(0 downto 0) := (others => '1');
 begin
     -------------------------------------------------------------------------------
     --

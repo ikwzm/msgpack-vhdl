@@ -2,7 +2,7 @@
 --!     @file    object/msgpack_object_components.vhd                            --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/11                                                      --
+--!     @date    2016/06/14                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
