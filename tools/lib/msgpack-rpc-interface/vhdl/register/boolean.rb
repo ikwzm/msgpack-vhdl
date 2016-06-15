@@ -1,4 +1,4 @@
-module MsgPack_RPC_Interface::VHDL::Signal::Integer
+module MsgPack_RPC_Interface::VHDL::Register::Boolean
   extend MsgPack_RPC_Interface::VHDL::Util
 
   def generate_port_list(master, type, kvmap, registory)
@@ -9,7 +9,6 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer
     r_in  = (master) ? "in"  : "out"
     r_out = (master) ? "out" : "in"
     add_port_line(vhdl_lines, registory, :store_data , w_out,  "#{type_name}")
-    add_port_line(vhdl_lines, registory, :store_sign , w_out,  "std_logic"   )
     add_port_line(vhdl_lines, registory, :store_last , w_out,  "std_logic"   )
     add_port_line(vhdl_lines, registory, :store_valid, w_out,  "std_logic"   )
     add_port_line(vhdl_lines, registory, :store_ready, w_in ,  "std_logic"   )
@@ -21,7 +20,7 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer
 
   module_function :generate_port_list
 
-  require_relative 'integer/store'
-  require_relative 'integer/query'
+  require_relative 'boolean/store'
+  require_relative 'boolean/query'
 
 end

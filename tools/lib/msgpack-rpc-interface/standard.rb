@@ -396,99 +396,71 @@ module MsgPack_RPC_Interface::Standard
     end
 
     class Integer < Base
+      include MsgPack_RPC_Interface::VHDL::Type::Std_Logic_Vector
       attr_reader :sign
       def initialize(registory)
         super(registory)
         @bits = registory.fetch("width", 32  )
         @sign = registory.fetch("sign" , true)
       end
-      def generate_vhdl_type
-        return "std_logic_vector(#{@bits}-1 downto 0)"
-      end
-      def generate_vhdl_convert(value)
-        return value
-      end
     end
 
     class Unsigned < Base
+      include MsgPack_RPC_Interface::VHDL::Type::Unsigned
       attr_reader :sign
       def initialize(registory)
         super(registory)
         @bits = registory.fetch("width", 32  )
         @sign = false
       end
-      def generate_vhdl_type
-        return "unsigned(#{@bits}-1 downto 0)"
-      end
-      def generate_vhdl_convert(value)
-        return "unsigned(#{value})"
-      end
     end
 
     class Signed < Base
+      include MsgPack_RPC_Interface::VHDL::Type::Signed
       attr_reader :sign
       def initialize(registory)
         super(registory)
         @bits = registory.fetch("width", 32  )
         @sign = true
       end
-      def generate_vhdl_type
-        return "signed(#{@bits}-1 downto 0)"
-      end
-      def generate_vhdl_convert(value)
-        return "signed(#{value})"
-      end
     end
 
     class Logic   < Base
+      include MsgPack_RPC_Interface::VHDL::Type::Std_Logic
       def initialize(registory)
         super(registory)
         @bits = 1
-      end
-      def generate_vhdl_type
-        return "std_logic"
-      end
-      def generate_vhdl_convert(value)
-        return "signed(#{value})"
       end
     end
 
     class Logic_Vector < Base
+      include MsgPack_RPC_Interface::VHDL::Type::Std_Logic_Vector
       def initialize(registory)
         super(registory)
         @bits = registory.fetch("width", 1)
       end
-      def generate_vhdl_type
-        return "std_logic_vector(#{@bits}-1 downto 0)"
-      end
     end
 
     class Binary < Base
+      include MsgPack_RPC_Interface::VHDL::Type::Std_Logic_Vector
       def initialize(registory)
         super(registory)
         @bits = 8
-      end
-      def generate_vhdl_type
-        return "std_logic_vector(#{@bits}-1 downto 0)"
       end
     end
     
     class String < Base
+      include MsgPack_RPC_Interface::VHDL::Type::Std_Logic_Vector
       def initialize(registory)
         super(registory)
         @bits = 8
       end
-      def generate_vhdl_type
-        return "std_logic_vector(#{@bits}-1 downto 0)"
-      end
     end
     
     class Boolean < Base
+      include MsgPack_RPC_Interface::VHDL::Type::Boolean
       def initialize(registory)
         @bits = 1
-      end
-      def generate_vhdl_type
-        return "boolean"
       end
     end
 

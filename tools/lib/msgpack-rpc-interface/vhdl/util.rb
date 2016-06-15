@@ -42,7 +42,7 @@ module MsgPack_RPC_Interface::VHDL::Util
     def interface_signals(data_type, registory)
       signals = Hash.new
       if registory.key?(:store_data) then
-        if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if data_type.std_logic_vector? == false then
           signals[:data] = "proc_0_data"
         else
           signals[:data] = registory[:store_data]
@@ -52,7 +52,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
       if registory.key?(:store_addr) then
         addr_type = registory[:addr_type]
-        if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if addr_type.std_logic_vector? == false then
           signals[:addr] = "proc_0_addr"
         else
           signals[:addr] = registory[:store_addr]
@@ -63,7 +63,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       if registory.key?(:store_size) then
         size_type = registory[:size_type]
         signals[:size_bits] = addr_type.bits
-        if size_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if size_type.std_logic_vector? == false then
           signals[:size] = "proc_0_size"
         else
           signals[:size] = registory[:store_size]
@@ -95,19 +95,19 @@ module MsgPack_RPC_Interface::VHDL::Util
     def sub_block?(data_type, registory)
       sub_block = false
       if registory.key?(:store_data) then
-        if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if data_type.std_logic_vector? == false then
           sub_block = true
         end
       end
       if registory.key?(:store_addr) then
         addr_type = registory[:addr_type]
-        if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if addr_type.std_logic_vector? == false then
           sub_block = true
         end
       end
       if registory.key?(:store_size) then
         size_type = registory[:size_type]
-        if size_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if size_type.std_logic_vector? == false then
           sub_block = true
         end
       end
@@ -117,7 +117,7 @@ module MsgPack_RPC_Interface::VHDL::Util
     def generate_decl(indent, name, data_type, kvmap, registory)
       vhdl_lines = Array.new
       if registory.key?(:store_data) then
-        if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if data_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent, 
             "signal    proc_0_data      :  std_logic_vector(#{data_type.bits-1} downto 0);"
           ))
@@ -125,7 +125,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
       if registory.key?(:store_addr) then
         addr_type = registory[:addr_type]
-        if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if addr_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent,
             "signal    proc_0_addr      :  std_logic_vector(#{addr_type.bits-1} downto 0);"
           ))
@@ -133,7 +133,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
       if registory.key?(:store_size) then
         size_type = registory[:size_type]
-        if size_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if size_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent,
             "signal    proc_0_size      :  std_logic_vector(#{size_type.bits-1} downto 0);"
           ))
@@ -145,29 +145,20 @@ module MsgPack_RPC_Interface::VHDL::Util
     def generate_stmt_post(indent, name, data_type, kvmap, registory)
       vhdl_lines = Array.new
       if registory.key?(:store_data) then
-        if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-          converted_data = data_type.generate_vhdl_convert("proc_0_data")
-          vhdl_lines.concat(string_to_lines(indent, 
-            "#{registory[:store_data]} <= #{converted_data};"
-          ))
+        if data_type.std_logic_vector? == false then
+          vhdl_lines.concat(string_to_lines(indent,data_type.generate_vhdl_convert_from_std_logic_vector(registory[:store_data], "proc_0_data")))
         end
       end
       if registory.key?(:store_addr) then
         addr_type = registory[:addr_type]
-        if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-          converted_addr = addr_type.generate_vhdl_convert("proc_0_addr")
-          vhdl_lines.concat(string_to_lines(indent, 
-            "#{registory[:store_addr]} <= #{converted_addr};"
-          ))
+        if addr_type.std_logic_vector? == false then
+          vhdl_lines.concat(string_to_lines(indent,addr_type.generate_vhdl_convert_from_std_logic_vector(registory[:store_addr], "proc_0_addr")))
         end
       end
       if registory.key?(:store_size) then
         size_type = registory[:size_type]
-        if size_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-          converted_size = size_type.generate_vhdl_convert("proc_0_size")
-          vhdl_lines.concat(string_to_lines(indent, 
-            "#{registory[:store_size]} <= #{converted_size};"
-          ))
+        if size_type.std_logic_vector? == false then
+          vhdl_lines.concat(string_to_lines(indent,size_type.generate_vhdl_convert_from_std_logic_vector(registory[:store_size], "proc_0_size")))
         end
       end
       return vhdl_lines
@@ -209,19 +200,19 @@ module MsgPack_RPC_Interface::VHDL::Util
     def sub_block?(data_type, registory)
       sub_block = false
       if registory.key?(:query_data) then
-        if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if data_type.std_logic_vector? == false then
           sub_block = true
         end
       end
       if registory.key?(:query_addr) then
         addr_type = registory[:addr_type]
-        if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if addr_type.std_logic_vector? == false then
           sub_block = true
         end
       end
       if registory.key?(:query_size) then
         size_type = registory[:size_type]
-        if size_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if size_type.std_logic_vector? == false then
           sub_block = true
         end
       end
@@ -231,7 +222,7 @@ module MsgPack_RPC_Interface::VHDL::Util
     def interface_signals(data_type, registory)
       signals = Hash.new
       if registory.key?(:query_data) then
-        if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if data_type.std_logic_vector? == false then
           signals[:data] = "proc_1_data"
         else
           signals[:data] = registory[:query_data]
@@ -241,7 +232,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
       if registory.key?(:query_addr) then
         addr_type = registory[:addr_type]
-        if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if addr_type.std_logic_vector? == false then
           signals[:addr] = "proc_1_addr"
         else
           signals[:addr] = registory[:query_addr]
@@ -252,7 +243,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       if registory.key?(:query_size) then
         size_type = registory[:size_type]
         signals[:size_bits] = addr_type.bits
-        if size_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if size_type.std_logic_vector? == false then
           signals[:size] = "proc_1_size"
         else
           signals[:size] = registory[:query_size]
@@ -284,7 +275,7 @@ module MsgPack_RPC_Interface::VHDL::Util
     def generate_decl(indent, name, data_type, kvmap, registory)
       vhdl_lines = Array.new
       if registory.key?(:query_data) then
-        if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if data_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent, 
             "signal    proc_1_data      :  std_logic_vector(#{data_type.bits-1} downto 0);"
           ))
@@ -292,7 +283,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
       if registory.key?(:query_addr) then
         addr_type = registory[:addr_type]
-        if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if addr_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent,
             "signal    proc_1_addr      :  std_logic_vector(#{addr_type.bits-1} downto 0);"
           ))
@@ -300,7 +291,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
       if registory.key?(:query_size) then
         size_type = registory[:size_type]
-        if size_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
+        if size_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent,
             "signal    proc_1_size      :  std_logic_vector(#{size_type.bits-1} downto 0);"
           ))
@@ -312,28 +303,20 @@ module MsgPack_RPC_Interface::VHDL::Util
     def generate_stmt_post(indent, name, data_type, kvmap, registory)
       vhdl_lines = Array.new
       if registory.key?(:query_data) then
-        if data_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-          vhdl_lines.concat(string_to_lines(indent, 
-            "proc_1_data <= std_logic_vector(#{registory[:query_data]});"
-          ))
+        if data_type.std_logic_vector? == false then
+          vhdl_lines.concat(string_to_lines(indent, data_type.generate_vhdl_convert_to_std_logic_vector(registory[:query_data], "proc_1_data")))
         end
       end
       if registory.key?(:query_addr) then
         addr_type = registory[:addr_type]
-        if addr_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-          converted_addr = addr_type.generate_vhdl_convert("proc_1_addr")
-          vhdl_lines.concat(string_to_lines(indent,
-            "#{registory[:query_addr]} <= #{converted_addr};"
-          ))
+        if addr_type.std_logic_vector? == false then
+          vhdl_lines.concat(string_to_lines(indent, addr_type.generate_vhdl_convert_from_std_logic_vector(registory[:query_addr], "proc_1_addr")))
         end
       end
       if registory.key?(:query_size) then
         size_type = registory[:size_type]
-        if size_type.generate_vhdl_type.match(/^std_logic_vector/) == nil then
-          converted_size = size_type.generate_vhdl_convert("proc_1_size")
-          vhdl_lines.concat(string_to_lines(indent,
-            "#{registory[:query_size]} <= #{converted_size};"
-          ))
+        if size_type.std_logic_vector? == false then
+          vhdl_lines.concat(string_to_lines(indent, size_type.generate_vhdl_convert_from_std_logic_vector(registory[:query_size], "proc_1_size")))
         end
       end
       return vhdl_lines

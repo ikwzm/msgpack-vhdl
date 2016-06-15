@@ -3,8 +3,8 @@ module MsgPack_RPC_Interface::VHDL::Stream::Integer
 
   def generate_port_list(master, data_type, kvmap, registory)
     size_type = registory[:size_type]
-    data_type_name = data_type.generate_vhdl_type
-    size_type_name = size_type.generate_vhdl_type
+    data_type_name = data_type.vhdl_type
+    size_type_name = size_type.vhdl_type
     vhdl_lines = Array.new
     w_out = (master) ? "out" : "in"
     w_in  = (master) ? "in"  : "out"

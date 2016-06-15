@@ -2,7 +2,7 @@ module MsgPack_RPC_Interface::VHDL::Memory::Arbitor
   extend MsgPack_RPC_Interface::VHDL::Util
 
   def generate_decl(indent, name, registory)
-    addr_type = registory[:addr_type].generate_vhdl_type
+    addr_type = registory[:addr_type].vhdl_type
     return string_to_lines(indent, <<"      EOT"
         signal    #{sprintf("%-17s",registory[:store_addr ])} :  #{addr_type};
         signal    #{sprintf("%-17s",registory[:store_ready])} :  std_logic;

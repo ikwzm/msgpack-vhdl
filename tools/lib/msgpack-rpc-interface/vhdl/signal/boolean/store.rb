@@ -1,15 +1,15 @@
-module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
+module MsgPack_RPC_Interface::VHDL::Signal::Boolean::Store
   extend MsgPack_RPC_Interface::VHDL::Util
 
   def generate_decl(indent, name, type, kvmap, registory)
     block_regs = registory.dup
     block_regs[:store_data ] = "proc_0_value"
     block_regs[:store_valid] = "proc_0_valid"
-    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.bits, "sign" => type.sign}))
-    generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
+    logic_type = MsgPack_RPC_Interface::Standard::Type::Boolean.new(Hash({}))
+    generator  = MsgPack_RPC_Interface::VHDL::Register::Boolean::Store
     return string_to_lines(
       indent, <<"      EOT"
-           signal    proc_0_value   :  std_logic_vector(#{type.bits-1} downto 0);
+           signal    proc_0_value   :  boolean;
            signal    proc_0_valid   :  std_logic;
       EOT
     ).concat(generator.generate_decl(indent, name, logic_type, kvmap, block_regs))
@@ -19,19 +19,18 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
     block_regs = registory.dup
     block_regs[:store_data ] = "proc_0_value"
     block_regs[:store_valid] = "proc_0_valid"
-    conv_stmt  = type.generate_vhdl_convert_from_std_logic_vector(registory[:store_data], "proc_0_value")
-    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.bits, "sign" => type.sign}))
-    generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
+    logic_type = MsgPack_RPC_Interface::Standard::Type::Boolean.new(Hash({}))
+    generator  = MsgPack_RPC_Interface::VHDL::Register::Boolean::Store
     return string_to_lines(
       indent, <<"      EOT"
              process(#{registory[:clock]}, #{registory[:reset]}) begin
                  if (#{registory[:reset]} = '1') then
-                          #{registory[:store_data]} <= (others => '0');
+                          #{registory[:store_data]} <= FALSE;
                  elsif (#{registory[:clock]}'event and #{registory[:clock]} = '1') then
                      if    (#{registory[:clear]} = '1') then
-                          #{registory[:store_data]} <= (others => '0');
+                          #{registory[:store_data]} <= FALSE;
                      elsif (proc_0_valid = '1') then
-                          #{conv_stmt}
+                          #{registory[:store_data]} <= proc_0_value;
                      end if;
                  end if;
              end process;
@@ -51,7 +50,7 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
   end
 
   def use_package_list(kvmap)
-    return MsgPack_RPC_Interface::VHDL::Register::Integer::Store.use_package_list(kvmap)
+    return MsgPack_RPC_Interface::VHDL::Register::Boolean::Store.use_package_list(kvmap)
   end
 
   module_function :generate_body

@@ -198,6 +198,43 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     return vhdl_lines
   end
 
+  def self.generate_stmt_method_return_boolean(indent, name, return_variable, registory)
+    return_name = registory[:return_name]
+    return_stmt = return_variable.interface.type.generate_vhdl_convert_to_std_logic_vector(return_name, "proc_return_value")
+    vhdl_lines  = string_to_lines(
+      indent, <<"        EOT"
+          PROC_RETURN : block
+              signal proc_return_value : std_logic_vector(0 downto 0);
+          begin
+              RET: MsgPack_RPC_Method_Return_Integer  -- 
+                  generic map (                  #{sprintf("%-28s", ""                     )}   -- 
+                      VALUE_WIDTH             => #{sprintf("%-28s", 1                      )} , --
+                      RETURN_UINT             => #{sprintf("%-28s", "FALSE"                )} , --
+                      RETURN_INT              => #{sprintf("%-28s", "FALSE"                )} , --
+                      RETURN_FLOAT            => #{sprintf("%-28s", "FALSE"                )} , --
+                      RETURN_BOOLEAN          => #{sprintf("%-28s", "TRUE"                 )}   --
+                  )                              #{sprintf("%-28s", ""                     )}   -- 
+                  port map (                     #{sprintf("%-28s", ""                     )}   -- 
+                      CLK                     => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
+                      RST                     => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
+                      CLR                     => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
+                      RET_ERROR               => #{sprintf("%-28s", "proc_return_error"    )} , -- In  :
+                      RET_START               => #{sprintf("%-28s", "proc_return_start"    )} , -- In  :
+                      RET_DONE                => #{sprintf("%-28s", "proc_return_done"     )} , -- In  :
+                      RET_BUSY                => #{sprintf("%-28s", "proc_return_busy"     )} , -- Out :
+                      RES_CODE                => #{sprintf("%-28s", registory[:res_code   ])} , -- Out :
+                      RES_VALID               => #{sprintf("%-28s", registory[:res_valid  ])} , -- Out :
+                      RES_LAST                => #{sprintf("%-28s", registory[:res_last   ])} , -- Out :
+                      RES_READY               => #{sprintf("%-28s", registory[:res_ready  ])} , -- In  :
+                      VALUE                   => #{sprintf("%-28s", "proc_return_value"    )}   -- In  :
+                  );
+              #{return_stmt}
+          end block;
+        EOT
+    )
+    return vhdl_lines
+  end
+
   def generate_decl(indent, name, arguments, return_variable, registory)
     if (arguments.size > 0) then
       decl_code = generate_decl_method_with_param(indent, name, arguments, registory)
@@ -222,6 +259,8 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
       body_code.concat(generate_stmt_method_return_nil(   indennt, name, registory))
     elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Integer then
       body_code.concat(generate_stmt_method_return_integer(indent, name, return_variable, registory))
+    elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Boolean then
+      body_code.concat(generate_stmt_method_return_boolean(indent, name, return_variable, registory))
     end
     return body_code
   end
@@ -269,7 +308,8 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     end
     if    return_variable == nil then
       list << "MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Return_Nil"
-    elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Integer then
+    elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Integer  or
+          return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Boolean  then
       list << "MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Return_Integer"
     end
     return list

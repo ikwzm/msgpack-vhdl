@@ -5,9 +5,9 @@ module MsgPack_RPC_Interface::VHDL::Memory::Binary
     addr_type = registory[:addr_type]
     data_type = MsgPack_RPC_Interface::Standard::Type.new(Hash({"name" => "Logic_Vector", "width" => registory[:width]*8}))
     strb_type = MsgPack_RPC_Interface::Standard::Type.new(Hash({"name" => "Logic_Vector", "width" => registory[:width]  }))
-    addr_type_name = addr_type.generate_vhdl_type
-    data_type_name = data_type.generate_vhdl_type
-    strb_type_name = strb_type.generate_vhdl_type
+    addr_type_name = addr_type.vhdl_type
+    data_type_name = data_type.vhdl_type
+    strb_type_name = strb_type.vhdl_type
     vhdl_lines = Array.new
     w_out = (master) ? "out" : "in"
     w_in  = (master) ? "in"  : "out"

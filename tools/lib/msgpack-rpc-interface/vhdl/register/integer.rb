@@ -2,7 +2,7 @@ module MsgPack_RPC_Interface::VHDL::Register::Integer
   extend MsgPack_RPC_Interface::VHDL::Util
 
   def generate_port_list(master, type, kvmap, registory)
-    type_name  = type.generate_vhdl_type
+    type_name  = type.vhdl_type
     vhdl_lines = Array.new
     w_out = (master) ? "out" : "in"
     w_in  = (master) ? "in"  : "out"
