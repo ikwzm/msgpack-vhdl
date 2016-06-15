@@ -38,7 +38,7 @@ module MsgPack_RPC_Interface
       met_regs["full_name"     ] = @full_name
       met_regs["arguments"     ] = @arguments
       met_regs["return"        ] = (@returns.size > 0) ? @returns[0] : nil
-      @interface = Synthesijer::Procedure::Interface::Method.new(met_regs)
+      @interface = Standard::Procedure::Interface::Method.new(met_regs)
       puts "Method.new(#{@name}) done." if @debug
     end
 
@@ -57,7 +57,7 @@ module MsgPack_RPC_Interface
       met_regs["name"          ] = @name
       met_regs["full_name"     ] = @full_name
       met_regs["variables"     ] = @variables
-      @interface = Synthesijer::Procedure::Interface::QueryVariables.new(met_regs)
+      @interface = Standard::Procedure::Interface::QueryVariables.new(met_regs)
     end
 
   end
@@ -75,7 +75,7 @@ module MsgPack_RPC_Interface
       met_regs["name"          ] = @name
       met_regs["full_name"     ] = @full_name
       met_regs["variables"     ] = @variables
-      @interface = Synthesijer::Procedure::Interface::StoreVariables.new(met_regs)
+      @interface = Standard::Procedure::Interface::StoreVariables.new(met_regs)
     end
 
   end

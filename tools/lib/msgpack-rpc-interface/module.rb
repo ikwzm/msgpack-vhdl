@@ -1,6 +1,6 @@
 require_relative 'variable'
 require_relative 'method'
-require_relative 'synthesijer'
+require_relative 'standard'
 
 module MsgPack_RPC_Interface
 
@@ -59,7 +59,7 @@ module MsgPack_RPC_Interface
       interface_regs["debug"    ] = @debug
       interface_regs["methods"  ] = @methods
       interface_regs["variables"] = @variables
-      @interface = Synthesijer::Module::Interface.new(interface_regs)
+      @interface = Standard::Module::Interface.new(interface_regs)
       puts "Module.new(#{@name}) done." if @debug
     end
 

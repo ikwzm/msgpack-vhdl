@@ -75,8 +75,8 @@ module MsgPack_RPC_Interface
       interface_regs["read"     ] = interface_regs.fetch("read" , varibale_regs.fetch("read"  , true))
       interface_regs["write"    ] = interface_regs.fetch("write", varibale_regs.fetch("write" , true))
         
-      if Synthesijer::Variable::Interface.const_defined?(interface_name) then
-        return Synthesijer::Variable::Interface.const_get(interface_name).new(interface_regs)
+      if Standard::Variable::Interface.const_defined?(interface_name) then
+        return Standard::Variable::Interface.const_get(interface_name).new(interface_regs)
       else
         abort "Undefined Interface::#{interface_name}"
       end
