@@ -1,14 +1,14 @@
 require 'set'
 
-module MsgPack_RPC_Interface::VHDL::Module
+module MsgPack_RPC_Interface::VHDL::Interface
   extend MsgPack_RPC_Interface::VHDL::Util
     
-  def generate_decl(indent, name, methods, variables, registory)
+  def generate_decl(indent, name, interface, registory)
     code_width  = registory[:code_width ]
     match_phase = registory[:match_phase]
     vhdl_lines  = string_to_lines(
       indent, <<"        EOT"
-          constant  PROC_NUM          :  integer := #{methods.size};
+          constant  PROC_NUM          :  integer := #{interface.methods.size};
           signal    proc_match_req    :  std_logic_vector        (#{match_phase}-1 downto 0);
           signal    proc_match_code   :  MsgPack_RPC.Code_Type;
           signal    proc_match_ok     :  std_logic_vector        (PROC_NUM-1 downto 0);
@@ -28,13 +28,13 @@ module MsgPack_RPC_Interface::VHDL::Module
           signal    proc_res_ready    :  std_logic_vector        (PROC_NUM-1 downto 0);
         EOT
     )
-    (methods + variables).map{|a| a.interface.blocks}.flatten.each do |block|
+    (interface.methods + interface.variables).map{|a| a.interface.blocks}.flatten.each do |block|
       vhdl_lines.concat(block.generate_vhdl_decl(indent, registory))
     end
     return vhdl_lines
   end
 
-  def generate_stmt(indent, name, methods, variables, registory)
+  def generate_stmt(indent, name, interface, registory)
     code_width  = registory[:code_width ]
     match_phase = registory[:match_phase]
     vhdl_lines  = string_to_lines(
@@ -80,7 +80,7 @@ module MsgPack_RPC_Interface::VHDL::Module
               );                         #{sprintf("%-28s", ""                      )}   -- 
         EOT
     )
-    methods.each_with_index do |method, num|
+    interface.methods.each_with_index do |method, num|
       method_registory = Hash.new
       method_registory[:code_width ] = code_width
       method_registory[:match_phase] = match_phase
@@ -106,53 +106,53 @@ module MsgPack_RPC_Interface::VHDL::Module
       method_registory[:res_ready  ] = "proc_res_ready  (#{num})"
       vhdl_lines.concat(method.interface.generate_vhdl_body(indent, method_registory))
     end
-    (methods + variables).map{|a| a.interface.blocks}.flatten.each do |block|
+    (interface.methods + interface.variables).map{|a| a.interface.blocks}.flatten.each do |block|
       vhdl_lines.concat(block.generate_vhdl_stmt(indent, registory))
     end
     return vhdl_lines
   end
     
-  def generate_body(indent, name, methods, variables, registory)
+  def generate_body(indent, name, interface, registory)
     indent_sub = indent + "    "
-    decl_code  = generate_decl(indent_sub, name, methods, variables, registory)
+    decl_code  = generate_decl(indent_sub, name, interface, registory)
     if (decl_code.size > 0) then
       block_start = registory.fetch(:block_start, "#{name}: block")
       block_end   = registory.fetch(:block_end  , "end #{name}")
       return ["#{indent}#{block_start}"] + 
              decl_code +
              ["#{indent}begin"] +
-             generate_stmt(indent_sub, name, methods, variables, registory) +
+             generate_stmt(indent_sub, name, interface, registory) +
              ["#{indent}#{block_end};"]
     else
-      return generate_stmt(indent    , name, methods, variables, registory)
+      return generate_stmt(indent    , name, interface, registory)
     end
   end
 
-  def generate_interface_list(indent, methods, variables, registory)
+  def generate_interface_list(indent, interface, registory)
     generic_list = Array.new
-    add_generic_line(generic_list, registory, :intake_bytes, "integer := 1")
-    add_generic_line(generic_list, registory, :outlet_bytes, "integer := 1")
+    add_generic_line( generic_list, registory, :intake_bytes, "integer := 1")
+    add_generic_line( generic_list, registory, :outlet_bytes, "integer := 1")
 
     port_list = Array.new
-    add_port_line(port_list, registory, :clock       , "in ", "std_logic"      )
-    add_port_line(port_list, registory, :reset       , "in ", "std_logic"      )
-    add_port_line(port_list, registory, :clear       , "in ", "std_logic"      )
-    add_port_line(port_list, registory, :intake_data , "in ", "std_logic_vector(8*#{registory[:intake_bytes]}-1 downto 0)")
-    add_port_line(port_list, registory, :intake_strb , "in ", "std_logic_vector(  #{registory[:intake_bytes]}-1 downto 0)")
-    add_port_line(port_list, registory, :intake_last , "in ", "std_logic"      )
-    add_port_line(port_list, registory, :intake_valid, "in ", "std_logic"      )
-    add_port_line(port_list, registory, :intake_ready, "out", "std_logic"      )
-    add_port_line(port_list, registory, :outlet_data , "out", "std_logic_vector(8*#{registory[:outlet_bytes]}-1 downto 0)")
-    add_port_line(port_list, registory, :outlet_strb , "out", "std_logic_vector(  #{registory[:outlet_bytes]}-1 downto 0)")
-    add_port_line(port_list, registory, :outlet_last , "out", "std_logic"      )
-    add_port_line(port_list, registory, :outlet_valid, "out", "std_logic"      )
-    add_port_line(port_list, registory, :outlet_ready, "in ", "std_logic"      )
+    add_port_line( port_list, registory, :clock       , "in ", "std_logic"      )
+    add_port_line( port_list, registory, :reset       , "in ", "std_logic"      )
+    add_port_line( port_list, registory, :clear       , "in ", "std_logic"      )
+    add_port_line( port_list, registory, :intake_data , "in ", "std_logic_vector(8*#{registory[:intake_bytes]}-1 downto 0)")
+    add_port_line( port_list, registory, :intake_strb , "in ", "std_logic_vector(  #{registory[:intake_bytes]}-1 downto 0)")
+    add_port_line( port_list, registory, :intake_last , "in ", "std_logic"      )
+    add_port_line( port_list, registory, :intake_valid, "in ", "std_logic"      )
+    add_port_line( port_list, registory, :intake_ready, "out", "std_logic"      )
+    add_port_line( port_list, registory, :outlet_data , "out", "std_logic_vector(8*#{registory[:outlet_bytes]}-1 downto 0)")
+    add_port_line( port_list, registory, :outlet_strb , "out", "std_logic_vector(  #{registory[:outlet_bytes]}-1 downto 0)")
+    add_port_line( port_list, registory, :outlet_last , "out", "std_logic"      )
+    add_port_line( port_list, registory, :outlet_valid, "out", "std_logic"      )
+    add_port_line( port_list, registory, :outlet_ready, "in ", "std_logic"      )
 
-    methods.each   do |m|
+    interface.methods.each   do |m|
       port_list.concat(m.interface.generate_vhdl_port_list(true))
     end
 
-    variables.each do |v|
+    interface.variables.each do |v|
       port_list.concat(v.interface.generate_vhdl_port_list(true))
     end
 
@@ -172,22 +172,74 @@ module MsgPack_RPC_Interface::VHDL::Module
     return vhdl_lines
   end
 
-  def generate_entity(indent, name, methods, variables, registory)
+  def generate_entity(indent, name, interface, registory)
     vhdl_lines = ["library ieee;"                   ,
                   "use     ieee.std_logic_1164.all;",
                   "use     ieee.numeric_std.all;"   
                  ]
     vhdl_lines << indent + "entity  #{name} is"
-    vhdl_lines.concat(generate_interface_list(indent + "    ", methods, variables, registory))
+    vhdl_lines.concat(generate_interface_list(indent + "    ", interface, registory))
     vhdl_lines << indent + "end     #{name};"
     return vhdl_lines
   end
 
-  def generate_component(indent, name, methods, variables, registory)
+  def generate_component(indent, name, interface, registory)
     vhdl_lines = Array.new
     vhdl_lines << indent + "component #{name} is"
-    vhdl_lines.concat(generate_interface_list(indent + "    ", methods, variables, registory))
+    vhdl_lines.concat(generate_interface_list(indent + "    ", interface, registory))
     vhdl_lines << indent + "end component;"
+    return vhdl_lines
+  end
+
+  def generate_instance(indent, name, interface, registory, external_registory)
+    vhdl_lines = Array.new
+    instance_name = external_registory.fetch(:instance_name, "U")
+    vhdl_lines << indent + "#{instance_name} : #{name}"
+
+    generic_map_list = Array.new
+    add_generic_map_line( generic_map_list, registory, external_registory, :intake_bytes )
+    add_generic_map_line( generic_map_list, registory, external_registory, :outlet_bytes )
+
+    port_map_list    = Array.new
+    add_port_map_line( port_map_list, registory, external_registory, :clock        ) 
+    add_port_map_line( port_map_list, registory, external_registory, :reset        )
+    add_port_map_line( port_map_list, registory, external_registory, :clear        )
+    add_port_map_line( port_map_list, registory, external_registory, :intake_data  )
+    add_port_map_line( port_map_list, registory, external_registory, :intake_strb  )
+    add_port_map_line( port_map_list, registory, external_registory, :intake_last  )
+    add_port_map_line( port_map_list, registory, external_registory, :intake_valid )
+    add_port_map_line( port_map_list, registory, external_registory, :intake_ready )
+    add_port_map_line( port_map_list, registory, external_registory, :outlet_data  )
+    add_port_map_line( port_map_list, registory, external_registory, :outlet_strb  )
+    add_port_map_line( port_map_list, registory, external_registory, :outlet_last  )
+    add_port_map_line( port_map_list, registory, external_registory, :outlet_valid )
+    add_port_map_line( port_map_list, registory, external_registory, :outlet_ready )
+
+    port_list = Array.new
+    interface.methods.each   do |m|
+      port_list.concat(m.interface.generate_vhdl_port_list(true))
+    end
+    interface.variables.each do |v|
+      port_list.concat(v.interface.generate_vhdl_port_list(true))
+    end
+    port_list.each do |port_desc|
+      port_name = port_desc.match(/^([a-zA-Z]+[a-zA-Z_]*)/)[0]
+      port_map_list << sprintf("%-20s => %-20s", port_name, port_name)
+    end
+
+    indent_sub = indent + "    "
+    if generic_map_list.size > 0 then
+      vhdl_lines << indent_sub + "generic map("
+      vhdl_lines.concat(generic_map_list.join(",\n").split("\n").map{|s| indent_sub + "    " + s})
+      vhdl_lines << indent_sub + ")"
+    end
+      
+    if port_map_list.size    > 0 then
+      vhdl_lines << indent_sub + "port map("
+      vhdl_lines.concat(port_map_list.join(",\n").split("\n").map{|s| indent_sub + "    " + s})
+      vhdl_lines << indent_sub + ");"
+    end
+    
     return vhdl_lines
   end
 
@@ -197,17 +249,17 @@ module MsgPack_RPC_Interface::VHDL::Module
             "MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Server"]
   end
 
-  def generate_use(methods, variables)
+  def generate_use(interface)
     use_set    = Set.new(use_package_list)
     lib_set    = Set.new
     vhdl_lines = ["library ieee;"                   ,
                   "use     ieee.std_logic_1164.all;",
                   "use     ieee.numeric_std.all;"   
                  ]
-    methods.each   do |m|
+    interface.methods.each   do |m|
       use_set.merge(Set.new(m.interface.use_package_list))
     end
-    variables.each do |v|
+    interface.variables.each do |v|
       use_set.merge(Set.new(v.interface.use_package_list))
     end
     use_set.each do |use|
@@ -227,6 +279,8 @@ module MsgPack_RPC_Interface::VHDL::Module
   module_function :generate_body
   module_function :generate_decl
   module_function :generate_stmt
+  module_function :generate_component
+  module_function :generate_instance
   module_function :generate_interface_list
   module_function :use_package_list
 end

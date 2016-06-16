@@ -579,6 +579,51 @@ module MsgPack_RPC_Interface::Standard
   class Module::Interface
       attr_reader :name, :full_name, :methods, :variables
 
+      DEFAULT_INTERFACE_REGISTORY = Hash({
+        code_width:       CODE_WIDTH  ,
+        match_phase:      MATCH_PHASE ,
+        clock:            "CLK"       ,
+        reset:            "RST"       ,
+        clear:            "CLR"       ,
+        intake_bytes:     "I_BYTES"   ,
+        intake_data:      "I_DATA"    ,
+        intake_strb:      "I_STRB"    ,
+        intake_last:      "I_LAST"    ,
+        intake_valid:     "I_VALID"   ,
+        intake_ready:     "I_READY"   ,
+        outlet_bytes:     "O_BYTES"   ,
+        outlet_data:      "O_DATA"    ,
+        outlet_strb:      "O_STRB"    ,
+        outlet_last:      "O_LAST"    ,
+        outlet_valid:     "O_VALID"   ,
+        outlet_ready:     "O_READY"   ,
+      })
+
+      DEFAULT_SERVER_REGISTORY = Hash({
+        clock:            "CLK"       ,
+        reset_n:          "ARESETn"   ,
+        clear:            "'0'"       ,
+        intake_bytes:     "I_BYTES"   ,
+        intake_data:      "I_TDATA"   ,
+        intake_strb:      "I_TKEEP"   ,
+        intake_last:      "I_TLAST"   ,
+        intake_valid:     "I_TVALID"  ,
+        intake_ready:     "I_TREADY"  ,
+        outlet_bytes:     "O_BYTES"   ,
+        outlet_data:      "O_TDATA"   ,
+        outlet_strb:      "O_TKEEP"   ,
+        outlet_last:      "O_TLAST"   ,
+        outlet_valid:     "O_TVALID"  ,
+        outlet_ready:     "O_TREADY"  ,
+        internal_reset:   "reset"     ,
+        internal_reset_n: "reset_n"   ,
+      })
+
+      DEFAULT_MODULE_REGISTORY = Hash({
+        clock:            "clk"       ,
+        reset:            "reset"     ,
+      })
+
       def initialize(registory)
         @debug     = registory.fetch("debug", false)
         @name      = registory["name"]
@@ -587,28 +632,61 @@ module MsgPack_RPC_Interface::Standard
         @variables = registory["variables"]
       end
 
-      def generate_vhdl_entity(indent, registory)
-        name = registory.fetch(:name , @name)
-        return MsgPack_RPC_Interface::VHDL::Module.generate_entity(indent, name, @methods, @variables, registory)
+      def generate_vhdl_entity(indent, interface_registory)
+        name = interface_registory.fetch(:name , @name)
+        if_regs = DEFAULT_INTERFACE_REGISTORY.dup
+        if_regs[:name] = name
+        if_regs.update(interface_registory)
+        return MsgPack_RPC_Interface::VHDL::Interface.generate_entity(indent, name, self, if_regs)
       end
 
-      def generate_vhdl_body(indent, registory)
-        name = registory.fetch(:name , @name)
-        new_regs = Hash({code_width:  CODE_WIDTH ,
-                         match_phase: MATCH_PHASE
-                        }).update(registory)
-        return MsgPack_RPC_Interface::VHDL::Module.generate_body(indent, name, @methods, @variables, new_regs)
+      def generate_vhdl_component(indent, interface_registory)
+        name = interface_registory.fetch(:name , @name)
+        if_regs = DEFAULT_INTERFACE_REGISTORY.dup
+        if_regs[:name] = name
+        if_regs.update(interface_registory)
+        return MsgPack_RPC_Interface::VHDL::Interface.generate_component(indent, name, self, if_regs)
+      end
+      
+      def generate_vhdl_body(indent, interface_registory)
+        name = interface_registory.fetch(:name , @name)
+        if_regs = DEFAULT_INTERFACE_REGISTORY.dup
+        if_regs[:name] = name
+        if_regs.update(interface_registory)
+        return MsgPack_RPC_Interface::VHDL::Interface.generate_body(indent, name, self, if_regs)
       end
 
-      def generate_vhdl_architecture(indent, registory)
-        name = registory.fetch(:name , @name)
-        new_regs = Hash({block_start: "architecture RTL of #{name} is",
-                         block_end:   "end RTL"                       
-                        }).update(registory)
-        vhdl_lines = MsgPack_RPC_Interface::VHDL::Module.generate_use(@methods, @variables)
-        vhdl_lines.concat(generate_vhdl_body(indent, new_regs))
+      def generate_vhdl_architecture(indent, interface_registory)
+        name = interface_registory.fetch(:name , @name)
+        if_regs = DEFAULT_INTERFACE_REGISTORY.dup
+        if_regs[:name       ] = name
+        if_regs[:block_start] = "architecture RTL of #{name} is"
+        if_regs[:block_end  ] = "end RTL"
+        if_regs.update(interface_registory)
+        vhdl_lines = MsgPack_RPC_Interface::VHDL::Interface.generate_use(self)
+        vhdl_lines.concat(generate_vhdl_body(indent, if_regs))
         return vhdl_lines
       end
+
+      def generate_vhdl_instance(indent, interface_registory, external_registory)
+        name = interface_registory.fetch(:name , @name)
+        return MsgPack_RPC_Interface::VHDL::Interface.generate_instance(indent, name, self, interface_registory, external_registory)
+      end
+      
+      def generate_vhdl_server(indent, server_registory, interface_registory)
+        name = server_registory[:name]
+        sv_regs = DEFAULT_SERVER_REGISTORY.dup
+        sv_regs[:block_start] = "architecture RTL of #{name} is"
+        sv_regs[:block_end  ] = "end RTL"
+        sv_regs.update(server_registory)
+        if_regs = DEFAULT_INTERFACE_REGISTORY.dup
+        if_regs.update(interface_registory)
+        md_regs = DEFAULT_MODULE_REGISTORY.dup
+        md_regs[:name] = @name
+        return MsgPack_RPC_Interface::VHDL::Server.generate_entity(indent, name, self, sv_regs, if_regs, md_regs) +
+               MsgPack_RPC_Interface::VHDL::Server.generate_body(  indent, name, self, sv_regs, if_regs, md_regs)
+      end        
+
   end
   
 end

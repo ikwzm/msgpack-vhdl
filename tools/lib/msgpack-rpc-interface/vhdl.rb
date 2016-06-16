@@ -6,5 +6,6 @@ require_relative 'vhdl/signal'
 require_relative 'vhdl/memory'
 require_relative 'vhdl/stream'
 require_relative 'vhdl/procedure'
-require_relative 'vhdl/module'
+require_relative 'vhdl/interface'
+require_relative 'vhdl/server'
 end

@@ -41,7 +41,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
                   PARAM_LAST              => #{sprintf("%-28s", registory[:param_last ])} , -- In  :
                   PARAM_SHIFT             => #{sprintf("%-28s", registory[:param_shift])} , -- Out :
                   RUN_REQ                 => #{sprintf("%-28s", registory[:run_req    ])} , -- Out :
-                  RUN_BUSY                => #{sprintf("%-28s", registory[run_busy    ])} , -- In  :
+                  RUN_BUSY                => #{sprintf("%-28s", registory[:run_busy   ])} , -- In  :
                   RET_ID                  => #{sprintf("%-28s", registory[:proc_res_id])} , -- Out :
                   RET_START               => #{sprintf("%-28s", "proc_return_start"    )} , -- Out :
                   RET_ERROR               => #{sprintf("%-28s", "proc_return_error"    )} , -- Out :

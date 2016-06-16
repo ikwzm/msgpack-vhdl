@@ -63,33 +63,13 @@ module MsgPack_RPC_Interface
       puts "Module.new(#{@name}) done." if @debug
     end
 
-    DEFAULT_REGISTORY = Hash({
-      clock:        "CLK"    ,
-      reset:        "RST"    ,
-      clear:        "CLR"    ,
-      intake_bytes: "I_BYTES",
-      intake_data:  "I_DATA" ,
-      intake_strb:  "I_STRB" ,
-      intake_last:  "I_LAST" ,
-      intake_valid: "I_VALID",
-      intake_ready: "I_READY",
-      outlet_bytes: "O_BYTES",
-      outlet_data:  "O_DATA" ,
-      outlet_strb:  "O_STRB" ,
-      outlet_last:  "O_LAST" ,
-      outlet_valid: "O_VALID",
-      outlet_ready: "O_READY"
-    })
+    def generate_interface(interface_registory)
+      return @interface.generate_vhdl_entity(       "", interface_registory) + 
+             @interface.generate_vhdl_architecture( "", interface_registory)
+    end
 
-    def generate_interface(registory)
-      name    = registory.fetch(:name, @name)
-      if_regs = DEFAULT_REGISTORY.dup
-      if_regs[:name       ] = name
-      if_regs[:block_start] = "architecture RTL of #{name} is"
-      if_regs[:block_end  ] = "end RTL"
-      if_regs.update(registory)
-      return @interface.generate_vhdl_entity(        "", if_regs) + 
-             @interface.generate_vhdl_architecture(  "", if_regs)
+    def generate_server(server_registory, interface_registory)
+      return @interface.generate_vhdl_server("", server_registory, interface_registory)
     end
   end
 end

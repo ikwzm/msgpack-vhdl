@@ -24,10 +24,28 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
     end
   end
+
+  def add_generic_map_line(list, instance_registory, external_registory, name)
+    if instance_registory.key?(name) then
+      if instance_registory[name].to_s.match(/^[a-zA-Z]+/) and external_registory.key?(name) then
+        list << sprintf("%-20s => %-20s", instance_registory[name], external_registory[name])
+      end
+    end
+  end
+  
+  def add_port_map_line(list, instance_registory, external_registory, name)
+    if instance_registory.key?(name) then
+      if instance_registory[name].to_s.match(/^[a-zA-Z]+/) and external_registory.key?(name) then
+        list << sprintf("%-20s => %-20s", instance_registory[name], external_registory[name])
+      end
+    end
+  end
       
   module_function :string_to_lines
   module_function :add_generic_line
   module_function :add_port_line
+  module_function :add_generic_map_line
+  module_function :add_port_map_line
 
   module Store
 
