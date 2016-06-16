@@ -31,6 +31,14 @@ module MsgPack_RPC_Interface
       puts "Variable::Node.new(#{@name}, #{@type}) done." if @debug
     end
 
+    def to_s(indent)
+      return [indent + sprintf("%-10s : %s" , "name"     , @name          ),
+              indent + sprintf("%-10s : %s" , "class"    , self.class.name),
+              indent + sprintf("%-10s : %s" , "type"     , @type.to_s     ),
+              indent + sprintf("%-10s : \n" , "interface"                 ),
+             ].join("\n") + @interface.to_s(indent + "  ")
+    end
+
     def collect_readable_variables
       return (@interface.read )? [self] : []
     end

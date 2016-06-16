@@ -58,8 +58,27 @@ module MsgPack_RPC_Interface::Standard
         return use_list
       end
 
-      def to_s
-        return "#{self.class.name}: {name: #{@name}, full_name: #{@full_name}, class: #{@msg_class.to_s}, type: #{@type.to_s}, kvmap: #{kvmap}, read: #{@read}, write: #{@write}}, regisotry: #{@registory}"
+      def registory_to_s(indent)
+        list = Array.new
+        @registory.each_pair do |k,v|
+          list << indent + sprintf("%-16s : %s" , k.to_s , v.to_s)
+        end
+        return list.join("\n")
+      end
+
+      def to_s(indent)
+        return [indent + sprintf("%-10s : %s" , "name"      , @name          ),
+                indent + sprintf("%-10s : %s" , "class"     , self.class.name),
+                indent + sprintf("%-10s : %s" , "port_name" , @port_name     ),
+                indent + sprintf("%-10s : %s" , "full_name" , @full_name     ),
+                indent + sprintf("%-10s : %s" , "class"     , @msg_class.to_s),
+                indent + sprintf("%-10s : %s" , "type"      , @type.to_s     ),
+                indent + sprintf("%-10s : %s" , "kvmap"     , @kvmap         ),
+                indent + sprintf("%-10s : %s" , "read"      , @read          ),
+                indent + sprintf("%-10s : %s" , "write"     , @write         ),
+                indent + sprintf("%-10s : %s" , "generator" , @generator     ),
+                indent + sprintf("%-10s : "   , "regisotry"                  ),
+               ].join("\n") + "\n" + registory_to_s(indent + "  ")
       end
 
     end
@@ -98,7 +117,7 @@ module MsgPack_RPC_Interface::Standard
         @registory[:width] = 1
         @registory.delete_if{|key,val| val == nil}
         @generator = MsgPack_RPC_Interface::VHDL::Register.const_get(@msg_class.class.to_s.split('::').last)
-        puts to_s if @debug
+        puts to_s("") if @debug
       end
       
     end
@@ -133,7 +152,7 @@ module MsgPack_RPC_Interface::Standard
         @registory[:width] = 1
         @registory.delete_if{|key,val| val == nil}
         @generator = MsgPack_RPC_Interface::VHDL::Signal.const_get(@msg_class.class.to_s.split('::').last)
-        puts to_s if @debug
+        puts to_s("") if @debug
       end
 
     end
@@ -209,6 +228,7 @@ module MsgPack_RPC_Interface::Standard
           @blocks << @arbitor
         end
         @registory.delete_if{|key,val| val == nil}
+        puts to_s("") if @debug
       end
 
       def generate_vhdl_body_store(indent, registory)
@@ -362,6 +382,7 @@ module MsgPack_RPC_Interface::Standard
         end
         @registory.delete_if{|key,val| val == nil}
         @generator = MsgPack_RPC_Interface::VHDL::Stream.const_get(@msg_class.class.to_s.split('::').last)
+        puts to_s("") if @debug
       end
 
     end
@@ -485,10 +506,11 @@ module MsgPack_RPC_Interface::Standard
         @return_name = (@return != nil) ? (@full_name.join("_") + "_" + @return.name) : nil
         @blocks      = []
         if registory.key?("port") then
-          @req_name    = registory["port"].fetch("request", @req_name)
-          @busy_name   = registory["port"].fetch("busy"   , @busy_name)
+          @req_name    = registory["port"].fetch("request", @req_name   )
+          @busy_name   = registory["port"].fetch("busy"   , @busy_name  )
           @return_name = registory["port"].fetch("return" , @return_name)
         end
+        puts to_s("") if @debug
       end
 
       def generate_vhdl_body(indent, registory)
@@ -513,6 +535,18 @@ module MsgPack_RPC_Interface::Standard
       def use_package_list
         return MsgPack_RPC_Interface::VHDL::Procedure::Method.use_package_list(@arguments, @return)
       end
+
+      def to_s(indent)
+        return [indent + sprintf("%-10s : %s" , "name"       , @name          ),
+                indent + sprintf("%-10s : %s" , "class"      , self.class.name),
+                indent + sprintf("%-10s : %s" , "port_name"  , @port_name     ),
+                indent + sprintf("%-10s : %s" , "full_name"  , @full_name     ),
+                indent + sprintf("%-10s : %s" , "req_name"   , @req_name      ),
+                indent + sprintf("%-10s : %s" , "busy_name"  , @busy_name     ),
+                indent + sprintf("%-10s : %s" , "return_name", @return_name   ),
+                indent + sprintf("%-10s : \n" , "arguments"                   ),
+               ].join("\n") + @arguments.map{|argument| argument.to_s(indent + "  ")}.join("\n")
+      end
     end
 
     class StoreVariables
@@ -525,6 +559,7 @@ module MsgPack_RPC_Interface::Standard
         @full_name = registory["full_name"]
         @variables = registory["variables"]
         @blocks    = []
+        puts to_s("") if @debug
       end
 
       def generate_vhdl_body(indent, registory)
@@ -543,6 +578,13 @@ module MsgPack_RPC_Interface::Standard
         return MsgPack_RPC_Interface::VHDL::Procedure::StoreVariables.use_package_list
       end
 
+      def to_s(indent)
+        return [indent + sprintf("%-10s : %s" , "name"       , @name          ),
+                indent + sprintf("%-10s : %s" , "class"      , self.class.name),
+                indent + sprintf("%-10s : %s" , "full_name"  , @full_name     ),
+                indent + sprintf("%-10s : \n" , "variables"                   ),
+               ].join("\n") + @variables.map{|v| v.to_s(indent + "  ")}.join("\n")
+      end
     end
 
     class QueryVariables
@@ -555,6 +597,7 @@ module MsgPack_RPC_Interface::Standard
         @full_name = registory["full_name"]
         @variables = registory["variables"]
         @blocks    = []
+        puts to_s("") if @debug
       end
 
       def generate_vhdl_body(indent, registory)
@@ -573,6 +616,12 @@ module MsgPack_RPC_Interface::Standard
         return MsgPack_RPC_Interface::VHDL::Procedure::QueryVariables.use_package_list
       end
 
+      def to_s(indent)
+        return [indent + sprintf("%-10s : %s" , "name"       , @name          ),
+                indent + sprintf("%-10s : %s" , "class"      , self.class.name),
+                indent + sprintf("%-10s : %s" , "full_name"  , @full_name     ),
+               ].join("\n") + @variables.map{|v| v.to_s(indent + "  ")}.join("\n")
+      end
     end
   end
 

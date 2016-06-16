@@ -3,7 +3,7 @@
 #---------------------------------------------------------------------------------
 #
 #       Version     :   0.0.2
-#       Created     :   2016/6/5
+#       Created     :   2016/6/16
 #       File name   :   msgpack-rpc-ifgen.rb
 #       Author      :   Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 #       Description :   MessagePack RPC Interface Generator
