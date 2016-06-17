@@ -163,12 +163,22 @@ module MsgPack_RPC_Interface::Standard
       
       def initialize(registory)
         super(registory)
-        if  registory.key?("size") then
+        if    registory.key?("size") then
           @registory[:size     ] = registory["size"]
           @registory[:addr_type] = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => Math::log2(@registory[:size]).ceil})))
-        else
-          @registory[:addr_type] = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => 32})))
+          @registory[:size_type] = Type.new(registory.fetch("size_type", Hash({"name" => "Logic_Vector", "width" => Math::log2(@registory[:size]).ceil+1})))
+        elsif registory.key?("size_type") then
+          @registory[:size_type] = Type.new(registory["size_type"])
+          @registory[:addr_type] = Type.new(registory.fetch("addr_type", Hash({"name" => "Logic_Vector", "width" => @registory[:size_type].bits-1})))
+          @registory[:size     ] = 2**(@registory[:size_type].bits-1)
+        elsif registory.key?("addr_type") then
+          @registory[:addr_type] = Type.new(registory["addr_type"])
+          @registory[:size_type] = Type.new(Hash({"name" => "Logic_Vector", "width" => @registory[:addr_type].bits+1}))
           @registory[:size     ] = 2**(@registory[:addr_type].bits)
+        else
+          @registory[:addr_type] = Type.new(Hash({"name" => "Logic_Vector", "width" => 32}))
+          @registory[:size_type] = Type.new(Hash({"name" => "Logic_Vector", "width" => 32}))
+          @registory[:size     ] = 2**(@registory[:size_type].bits-1)
         end
         @registory[:width] = registory.fetch("width", 1)
         if    @read == true  and @write == true  then
@@ -180,14 +190,17 @@ module MsgPack_RPC_Interface::Standard
           @registory[:store_strb ] = @port_name + "_strb"
           if registory.key?("port") then
             port_regs = registory["port"]
-            @registory[:query_addr ] = port_regs.fetch("raddr", @registory[:query_addr ])
-            @registory[:query_data ] = port_regs.fetch("rdata", @registory[:query_data ])
-            @registory[:store_addr ] = port_regs.fetch("waddr", @registory[:store_addr ])
-            @registory[:store_data ] = port_regs.fetch("wdata", @registory[:store_data ])
-            @registory[:store_valid] = port_regs.fetch("we"   , @registory[:store_valid])
-            @registory[:store_strb ] = port_regs.fetch("wstrb", @registory[:store_strb ])
-            @registory[:query_addr ] = port_regs.fetch("addr" , @registory[:query_addr ])
-            @registory[:store_addr ] = port_regs.fetch("addr" , @registory[:store_addr ])
+            @registory[:query_addr  ] = port_regs.fetch("raddr" , @registory[:query_addr  ])
+            @registory[:query_data  ] = port_regs.fetch("rdata" , @registory[:query_data  ])
+            @registory[:store_addr  ] = port_regs.fetch("waddr" , @registory[:store_addr  ])
+            @registory[:store_data  ] = port_regs.fetch("wdata" , @registory[:store_data  ])
+            @registory[:store_valid ] = port_regs.fetch("we"    , @registory[:store_valid ])
+            @registory[:store_strb  ] = port_regs.fetch("wstrb" , @registory[:store_strb  ])
+            @registory[:query_addr  ] = port_regs.fetch("addr"  , @registory[:query_addr  ])
+            @registory[:store_addr  ] = port_regs.fetch("addr"  , @registory[:store_addr  ])
+            if port_regs.key?("oe") then
+              @registory[:query_enable] = port_regs["oe"]
+            end
           end
         elsif @read == true  and @write == false then
           @registory[:query_addr ] = @port_name + "_addr"
@@ -196,6 +209,9 @@ module MsgPack_RPC_Interface::Standard
             port_regs = registory["port"]
             @registory[:query_addr ] = port_regs.fetch("addr" , @registory[:query_addr ])
             @registory[:query_data ] = port_regs.fetch("data" , @registory[:query_data ])
+            if port_regs.key?("oe") then
+              @registory[:query_enable] = port_regs["oe"]
+            end
           end
         elsif @read == false and @write == true  then
           @registory[:store_addr ] = @port_name + "_addr"
@@ -209,7 +225,13 @@ module MsgPack_RPC_Interface::Standard
             @registory[:store_valid] = port_regs.fetch("we"   , @registory[:store_valid])
             @registory[:store_strb ] = port_regs.fetch("strb" , @registory[:store_strb ])
           end
-        end 
+        end
+        if registory.key?("port") then
+          port_regs = registory["port"]
+          if port_regs.key?("default_size") 
+            @registory[:default_size] = port_regs["default_size"]
+          end
+        end
         @generator = MsgPack_RPC_Interface::VHDL::Memory.const_get(@msg_class.class.to_s.split('::').last)
         if @port_raddr == @port_waddr then
           arb_regs = Hash.new
@@ -217,13 +239,19 @@ module MsgPack_RPC_Interface::Standard
           arb_regs[:addr       ] = @registory[:query_addr]
           arb_regs[:addr_type  ] = @registory[:addr_type]
           arb_regs[:store_addr ] = "proc_#{@port_name}_waddr"
+          arb_regs[:store_valid] = "proc_#{@port_name}_wvalid"
           arb_regs[:store_ready] = "proc_#{@port_name}_wready"
           arb_regs[:store_start] = "proc_#{@port_name}_wstart"
           arb_regs[:store_busy ] = "proc_#{@port_name}_wbusy"
           arb_regs[:query_addr ] = "proc_#{@port_name}_raddr"
           arb_regs[:query_valid] = "proc_#{@port_name}_rvalid"
+          arb_regs[:query_ready] = "proc_#{@port_name}_rready"
           arb_regs[:query_start] = "proc_#{@port_name}_rstart"
           arb_regs[:query_busy ] = "proc_#{@port_name}_rbusy"
+          arb_regs[:we         ] = @registory[:store_valid]
+          if registory.key?(:query_enable) then
+            arb_regs[:oe         ] = @registory[:query_enable]
+          end
           @arbitor = Arbitor.new(arb_regs)
           @blocks << @arbitor
         end
@@ -235,6 +263,7 @@ module MsgPack_RPC_Interface::Standard
         new_regs = registory.dup
         if @arbitor != nil then
           new_regs[:store_addr ] = @arbitor.registory[:store_addr ]
+          new_regs[:store_valid] = @arbitor.registory[:store_valid]
           new_regs[:store_ready] = @arbitor.registory[:store_ready]
           new_regs[:store_start] = @arbitor.registory[:store_start]
           new_regs[:store_busy ] = @arbitor.registory[:store_busy ]
@@ -249,6 +278,7 @@ module MsgPack_RPC_Interface::Standard
         if @arbitor != nil then
           new_regs[:query_addr  ] = @arbitor.registory[:query_addr  ]
           new_regs[:query_valid ] = @arbitor.registory[:query_valid ]
+          new_regs[:query_ready ] = @arbitor.registory[:query_ready ]
           new_regs[:query_start ] = @arbitor.registory[:query_start ]
           new_regs[:query_busy  ] = @arbitor.registory[:query_busy  ]
         else

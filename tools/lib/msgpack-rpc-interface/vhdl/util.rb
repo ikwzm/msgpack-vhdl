@@ -234,6 +234,12 @@ module MsgPack_RPC_Interface::VHDL::Util
           sub_block = true
         end
       end
+      if registory.key?(:default_size) then
+        size_type = registory[:size_type]
+        if size_type.std_logic_vector? == false then
+          sub_block = true
+        end
+      end
       return sub_block
     end
 
@@ -260,7 +266,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
       if registory.key?(:query_size) then
         size_type = registory[:size_type]
-        signals[:size_bits] = addr_type.bits
+        signals[:size_bits] = size_type.bits
         if size_type.std_logic_vector? == false then
           signals[:size] = "proc_1_size"
         else
@@ -275,9 +281,27 @@ module MsgPack_RPC_Interface::VHDL::Util
         signals[:addr_bits] = 32
       end
       if registory.key?(:size_type) then
-        signals[:size_bits] = registory[:size_type].bits
+        size_bits   = registory[:size_type].bits
+        memory_size = registory.fetch(:size, 2**(size_bits-1))
+        signals[:size_bits] = size_bits
+      elsif registory.key?(:size) then
+        memory_size = registory[:size]
+        size_bits   = Math::log2(memory_size+1).ceil
+        signals[:size_bits] = size_bits
       else
-        signals[:size_bits] = 32
+        size_bits   = 32
+        memory_size = 2**size_bits
+        signals[:size_bits] = size_bits
+      end
+      if registory.key?(:default_size) then
+        size_type = registory[:size_type]
+        if size_type.std_logic_vector? == false then
+          signals[:default_size] = "proc_1_default_size"
+        else
+          signals[:default_size] = registory[:default_size]
+        end
+      else
+          signals[:default_size] = '"' + Array.new(size_bits){|n| (memory_size >> (size_bits-1-n)) & 1}.join + '"'
       end
       signals[:data_bits] = registory[:width]*data_type.bits
       signals[:strb_bits] = registory[:width]
@@ -295,7 +319,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       if registory.key?(:query_data) then
         if data_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent, 
-            "signal    proc_1_data      :  std_logic_vector(#{data_type.bits-1} downto 0);"
+            "signal    proc_1_data          :  std_logic_vector(#{data_type.bits-1} downto 0);"
           ))
         end
       end
@@ -303,7 +327,7 @@ module MsgPack_RPC_Interface::VHDL::Util
         addr_type = registory[:addr_type]
         if addr_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent,
-            "signal    proc_1_addr      :  std_logic_vector(#{addr_type.bits-1} downto 0);"
+            "signal    proc_1_addr          :  std_logic_vector(#{addr_type.bits-1} downto 0);"
           ))
         end
       end
@@ -311,7 +335,15 @@ module MsgPack_RPC_Interface::VHDL::Util
         size_type = registory[:size_type]
         if size_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent,
-            "signal    proc_1_size      :  std_logic_vector(#{size_type.bits-1} downto 0);"
+            "signal    proc_1_size          :  std_logic_vector(#{size_type.bits-1} downto 0);"
+          ))
+        end
+      end
+      if registory.key?(:default_size) then
+        size_type = registory[:size_type]
+        if size_type.std_logic_vector? == false then
+          vhdl_lines.concat(string_to_lines(indent,
+            "signal    proc_1_default_size  :  std_logic_vector(#{size_type.bits-1} downto 0);"
           ))
         end
       end
@@ -335,6 +367,12 @@ module MsgPack_RPC_Interface::VHDL::Util
         size_type = registory[:size_type]
         if size_type.std_logic_vector? == false then
           vhdl_lines.concat(string_to_lines(indent, size_type.generate_vhdl_convert_from_std_logic_vector(registory[:query_size], "proc_1_size")))
+        end
+      end
+      if registory.key?(:default_size) then
+        size_type = registory[:size_type]
+        if size_type.std_logic_vector? == false then
+          vhdl_lines.concat(string_to_lines(indent, size_type.generate_vhdl_convert_to_std_logic_vector(registory[:default_size], "proc_1_default_size")))
         end
       end
       return vhdl_lines
