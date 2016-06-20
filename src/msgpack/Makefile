@@ -32,6 +32,8 @@ OBJECT_ENTITY_FILES   = object/msgpack_object_packer.vhd                    \
                         object/msgpack_object_decode_binary_stream.vhd      \
                         object/msgpack_object_decode_map.vhd                \
                         object/msgpack_object_decode_boolean.vhd            \
+                        object/msgpack_object_decode_boolean_array.vhd      \
+                        object/msgpack_object_decode_boolean_stream.vhd     \
                         object/msgpack_object_decode_integer.vhd            \
                         object/msgpack_object_decode_integer_array.vhd      \
                         object/msgpack_object_decode_integer_stream.vhd     \
@@ -40,6 +42,8 @@ OBJECT_ENTITY_FILES   = object/msgpack_object_packer.vhd                    \
                         object/msgpack_object_encode_binary_array.vhd       \
                         object/msgpack_object_encode_binary_stream.vhd      \
                         object/msgpack_object_encode_boolean.vhd            \
+                        object/msgpack_object_encode_boolean_array.vhd      \
+                        object/msgpack_object_encode_boolean_stream.vhd     \
                         object/msgpack_object_encode_integer.vhd            \
                         object/msgpack_object_encode_integer_array.vhd      \
                         object/msgpack_object_encode_integer_stream.vhd     \
@@ -48,6 +52,8 @@ OBJECT_ENTITY_FILES   = object/msgpack_object_packer.vhd                    \
                         object/msgpack_object_match_aggregator.vhd          \
                         object/msgpack_object_store_array.vhd               \
                         object/msgpack_object_store_boolean_register.vhd    \
+                        object/msgpack_object_store_boolean_array.vhd       \
+                        object/msgpack_object_store_boolean_stream.vhd      \
                         object/msgpack_object_store_integer_register.vhd    \
                         object/msgpack_object_store_integer_array.vhd       \
                         object/msgpack_object_store_integer_stream.vhd      \
@@ -55,6 +61,8 @@ OBJECT_ENTITY_FILES   = object/msgpack_object_packer.vhd                    \
                         object/msgpack_object_store_binary_stream.vhd       \
                         object/msgpack_object_query_stream_parameter.vhd    \
                         object/msgpack_object_query_boolean_register.vhd    \
+                        object/msgpack_object_query_boolean_array.vhd       \
+                        object/msgpack_object_query_boolean_stream.vhd      \
                         object/msgpack_object_query_integer_register.vhd    \
                         object/msgpack_object_query_integer_array.vhd       \
                         object/msgpack_object_query_integer_stream.vhd      \
@@ -77,6 +85,8 @@ KVMAP_ENTITY_FILES    = kvmap/msgpack_kvmap_key_compare.vhd                 \
                         kvmap/msgpack_kvmap_key_match_aggregator.vhd        \
                         kvmap/msgpack_kvmap_dispatcher.vhd                  \
                         kvmap/msgpack_kvmap_store_boolean_register.vhd      \
+                        kvmap/msgpack_kvmap_store_boolean_array.vhd         \
+                        kvmap/msgpack_kvmap_store_boolean_stream.vhd        \
                         kvmap/msgpack_kvmap_store_integer_register.vhd      \
                         kvmap/msgpack_kvmap_store_integer_array.vhd         \
                         kvmap/msgpack_kvmap_store_integer_stream.vhd        \
@@ -85,6 +95,8 @@ KVMAP_ENTITY_FILES    = kvmap/msgpack_kvmap_key_compare.vhd                 \
                         kvmap/msgpack_kvmap_store_map_value.vhd             \
                         kvmap/msgpack_kvmap_store.vhd                       \
                         kvmap/msgpack_kvmap_query_boolean_register.vhd      \
+                        kvmap/msgpack_kvmap_query_boolean_array.vhd         \
+                        kvmap/msgpack_kvmap_query_boolean_stream.vhd        \
                         kvmap/msgpack_kvmap_query_integer_register.vhd      \
                         kvmap/msgpack_kvmap_query_integer_array.vhd         \
                         kvmap/msgpack_kvmap_query_integer_stream.vhd        \

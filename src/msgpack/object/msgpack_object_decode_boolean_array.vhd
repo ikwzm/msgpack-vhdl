@@ -44,9 +44,9 @@ entity  MsgPack_Object_Decode_Boolean_Array is
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        DATA_BITS       :  positive := 1;
         ADDR_BITS       :  positive := 8;
-        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
-        DATA_BITS       :  integer  := 1
+        SIZE_BITS       :  positive := 32
     );
     port (
     -------------------------------------------------------------------------------
@@ -94,11 +94,25 @@ architecture RTL of MsgPack_Object_Decode_Boolean_Array is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
+    function calc_width(BYTES:integer) return integer is
+        variable width : integer;
+    begin
+        width := 0;
+        while (2**width < BYTES) loop
+            width := width + 1;
+        end loop;
+        return width;
+    end function;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
     constant  OUTLET_WORDS      :  integer := DATA_BITS;
+    constant  OUTLET_WIDTH      :  integer := calc_width(OUTLET_WORDS);
     signal    outlet_data       :  std_logic_vector(DATA_BITS-1 downto 0);
     signal    outlet_strb       :  std_logic_vector(DATA_BITS-1 downto 0);
     signal    outlet_last       :  std_logic;
     signal    outlet_valid      :  std_logic;
+    signal    outlet_busy       :  std_logic;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -110,6 +124,7 @@ architecture RTL of MsgPack_Object_Decode_Boolean_Array is
     signal    intake_last       :  std_logic;
     signal    intake_code       :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
     signal    intake_shift      :  std_logic_vector(CODE_WIDTH-1 downto 0);
+    signal    intake_busy       :  std_logic;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -180,18 +195,23 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (I_ADDR)
-        variable offset_addr :  unsigned(OUTLET_WORDS-1 downto 0);
-    begin
-        offset_addr := to_01(unsigned(I_ADDR(offset_addr'range)));
-        for i in intake_offset'range loop
-            if (i < offset_addr) then
-                intake_offset(i) <= '1';
-            else
-                intake_offset(i) <= '0';
-            end if;
-        end loop;
-    end process;
+    OUTLET_WORDS_1: if (OUTLET_WORDS = 1) generate
+        intake_offset <= (others => '0');
+    end generate;
+    OUTLET_WORDS_2: if (OUTLET_WORDS > 1) generate
+        process (I_ADDR)
+            variable offset_addr :  unsigned(OUTLET_WIDTH-1 downto 0);
+        begin
+            offset_addr := to_01(unsigned(I_ADDR(offset_addr'range)));
+            for i in intake_offset'range loop
+                if (i < offset_addr) then
+                    intake_offset(i) <= '1';
+                else
+                    intake_offset(i) <= '0';
+                end if;
+            end loop;
+        end process;
+    end generate;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

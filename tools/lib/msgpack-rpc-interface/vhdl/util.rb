@@ -80,7 +80,7 @@ module MsgPack_RPC_Interface::VHDL::Util
       end
       if registory.key?(:store_size) then
         size_type = registory[:size_type]
-        signals[:size_bits] = addr_type.bits
+        signals[:size_bits] = size_type.bits
         if size_type.std_logic_vector? == false then
           signals[:size] = "proc_0_size"
         else

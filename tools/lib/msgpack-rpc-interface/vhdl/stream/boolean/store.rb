@@ -1,44 +1,32 @@
-module MsgPack_RPC_Interface::VHDL::Stream::Integer::Query
+module MsgPack_RPC_Interface::VHDL::Stream::Boolean::Store
   extend  MsgPack_RPC_Interface::VHDL::Util
-  include MsgPack_RPC_Interface::VHDL::Util::Query
+  include MsgPack_RPC_Interface::VHDL::Util::Store
 
   def generate_stmt(indent, name, data_type, kvmap, registory)
     instance_name = instance_name(name, data_type, registory)
     interface     = interface_signals(data_type, registory)
-    value_bits    = data_type.bits
-    value_sign    = data_type.sign
-    size_bits     = interface[:size_bits]
-    width         = registory.fetch(:width      , 1     )
-    default_size  = registory.fetch(:query_dsize , '"' + Array.new(size_bits){|n| (width >> (size_bits-1-n)) & 1}.join + '"')
     if kvmap == true then
       key_string = "STRING'(\"" + name + "\")"
       vhdl_lines = string_to_lines(
         indent, <<"        EOT"
-          #{instance_name} : MsgPack_KVMap_Query_Integer_Stream   -- 
+          #{instance_name} : MsgPack_KVMap_Store_Boolean_Stream   -- 
               generic map (              #{sprintf("%-28s", ""                     )}   -- 
                   KEY                 => #{sprintf("%-28s", key_string             )} , --
                   MATCH_PHASE         => #{sprintf("%-28s", registory[:match_phase])} , --
                   CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
-                  SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
-                  VALUE_BITS          => #{sprintf("%-28s", value_bits             )} , --
-                  VALUE_SIGN          => #{sprintf("%-28s", value_sign             )}   --
+                  DATA_BITS           => #{sprintf("%-28s", interface[:data_bits  ])} , --
+                  SIZE_BITS           => #{sprintf("%-28s", interface[:size_bits  ])}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
               port map (                 #{sprintf("%-28s", ""                     )}   -- 
                   CLK                 => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
                   RST                 => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
                   CLR                 => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
-                  DEFAULT_SIZE        => #{sprintf("%-28s", default_size           )} , -- In  :
                   I_CODE              => #{sprintf("%-28s", registory[:param_code ])} , -- In  :
                   I_LAST              => #{sprintf("%-28s", registory[:param_last ])} , -- In  :
                   I_VALID             => #{sprintf("%-28s", registory[:param_valid])} , -- In  :
                   I_ERROR             => #{sprintf("%-28s", registory[:param_error])} , -- Out :
                   I_DONE              => #{sprintf("%-28s", registory[:param_done ])} , -- Out :
                   I_SHIFT             => #{sprintf("%-28s", registory[:param_shift])} , -- Out :
-                  O_CODE              => #{sprintf("%-28s", registory[:value_code ])} , -- Out :
-                  O_LAST              => #{sprintf("%-28s", registory[:value_last ])} , -- Out :
-                  O_VALID             => #{sprintf("%-28s", registory[:value_valid])} , -- Out :
-                  O_ERROR             => #{sprintf("%-28s", registory[:value_error])} , -- Out :
-                  O_READY             => #{sprintf("%-28s", registory[:value_ready])} , -- In  :
                   MATCH_REQ           => #{sprintf("%-28s", registory[:match_req  ])} , -- In  :
                   MATCH_CODE          => #{sprintf("%-28s", registory[:match_code ])} , -- In  :
                   MATCH_OK            => #{sprintf("%-28s", registory[:match_ok   ])} , -- Out :
@@ -46,45 +34,42 @@ module MsgPack_RPC_Interface::VHDL::Stream::Integer::Query
                   MATCH_SHIFT         => #{sprintf("%-28s", registory[:match_shift])} , -- Out :
                   START               => #{sprintf("%-28s", interface[:start      ])} , -- Out :
                   BUSY                => #{sprintf("%-28s", interface[:busy       ])} , -- Out :
-                  SIZE                => #{sprintf("%-28s", interface[:size       ])} , -- In  :
-                  VALUE               => #{sprintf("%-28s", interface[:data       ])} , -- In  :
-                  VALID               => #{sprintf("%-28s", interface[:valid      ])} , -- In  :
-                  READY               => #{sprintf("%-28s", interface[:ready      ])}   -- Out :
+                  SIZE                => #{sprintf("%-28s", interface[:size       ])} , -- Out :
+                  DATA                => #{sprintf("%-28s", interface[:data       ])} , -- Out :
+                  STRB                => #{sprintf("%-28s", interface[:strb       ])} , -- Out :
+                  LAST                => #{sprintf("%-28s", interface[:last       ])} , -- Out :
+                  VALID               => #{sprintf("%-28s", interface[:valid      ])} , -- Out :
+                  READY               => #{sprintf("%-28s", interface[:ready      ])}   -- In  :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
     else
-      vhdl_lines = string_to_lines(
+      vhdl_lines    = string_to_lines(
         indent, <<"        EOT"
-          #{instance_name} : MsgPack_Object_Query_Interger_Stream   -- 
+          #{instance_name} : MsgPack_Object_Store_Boolean_Stream   -- 
               generic map (              #{sprintf("%-28s", ""                     )}   -- 
                   CODE_WIDTH          => #{sprintf("%-28s", registory[:code_width ])} , --
-                  SIZE_BITS           => #{sprintf("%-28s", size_bits              )} , --
-                  VALUE_BITS          => #{sprintf("%-28s", value_bits             )} , --
-                  VALUE_SIGN          => #{sprintf("%-28s", value_sign             )}   --
+                  DATA_BITS           => #{sprintf("%-28s", interface[:data_bits  ])} , --
+                  SIZE_BITS           => #{sprintf("%-28s", interface[:size_bits  ])}   --
               )                          #{sprintf("%-28s", ""                     )}   -- 
               port map (                 #{sprintf("%-28s", ""                     )}   -- 
                   CLK                 => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
                   RST                 => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
                   CLR                 => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
-                  DEFAULT_SIZE        => #{sprintf("%-28s", default_size           )} , -- In  :
                   I_CODE              => #{sprintf("%-28s", registory[:param_code ])} , -- In  :
                   I_LAST              => #{sprintf("%-28s", registory[:param_last ])} , -- In  :
                   I_VALID             => #{sprintf("%-28s", registory[:param_valid])} , -- In  :
                   I_ERROR             => #{sprintf("%-28s", registory[:param_error])} , -- Out :
                   I_DONE              => #{sprintf("%-28s", registory[:param_done ])} , -- Out :
                   I_SHIFT             => #{sprintf("%-28s", registory[:param_shift])} , -- Out :
-                  O_CODE              => #{sprintf("%-28s", registory[:value_code ])} , -- Out :
-                  O_LAST              => #{sprintf("%-28s", registory[:value_last ])} , -- Out :
-                  O_VALID             => #{sprintf("%-28s", registory[:value_valid])} , -- Out :
-                  O_ERROR             => #{sprintf("%-28s", registory[:value_error])} , -- Out :
-                  O_READY             => #{sprintf("%-28s", registory[:value_ready])} , -- In  :
                   START               => #{sprintf("%-28s", interface[:start      ])} , -- Out :
                   BUSY                => #{sprintf("%-28s", interface[:busy       ])} , -- Out :
-                  SIZE                => #{sprintf("%-28s", interface[:size       ])} , -- In  :
-                  VALUE               => #{sprintf("%-28s", interface[:data       ])} , -- In  :
-                  VALID               => #{sprintf("%-28s", interface[:valid      ])} , -- In  :
-                  READY               => #{sprintf("%-28s", interface[:ready      ])}   -- Out :
+                  SIZE                => #{sprintf("%-28s", interface[:size       ])} , -- Out :
+                  DATA                => #{sprintf("%-28s", interface[:data       ])} , -- Out :
+                  STRB                => #{sprintf("%-28s", interface[:strb       ])} , -- Out :
+                  LAST                => #{sprintf("%-28s", interface[:last       ])} , -- Out :
+                  VALID               => #{sprintf("%-28s", interface[:valid      ])} , -- Out :
+                  READY               => #{sprintf("%-28s", interface[:ready      ])}   -- In  :
               );                         #{sprintf("%-28s", ""                     )}   -- 
         EOT
       )
@@ -94,9 +79,9 @@ module MsgPack_RPC_Interface::VHDL::Stream::Integer::Query
   
   def use_package_list(kvmap)
     if kvmap == true then
-      return ["MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Query_Integer_Stream"]
+      return ["MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Store_Boolean_Stream"]
     else
-      return ["MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Integer_Stream"]
+      return ["MsgPack.MsgPack_Object_Components.MsgPack_Object_Store_Boolean_Stream"]
     end
   end
 

@@ -112,7 +112,7 @@ architecture RTL of MsgPack_Object_Encode_Boolean_Stream is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    type      STATE_TYPE       is (IDLE_STATE, SIZE_STATE, DATA_STATE);
+    type      STATE_TYPE       is (IDLE_STATE, START_STATE, RUN_STATE);
     signal    curr_state        :  STATE_TYPE;
     signal    curr_count        :  unsigned(SIZE'length-1 downto 0);
 begin
@@ -207,7 +207,7 @@ begin
                     value_code(i) <= MsgPack_Object.New_Code_False;
                 end if;
             else
-                    value_code(i) <= CODE_NULL;
+                    value_code(i) <= MsgPack_Object.CODE_NULL;
             end if;
         end loop;
     end process;
@@ -226,7 +226,7 @@ begin
              START           => START           , -- In  :
              SIZE            => SIZE            , -- In  :
              I_CODE          => value_code      , -- In  :
-             I_LAST          => value_last      , -- In  :
+             I_LAST          => '1'             , -- In  :
              I_ERROR         => '0'             , -- In  :
              I_VALID         => value_valid     , -- In  :
              I_READY         => value_ready     , -- Out :

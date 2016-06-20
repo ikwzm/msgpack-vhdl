@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_store_boolean_array.vhd
---!     @brief   MessagePack Object Store Boolean Array Module :
+--!     @file    msgpack_object_query_boolean_array.vhd
+--!     @brief   MessagePack Object Queary Boolean Array Module :
 --!     @version 0.2.0
 --!     @date    2016/6/19
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,14 +38,14 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Store_Boolean_Array is
+entity  MsgPack_Object_Query_Boolean_Array is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 1;
-        ADDR_BITS       :  positive := 8;
+        ADDR_BITS       :  positive := 32;
         SIZE_BITS       :  positive := MsgPack_Object.CODE_DATA_BITS
     );
     port (
@@ -56,7 +56,11 @@ entity  MsgPack_Object_Store_Boolean_Array is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- MessagePack Object Code Input Interface
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector( SIZE_BITS-1 downto 0) := (others => '1');
+    -------------------------------------------------------------------------------
+    -- Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         I_LAST          : in  std_logic;
@@ -65,19 +69,25 @@ entity  MsgPack_Object_Store_Boolean_Array is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Boolean Value Data and Address Output
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Boolean Value Input Interface
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
         SIZE            : out std_logic_vector(SIZE_BITS-1 downto 0);
         ADDR            : out std_logic_vector(ADDR_BITS-1 downto 0);
-        DATA            : out std_logic_vector(DATA_BITS-1 downto 0);
-        STRB            : out std_logic_vector(DATA_BITS-1 downto 0);
-        LAST            : out std_logic;
-        VALID           : out std_logic;
-        READY           : in  std_logic
+        DATA            : in  std_logic_vector(DATA_BITS-1 downto 0);
+        VALID           : in  std_logic;
+        READY           : out std_logic
     );
-end  MsgPack_Object_Store_Boolean_Array;
+end  MsgPack_Object_Query_Boolean_Array;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -86,27 +96,42 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Boolean_Array;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Store_Array;
-architecture RTL of MsgPack_Object_Store_Boolean_Array is
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Boolean_Array;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Array;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Stream_Parameter;
+architecture RTL of MsgPack_Object_Query_Boolean_Array is
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
     signal    param_code    :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
-    signal    param_addr    :  std_logic_vector          ( ADDR_BITS-1 downto 0);
     signal    param_valid   :  std_logic;
     signal    param_last    :  std_logic;
     signal    param_error   :  std_logic;
     signal    param_done    :  std_logic;
     signal    param_shift   :  std_logic_vector          (CODE_WIDTH-1 downto 0);
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    signal    value_code    :  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+    signal    value_valid   :  std_logic;
+    signal    value_last    :  std_logic;
+    signal    value_error   :  std_logic;
+    signal    value_ready   :  std_logic;
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    signal    encode_addr   :  std_logic_vector          ( ADDR_BITS-1 downto 0);
+    signal    encode_start  :  std_logic;
+    signal    encode_busy   :  std_logic;
+    signal    encode_size   :  std_logic_vector          ( SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    STORE_ARRAY: MsgPack_Object_Store_Array      -- 
+    QUERY_ARRAY: MsgPack_Object_Query_Array      -- 
         generic map (                            -- 
-            CODE_WIDTH      => CODE_WIDTH      , -- 
-            ADDR_BITS       => ADDR_BITS         -- 
+            CODE_WIDTH      => CODE_WIDTH      , --
+            ADDR_BITS       => ADDR_BITS         --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
@@ -118,44 +143,77 @@ begin
             I_ERROR         => I_ERROR         , -- Out :
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
-            VALUE_START     => open            , -- Out :
-            VALUE_ADDR      => param_addr      , -- Out :
-            VALUE_VALID     => param_valid     , -- Out :
-            VALUE_CODE      => param_code      , -- Out :
-            VALUE_LAST      => param_last      , -- Out :
-            VALUE_ERROR     => param_error     , -- In  :
-            VALUE_DONE      => param_done      , -- In  :
-            VALUE_SHIFT     => param_shift       -- In  :
-        );                                       -- 
+            O_CODE          => O_CODE          , -- Out :
+            O_VALID         => O_VALID         , -- Out :
+            O_LAST          => O_LAST          , -- Out :
+            O_ERROR         => O_ERROR         , -- Out :
+            O_READY         => O_READY         , -- In  :
+            PARAM_START     => open            , -- Out :
+            PARAM_ADDR      => encode_addr     , -- Out :
+            PARAM_VALID     => param_valid     , -- Out :
+            PARAM_CODE      => param_code      , -- Out :
+            PARAM_LAST      => param_last      , -- Out :
+            PARAM_ERROR     => param_error     , -- In  :
+            PARAM_DONE      => param_done      , -- In  :
+            PARAM_SHIFT     => param_shift     , -- In  :
+            VALUE_VALID     => value_valid     , -- In  :
+            VALUE_CODE      => value_code      , -- In  :
+            VALUE_LAST      => value_last      , -- In  :
+            VALUE_ERROR     => value_error     , -- In  :
+            VALUE_READY     => value_ready       -- Out :
+        );
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE: MsgPack_Object_Decode_Boolean_Array  -- 
+    PARAM: MsgPack_Object_Query_Stream_Parameter --
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            ADDR_BITS       => ADDR_BITS       , -- 
-            SIZE_BITS       => SIZE_BITS       , -- 
-            DATA_BITS       => DATA_BITS         --
+            SIZE_BITS       => SIZE_BITS         --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            I_ADDR          => param_addr      , -- In  :
+            DEFAULT_SIZE    => DEFAULT_SIZE    , -- In  :
             I_CODE          => param_code      , -- In  :
             I_LAST          => param_last      , -- In  :
             I_VALID         => param_valid     , -- In  :
             I_ERROR         => param_error     , -- Out :
             I_DONE          => param_done      , -- Out :
             I_SHIFT         => param_shift     , -- Out :
-            O_START         => START           , -- Out :
-            O_BUSY          => BUSY            , -- Out :
-            O_SIZE          => SIZE            , -- Out :
-            O_ADDR          => ADDR            , -- Out :
-            O_DATA          => DATA            , -- Out :
-            O_STRB          => STRB            , -- Out :
-            O_LAST          => LAST            , -- Out :
-            O_VALID         => VALID           , -- Out :
-            O_READY         => READY             -- In  :
+            START           => encode_start    , -- Out :
+            SIZE            => encode_size     , -- Out :
+            BUSY            => encode_busy       -- In  :
+        );                                       -- 
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    ENCODE: MsgPack_Object_Encode_Boolean_Array  -- 
+        generic map (                            -- 
+            CODE_WIDTH      => CODE_WIDTH      , --
+            ADDR_BITS       => ADDR_BITS       , --
+            SIZE_BITS       => SIZE_BITS       , --
+            DATA_BITS       => DATA_BITS         --
+        )                                        -- 
+        port map (                               -- 
+            CLK             => CLK             , -- In  :
+            RST             => RST             , -- In  :
+            CLR             => CLR             , -- In  :
+            START           => encode_start    , -- In  :
+            ADDR            => encode_addr     , -- In  :
+            SIZE            => encode_size     , -- In  :
+            BUSY            => encode_busy     , -- Out :
+            O_CODE          => value_code      , -- Out :
+            O_LAST          => value_last      , -- Out :
+            O_ERROR         => value_error     , -- Out :
+            O_VALID         => value_valid     , -- Out :
+            O_READY         => value_ready     , -- In  :
+            I_START         => START           , -- Out :
+            I_BUSY          => BUSY            , -- Out :
+            I_SIZE          => SIZE            , -- Out :
+            I_ADDR          => ADDR            , -- Out :
+            I_DATA          => DATA            , -- In  :
+            I_VALID         => VALID           , -- In  :
+            I_READY         => READY             -- Out :
         );                                       --
 end RTL;

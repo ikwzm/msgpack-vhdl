@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------
---!     @file    msgpack_object_store_boolean_stream.vhd
---!     @brief   MessagePack Object Store Boolean Stream Module :
+--!     @file    msgpack_object_query_boolean_stream.vhd
+--!     @brief   MessagePack Object Query Boolean Stream Module :
 --!     @version 0.2.0
 --!     @date    2016/6/19
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
@@ -38,7 +38,7 @@ library ieee;
 use     ieee.std_logic_1164.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-entity  MsgPack_Object_Store_Boolean_Stream is
+entity  MsgPack_Object_Query_Boolean_Stream is
     -------------------------------------------------------------------------------
     -- Generic Parameters
     -------------------------------------------------------------------------------
@@ -55,7 +55,11 @@ entity  MsgPack_Object_Store_Boolean_Stream is
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
-    -- MessagePack Object Code Input Interface
+    -- Default(when parameter == nil) Query Size 
+    -------------------------------------------------------------------------------
+        DEFAULT_SIZE    : in  std_logic_vector(SIZE_BITS-1 downto 0) := (others => '1');
+    -------------------------------------------------------------------------------
+    -- Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
         I_LAST          : in  std_logic;
@@ -64,18 +68,26 @@ entity  MsgPack_Object_Store_Boolean_Stream is
         I_DONE          : out std_logic;
         I_SHIFT         : out std_logic_vector(CODE_WIDTH-1 downto 0);
     -------------------------------------------------------------------------------
-    -- Boolean Value Data and Address Output
+    -- Object Code Output Interface
+    -------------------------------------------------------------------------------
+        O_CODE          : out MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);
+        O_LAST          : out std_logic;
+        O_ERROR         : out std_logic;
+        O_VALID         : out std_logic;
+        O_READY         : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Boolean Value Input Interface
     -------------------------------------------------------------------------------
         START           : out std_logic;
         BUSY            : out std_logic;
         SIZE            : out std_logic_vector(SIZE_BITS-1 downto 0);
-        DATA            : out std_logic_vector(DATA_BITS-1 downto 0);
-        STRB            : out std_logic_vector(DATA_BITS-1 downto 0);
-        LAST            : out std_logic;
-        VALID           : out std_logic;
-        READY           : in  std_logic
+        DATA            : in  std_logic_vector(DATA_BITS-1 downto 0);
+        STRB            : in  std_logic_vector(DATA_BITS-1 downto 0);
+        LAST            : in  std_logic;
+        VALID           : in  std_logic;
+        READY           : out std_logic
     );
-end  MsgPack_Object_Store_Boolean_Stream;
+end  MsgPack_Object_Query_Boolean_Stream;
 -----------------------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------------------
@@ -84,35 +96,66 @@ use     ieee.std_logic_1164.all;
 use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
-use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Boolean_Stream;
-architecture RTL of MsgPack_Object_Store_Boolean_Stream is
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Boolean_Stream;
+use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Stream_Parameter;
+architecture RTL of MsgPack_Object_Query_Boolean_Stream is
+    signal    param_start    :  std_logic;
+    signal    param_busy     :  std_logic;
+    signal    param_size     :  std_logic_vector(SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    DECODE: MsgPack_Object_Decode_Boolean_Stream -- 
+    PARAM: MsgPack_Object_Query_Stream_Parameter --
         generic map (                            -- 
             CODE_WIDTH      => CODE_WIDTH      , --
-            SIZE_BITS       => SIZE_BITS       , --
-            DATA_BITS       => DATA_BITS         --
+            SIZE_BITS       => SIZE_BITS         --
         )                                        -- 
         port map (                               -- 
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
+            DEFAULT_SIZE    => DEFAULT_SIZE    , -- In  :
             I_CODE          => I_CODE          , -- In  :
             I_LAST          => I_LAST          , -- In  :
             I_VALID         => I_VALID         , -- In  :
             I_ERROR         => I_ERROR         , -- Out :
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
-            O_START         => START           , -- Out :
-            O_BUSY          => BUSY            , -- Out :
-            O_SIZE          => SIZE            , -- Out :
-            O_DATA          => DATA            , -- Out :
-            O_STRB          => STRB            , -- Out :
-            O_LAST          => LAST            , -- Out :
-            O_VALID         => VALID           , -- Out :
-            O_READY         => READY             -- In  :
+            START           => param_start     , -- Out :
+            SIZE            => param_size      , -- Out :
+            BUSY            => param_busy        -- In  :
+        );                                       -- 
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    ENCODE: MsgPack_Object_Encode_Boolean_Stream -- 
+        generic map (                            -- 
+            CODE_WIDTH      => CODE_WIDTH      , --
+            DATA_BITS       => DATA_BITS       , --
+            SIZE_BITS       => SIZE_BITS       , --
+            I_JUSTIFIED     => FALSE           , --
+            I_BUFFERED      => TRUE              -- 
+        )                                        -- 
+        port map (                               -- 
+            CLK             => CLK             , -- In  :
+            RST             => RST             , -- In  :
+            CLR             => CLR             , -- In  :
+            START           => param_start     , -- In  :
+            SIZE            => param_size      , -- In  :
+            BUSY            => param_busy      , -- Out :
+            I_START         => START           , -- Out :
+            I_BUSY          => BUSY            , -- Out :
+            I_SIZE          => SIZE            , -- Out :
+            I_DATA          => DATA            , -- In  :
+            I_STRB          => STRB            , -- In  :
+            I_LAST          => LAST            , -- In  :
+            I_VALID         => VALID           , -- In  :
+            I_READY         => READY           , -- Out :
+            O_CODE          => O_CODE          , -- Out :
+            O_LAST          => O_LAST          , -- Out :
+            O_ERROR         => O_ERROR         , -- Out :
+            O_VALID         => O_VALID         , -- Out :
+            O_READY         => O_READY           -- In  :
         );                                       --
 end RTL;

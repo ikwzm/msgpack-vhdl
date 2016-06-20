@@ -233,7 +233,7 @@ module MsgPack_RPC_Interface::Standard
           end
         end
         @generator = MsgPack_RPC_Interface::VHDL::Memory.const_get(@msg_class.class.to_s.split('::').last)
-        if @port_raddr == @port_waddr then
+        if @registory[:query_addr] == @registory[:store_addr] then
           arb_regs = Hash.new
           arb_regs[:name       ] = @port_name
           arb_regs[:addr       ] = @registory[:query_addr]
@@ -249,7 +249,7 @@ module MsgPack_RPC_Interface::Standard
           arb_regs[:query_start] = "proc_#{@port_name}_rstart"
           arb_regs[:query_busy ] = "proc_#{@port_name}_rbusy"
           arb_regs[:we         ] = @registory[:store_valid]
-          if registory.key?(:query_enable) then
+          if @registory.key?(:query_enable) then
             arb_regs[:oe         ] = @registory[:query_enable]
           end
           @arbitor = Arbitor.new(arb_regs)
@@ -323,10 +323,12 @@ module MsgPack_RPC_Interface::Standard
           max_size  = registory["max_size"]
           size_bits = Math::log2(max_size+1).ceil
           @registory[:max_size ] = max_size
+          @registory[:size     ] = max_size
           @registory[:size_type] = Type.new(registory.fetch("size_type", Hash({"name" => "Logic_Vector", "width" => size_bits})))
         else
           @registory[:size_type] = Type.new(registory.fetch("size_type", Hash({"name" => "Logic_Vector", "width" => 32})))
           @registory[:max_size ] = 2**(@registory[:size_type].bits-1)
+          @registory[:size     ] = 2**(@registory[:size_type].bits-1)
         end
         if    @read == true  and @write == true  then
           @registory[:store_start] = nil

@@ -45,7 +45,7 @@ entity  MsgPack_Object_Decode_Boolean_Stream is
     generic (
         CODE_WIDTH      :  positive := 1;
         DATA_BITS       :  positive := 1;
-        SIZE_BITS       :  boolean  := MsgPack_Object.CODE_DATA_BITS
+        SIZE_BITS       :  positive := 32
     );
     port (
     -------------------------------------------------------------------------------
@@ -90,6 +90,7 @@ use     MsgPack.PipeWork_Components.REDUCER;
 architecture RTL of MsgPack_Object_Decode_Boolean_Stream is
     constant  OUTLET_WORDS      :  integer := DATA_BITS;
     constant  intake_offset     :  std_logic_vector(OUTLET_WORDS-1 downto 0) := (others => '0');
+    signal    intake_busy       :  std_logic;
     signal    intake_valid      :  std_logic;
     signal    intake_error      :  std_logic;
     signal    intake_done       :  std_logic;
@@ -101,6 +102,7 @@ architecture RTL of MsgPack_Object_Decode_Boolean_Stream is
     signal    value_data        :  std_logic_vector(0 downto 0);
     constant  value_strb        :  std_logic_vector(0 downto 0) := (others => '1');
     signal    value_last        :  std_logic;
+    signal    outlet_busy       :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
