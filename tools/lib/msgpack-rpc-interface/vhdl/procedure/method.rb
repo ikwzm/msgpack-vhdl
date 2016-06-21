@@ -256,7 +256,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
       body_code = generate_stmt_method_no_param(  indent, name, registory)
     end
     if    return_variable == nil then
-      body_code.concat(generate_stmt_method_return_nil(   indennt, name, registory))
+      body_code.concat(generate_stmt_method_return_nil(    indent, name, registory))
     elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Integer then
       body_code.concat(generate_stmt_method_return_integer(indent, name, return_variable, registory))
     elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Boolean then
