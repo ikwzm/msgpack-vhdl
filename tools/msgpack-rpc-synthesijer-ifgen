@@ -55,11 +55,13 @@ class InterfaceGenerator
     @debug             = false
     @file_list         = Array.new
     @modules           = Array.new
+    @server            = false
     @opt               = OptionParser.new do |opt|
       opt.program_name = @program_name
       opt.version      = @program_version
       opt.summary_width= 20
       opt.banner       = "Usage: msgpack-rpc-ifgen file_name..."
+      opt.on('-s', '--server' ){|val| @server  = true}
       opt.on('-v', '--verbose'){|val| @verbose = true}
       opt.on('-d', '--debug'  ){|val| @debug   = true}
     end
@@ -186,8 +188,13 @@ class InterfaceGenerator
     module_info["variables"].concat(get_variable_mem_list(remain_port_list))
     # remain_port_list.each {|port| puts port;}
     module_info["debug"    ] = true if @debug
-    module_info["generate" ] = Hash({"interface" => Hash({"name" => entity_name + "_Interface",
-                                                          "file" => entity_name + "_Interface.vhd"})})
+    module_info["generate" ] = Hash.new
+    module_info["generate" ]["interface"] = Hash({"name" => entity_name + "_Interface",
+                                                  "file" => entity_name + "_Interface.vhd"})
+    if @server == true then
+      module_info["generate"]["server"  ] = Hash({"name" => entity_name + "_Server",
+                                                  "file" => entity_name + "_Server.vhd"})
+    end
     return [MsgPack_RPC_Interface::Module.new(module_info)]
   end
   #-------------------------------------------------------------------------------
