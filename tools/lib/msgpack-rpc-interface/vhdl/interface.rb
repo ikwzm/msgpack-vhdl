@@ -223,7 +223,7 @@ module MsgPack_RPC_Interface::VHDL::Interface
       port_list.concat(v.interface.generate_vhdl_port_list(true))
     end
     port_list.each do |port_desc|
-      port_name = port_desc.match(/^([a-zA-Z]+[a-zA-Z_]*)/)[0]
+      port_name = port_desc.match(/^([a-zA-Z]+[a-zA-Z0-9_]*)/)[0]
       port_map_list << sprintf("%-20s => %-20s", port_name, port_name)
     end
 
