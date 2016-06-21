@@ -466,6 +466,9 @@ module MsgPack_RPC_Interface::Standard
         @bits = registory.fetch("width", 32  )
         @sign = false
       end
+      def to_s
+        return "#{self.class.name}(#{@bits})"
+      end
     end
 
     class Signed < Base
@@ -475,6 +478,9 @@ module MsgPack_RPC_Interface::Standard
         super(registory)
         @bits = registory.fetch("width", 32  )
         @sign = true
+      end
+      def to_s
+        return "#{self.class.name}(#{@bits})"
       end
     end
 
@@ -491,6 +497,9 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         @bits = registory.fetch("width", 1)
+      end
+      def to_s
+        return "#{self.class.name}(#{@bits})"
       end
     end
 
@@ -577,7 +586,11 @@ module MsgPack_RPC_Interface::Standard
                 indent + sprintf("%-10s : %s" , "busy_name"  , @busy_name     ),
                 indent + sprintf("%-10s : %s" , "return_name", @return_name   ),
                 indent + sprintf("%-10s : \n" , "arguments"                   ),
-               ].join("\n") + @arguments.map{|argument| argument.to_s(indent + "  ")}.join("\n")
+               ].join("\n") +
+               @arguments.map{|argument| argument.to_s(indent + "  ")}.join("\n") + "\n" +
+               [indent + sprintf("%-10s : \n" , "return"                     ),
+               ].join("\n") +
+               ((@return != nil) ? @return.to_s(indent + "  ") : "")
       end
     end
 
