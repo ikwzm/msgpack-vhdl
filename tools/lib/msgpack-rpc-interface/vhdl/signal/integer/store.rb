@@ -5,38 +5,37 @@ module MsgPack_RPC_Interface::VHDL::Signal::Integer::Store
     block_regs = registory.dup
     block_regs[:store_data ] = "proc_0_value"
     block_regs[:store_valid] = "proc_0_valid"
-    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.bits, "sign" => type.sign}))
+    value_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.bits, "sign" => type.sign}))
     generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
     return string_to_lines(
       indent, <<"      EOT"
-           signal    proc_0_value   :  std_logic_vector(#{type.bits-1} downto 0);
-           signal    proc_0_valid   :  std_logic;
+           signal    #{block_regs[:store_data ]} :  #{value_type.vhdl_type};
+           signal    #{block_regs[:store_valid]} :  std_logic;
       EOT
-    ).concat(generator.generate_decl(indent, name, logic_type, kvmap, block_regs))
+    ).concat(generator.generate_decl(indent, name, value_type, kvmap, block_regs))
   end
 
   def generate_stmt(indent, name, type, kvmap, registory)
     block_regs = registory.dup
     block_regs[:store_data ] = "proc_0_value"
     block_regs[:store_valid] = "proc_0_valid"
-    conv_stmt  = type.generate_vhdl_convert_from_std_logic_vector(registory[:store_data], "proc_0_value")
-    logic_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.bits, "sign" => type.sign}))
+    value_type = MsgPack_RPC_Interface::Standard::Type::Integer.new(Hash({"width" => type.bits, "sign" => type.sign}))
     generator  = MsgPack_RPC_Interface::VHDL::Register::Integer::Store
     return string_to_lines(
       indent, <<"      EOT"
              process(#{registory[:clock]}, #{registory[:reset]}) begin
                  if (#{registory[:reset]} = '1') then
-                          #{registory[:store_data]} <= (others => '0');
+                          #{type.generate_vhdl_reset_value(registory[:store_data], 0)}
                  elsif (#{registory[:clock]}'event and #{registory[:clock]} = '1') then
                      if    (#{registory[:clear]} = '1') then
-                          #{registory[:store_data]} <= (others => '0');
+                          #{type.generate_vhdl_reset_value(registory[:store_data], 0)}
                      elsif (proc_0_valid = '1') then
-                          #{conv_stmt}
+                          #{type.generate_vhdl_convert_from_std_logic_vector(registory[:store_data], block_regs[:store_data])}
                      end if;
                  end if;
              end process;
       EOT
-    ).concat(generator.generate_stmt(indent, name, logic_type, kvmap, block_regs))
+    ).concat(generator.generate_stmt(indent, name, value_type, kvmap, block_regs))
   end
 
   def generate_body(indent, name, type, kvmap, registory)

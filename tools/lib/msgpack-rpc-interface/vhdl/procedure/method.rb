@@ -165,34 +165,40 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
   end
         
   def self.generate_stmt_method_return_integer(indent, name, return_variable, registory)
-    value_width = return_variable.type.bits
+    value_width = return_variable.interface.type.bits
     return_uint = (return_variable.type.sign) ? "FALSE" : "TRUE"
     return_int  = (return_variable.type.sign) ? "TRUE"  : "FALSE"
-    return_value= "std_logic_vector(#{registory[:return_name]})"
+    return_name = registory[:return_name]
+    return_stmt = return_variable.interface.type.generate_vhdl_convert_to_std_logic_vector(return_name, "proc_return_value")
     vhdl_lines  = string_to_lines(
       indent, <<"        EOT"
-          PROC_RETURN : MsgPack_RPC_Method_Return_Integer  -- 
-              generic map (                  #{sprintf("%-28s", ""                     )}   -- 
-                  VALUE_WIDTH             => #{sprintf("%-28s", value_width            )} , --
-                  RETURN_UINT             => #{sprintf("%-28s", return_uint            )} , --
-                  RETURN_INT              => #{sprintf("%-28s", return_int             )} , --
-                  RETURN_FLOAT            => #{sprintf("%-28s", "FALSE"                )} , --
-                  RETURN_BOOLEAN          => #{sprintf("%-28s", "FALSE"                )}   --
-              )                              #{sprintf("%-28s", ""                     )}   -- 
-              port map (                     #{sprintf("%-28s", ""                     )}   -- 
-                  CLK                     => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
-                  RST                     => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
-                  CLR                     => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
-                  RET_ERROR               => #{sprintf("%-28s", "proc_return_error"    )} , -- In  :
-                  RET_START               => #{sprintf("%-28s", "proc_return_start"    )} , -- In  :
-                  RET_DONE                => #{sprintf("%-28s", "proc_return_done"     )} , -- In  :
-                  RET_BUSY                => #{sprintf("%-28s", "proc_return_busy"     )} , -- Out :
-                  RES_CODE                => #{sprintf("%-28s", registory[:res_code   ])} , -- Out :
-                  RES_VALID               => #{sprintf("%-28s", registory[:res_valid  ])} , -- Out :
-                  RES_LAST                => #{sprintf("%-28s", registory[:res_last   ])} , -- Out :
-                  RES_READY               => #{sprintf("%-28s", registory[:res_ready  ])} , -- In  :
-                  VALUE                   => #{sprintf("%-28s", return_value           )}   -- In  :
-              );
+          PROC_RETURN : block
+              signal proc_return_value : std_logic_vector(#{value_width}-1 downto 0);
+          begin
+              RET: MsgPack_RPC_Method_Return_Integer  -- 
+                  generic map (                  #{sprintf("%-28s", ""                     )}   -- 
+                      VALUE_WIDTH             => #{sprintf("%-28s", value_width            )} , --
+                      RETURN_UINT             => #{sprintf("%-28s", return_uint            )} , --
+                      RETURN_INT              => #{sprintf("%-28s", return_int             )} , --
+                      RETURN_FLOAT            => #{sprintf("%-28s", "FALSE"                )} , --
+                      RETURN_BOOLEAN          => #{sprintf("%-28s", "FALSE"                )}   --
+                  )                              #{sprintf("%-28s", ""                     )}   -- 
+                  port map (                     #{sprintf("%-28s", ""                     )}   -- 
+                      CLK                     => #{sprintf("%-28s", registory[:clock      ])} , -- In  :
+                      RST                     => #{sprintf("%-28s", registory[:reset      ])} , -- in  :
+                      CLR                     => #{sprintf("%-28s", registory[:clear      ])} , -- in  :
+                      RET_ERROR               => #{sprintf("%-28s", "proc_return_error"    )} , -- In  :
+                      RET_START               => #{sprintf("%-28s", "proc_return_start"    )} , -- In  :
+                      RET_DONE                => #{sprintf("%-28s", "proc_return_done"     )} , -- In  :
+                      RET_BUSY                => #{sprintf("%-28s", "proc_return_busy"     )} , -- Out :
+                      RES_CODE                => #{sprintf("%-28s", registory[:res_code   ])} , -- Out :
+                      RES_VALID               => #{sprintf("%-28s", registory[:res_valid  ])} , -- Out :
+                      RES_LAST                => #{sprintf("%-28s", registory[:res_last   ])} , -- Out :
+                      RES_READY               => #{sprintf("%-28s", registory[:res_ready  ])} , -- In  :
+                      VALUE                   => #{sprintf("%-28s", "proc_return_value"    )}   -- In  :
+                  );
+              #{return_stmt}
+          end block;
         EOT
     )
     return vhdl_lines
