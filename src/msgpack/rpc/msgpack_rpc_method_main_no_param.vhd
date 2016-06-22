@@ -2,7 +2,7 @@
 --!     @file    msgpack_rpc_method_no_param.vhd
 --!     @brief   MessagePack-RPC Method Main Module without Parameter :
 --!     @version 0.2.0
---!     @date    2016/5/20
+--!     @date    2016/6/22
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -68,6 +68,7 @@ entity  MsgPack_RPC_Method_Main_No_Param is
         PROC_REQ_ID     : in  MsgPack_RPC.MsgID_Type;
         PROC_REQ        : in  std_logic;
         PROC_BUSY       : out std_logic;
+        PROC_START      : out std_logic;
         PARAM_CODE      : in  MsgPack_RPC.Code_Type;
         PARAM_VALID     : in  std_logic;
         PARAM_LAST      : in  std_logic;
@@ -174,9 +175,11 @@ begin
     process (CLK, RST) begin
         if (RST = '1') then
                 curr_state   <= IDLE_STATE;
+                PROC_START   <= '0';
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
                 curr_state   <= IDLE_STATE;
+                PROC_START   <= '0';
             else
                 case curr_state is
                     when IDLE_STATE =>
@@ -233,6 +236,11 @@ begin
                     when others =>
                         curr_state   <= IDLE_STATE;
                 end case;
+                if (curr_state = IDLE_STATE and PROC_REQ = '1') then
+                    PROC_START <= '1';
+                else
+                    PROC_START <= '0';
+                end if;
             end if;
         end if;
     end process;

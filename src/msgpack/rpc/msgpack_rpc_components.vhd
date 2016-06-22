@@ -2,7 +2,7 @@
 --!     @file    rpc/msgpack_rpc_components.vhd                                  --
 --!     @brief   MessagaPack Component Library Description                       --
 --!     @version 0.2.0                                                           --
---!     @date    2016/06/10                                                      --
+--!     @date    2016/06/22                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -293,6 +293,7 @@ component MsgPack_RPC_Method_Main_No_Param
         PROC_REQ_ID     : in  MsgPack_RPC.MsgID_Type;
         PROC_REQ        : in  std_logic;
         PROC_BUSY       : out std_logic;
+        PROC_START      : out std_logic;
         PARAM_CODE      : in  MsgPack_RPC.Code_Type;
         PARAM_VALID     : in  std_logic;
         PARAM_LAST      : in  std_logic;
