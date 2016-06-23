@@ -62,6 +62,7 @@ entity  MsgPack_Object_Encode_Integer_Stream is
         START           : in  std_logic;
         SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
@@ -195,8 +196,8 @@ begin
              CLR             => CLR             , -- In  :
              START           => START           , -- In  :
              SIZE            => SIZE            , -- In  :
-             BUSY            => encode_busy     , -- Out :
-             READY           => open            , -- Out :
+             BUSY            => BUSY            , -- Out :
+             READY           => READY           , -- Out :
              I_CODE          => t_code          , -- In  :
              I_LAST          => t_last          , -- In  :
              I_ERROR         => t_error         , -- In  :
@@ -256,7 +257,6 @@ begin
         end if;
     end process;
     i_last  <= '1' when (to_01(curr_count) <= 1) else '0';
-    BUSY    <= '1' when (curr_state = RUN_STATE    or queue_busy = '1' or encode_busy = '1') else '0';
     I_START <= '1' when (curr_state = START_STATE and curr_count >  0 ) else '0';
     I_BUSY  <= '1' when (curr_state = RUN_STATE) else '0';
     I_SIZE  <= std_logic_vector(curr_count);

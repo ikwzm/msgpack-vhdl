@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_integer_array.vhd
 --!     @brief   MessagePack Object Encode to Integer Array
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -64,6 +64,7 @@ entity  MsgPack_Object_Encode_Integer_Array is
         ADDR            : in  std_logic_vector( ADDR_BITS-1 downto 0);
         SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
@@ -125,6 +126,7 @@ begin
             START           => START               , -- In  :
             SIZE            => SIZE                , -- In  :
             BUSY            => BUSY                , -- Out :
+            READY           => READY               , -- Out :
         ---------------------------------------------------------------------------
         -- Integer Value Input Interface
         ---------------------------------------------------------------------------

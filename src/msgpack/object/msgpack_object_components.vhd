@@ -1138,6 +1138,7 @@ component MsgPack_Object_Encode_Integer_Array
         ADDR            : in  std_logic_vector( ADDR_BITS-1 downto 0);
         SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
@@ -1185,6 +1186,7 @@ component MsgPack_Object_Encode_Integer_Stream
         START           : in  std_logic;
         SIZE            : in  std_logic_vector( SIZE_BITS-1 downto 0);
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Integer Value Input Interface
     -------------------------------------------------------------------------------
