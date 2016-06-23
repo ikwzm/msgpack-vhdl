@@ -2,11 +2,11 @@
 --!     @file    msgpack_object_encode_array.vhd
 --!     @brief   MessagePack Object encode to array
 --!     @version 0.2.0
---!     @date    2015/11/9
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -58,6 +58,8 @@ entity  MsgPack_Object_Encode_Array is
     -------------------------------------------------------------------------------
         START           : in  std_logic;
         SIZE            : in  std_logic_vector(SIZE_BITS-1 downto 0);
+        BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Value Object Encode Input Interface
     -------------------------------------------------------------------------------
@@ -93,43 +95,57 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (CLK, RST) begin
+    process (CLK, RST)
+        variable next_state     :  STATE_TYPE;
+    begin
         if (RST = '1') then
                 curr_state <= IDLE_STATE;
+                BUSY       <= '0';
+                READY      <= '0';
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
                 curr_state <= IDLE_STATE;
+                BUSY       <= '0';
+                READY      <= '0';
             else
                 case curr_state is
                     when IDLE_STATE =>
                         if (START = '1') then
-                                curr_state <= ARRAY_STATE;
+                                next_state := ARRAY_STATE;
                         else
-                                curr_state <= IDLE_STATE;
+                                next_state := IDLE_STATE;
                         end if;
                     when ARRAY_STATE =>
                         if (O_READY = '1') then
                             if (array_count_zero) then
-                                curr_state <= IDLE_STATE;
+                                next_state := IDLE_STATE;
                             else
-                                curr_state <= VALUE_STATE;
+                                next_state := VALUE_STATE;
                             end if;
                         else
-                                curr_state <= ARRAY_STATE;
+                                next_state := ARRAY_STATE;
                         end if;
                     when VALUE_STATE =>
                         if (I_VALID = '1' and I_LAST = '1' and O_READY = '1') then
                             if (array_count_zero) then
-                                curr_state <= IDLE_STATE;
+                                next_state := IDLE_STATE;
                             else
-                                curr_state <= VALUE_STATE;
+                                next_state := VALUE_STATE;
                             end if;
                         else
-                                curr_state <= VALUE_STATE;
+                                next_state := VALUE_STATE;
                         end if;
                     when others =>
-                                curr_state <= IDLE_STATE;
+                                next_state := IDLE_STATE;
                 end case;
+                curr_state <= next_state;
+                if (next_state = IDLE_STATE) then
+                    READY <= '1';
+                    BUSY  <= '0';
+                else
+                    READY <= '0';
+                    BUSY  <= '1';
+                end if;
             end if;
         end if;
     end process;

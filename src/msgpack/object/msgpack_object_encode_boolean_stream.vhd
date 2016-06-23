@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_boolean_stream.vhd
 --!     @brief   MessagePack Object Encode to Boolean Stream
 --!     @version 0.2.0
---!     @date    2016/6/19
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -225,6 +225,8 @@ begin
              CLR             => CLR             , -- In  :
              START           => START           , -- In  :
              SIZE            => SIZE            , -- In  :
+             BUSY            => open            , -- Out :
+             READY           => open            , -- Out :
              I_CODE          => value_code      , -- In  :
              I_LAST          => '1'             , -- In  :
              I_ERROR         => '0'             , -- In  :

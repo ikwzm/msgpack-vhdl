@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_integer_stream.vhd
 --!     @brief   MessagePack Object encode to integer stream
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -101,6 +101,7 @@ architecture RTL of MsgPack_Object_Encode_Integer_Stream is
     signal    t_valid           :  std_logic;
     signal    t_ready           :  std_logic;
     signal    t_shift           :  std_logic_vector(CODE_WIDTH-1 downto 0);
+    signal    encode_busy       :  std_logic;
     signal    queue_busy        :  std_logic;
     signal    i_enable          :  std_logic;
     signal    i_last            :  std_logic;
@@ -194,6 +195,8 @@ begin
              CLR             => CLR             , -- In  :
              START           => START           , -- In  :
              SIZE            => SIZE            , -- In  :
+             BUSY            => encode_busy     , -- Out :
+             READY           => open            , -- Out :
              I_CODE          => t_code          , -- In  :
              I_LAST          => t_last          , -- In  :
              I_ERROR         => t_error         , -- In  :
@@ -253,7 +256,7 @@ begin
         end if;
     end process;
     i_last  <= '1' when (to_01(curr_count) <= 1) else '0';
-    BUSY    <= '1' when (curr_state = RUN_STATE    or queue_busy = '1') else '0';
+    BUSY    <= '1' when (curr_state = RUN_STATE    or queue_busy = '1' or encode_busy = '1') else '0';
     I_START <= '1' when (curr_state = START_STATE and curr_count >  0 ) else '0';
     I_BUSY  <= '1' when (curr_state = RUN_STATE) else '0';
     I_SIZE  <= std_logic_vector(curr_count);

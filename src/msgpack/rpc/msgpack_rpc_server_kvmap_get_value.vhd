@@ -2,7 +2,7 @@
 --!     @file    msgpack_rpc_server_kvmap_get_value.vhd
 --!     @brief   MessagePack-RPC Server Key Value Map Get Value Module :
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -356,6 +356,8 @@ begin
             CLR             => CLR                     , -- In  :
             START           => array_start             , -- In  :
             SIZE            => array_size              , -- In  :
+            BUSY            => open                    , -- Out :
+            READY           => open                    , -- Out :
             I_CODE          => ret_value_code          , -- In  :
             I_LAST          => ret_value_last          , -- In  :
             I_ERROR         => ret_value_error         , -- In  :
