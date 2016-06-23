@@ -209,6 +209,7 @@ begin
             ADDR            => encode_addr     , -- In  :
             SIZE            => encode_size     , -- In  :
             BUSY            => encode_busy     , -- Out :
+            READY           => open            , -- Out :
             O_CODE          => value_code      , -- Out :
             O_LAST          => value_last      , -- Out :
             O_ERROR         => value_error     , -- Out :

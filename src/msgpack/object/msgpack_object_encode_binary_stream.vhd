@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_binary_stream.vhd
 --!     @brief   MessagePack Object Encode to Binary/String Stream
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -64,6 +64,7 @@ entity  MsgPack_Object_Encode_Binary_Stream is
         START           : in  std_logic;
         SIZE            : in  std_logic_vector(SIZE_BITS  -1 downto 0);
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -249,23 +250,29 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (CLK, RST) begin
+    process (CLK, RST)
+        variable  next_state  :  STATE_TYPE;
+    begin
         if (RST = '1') then
                 curr_state <= IDLE_STATE;
                 curr_size  <= (others => '0');
                 size_zero  <= '0';
+                BUSY       <= '0';
+                READY      <= '0';
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
                 curr_state <= IDLE_STATE;
                 curr_size  <= (others => '0');
                 size_zero  <= '0';
+                BUSY       <= '0';
+                READY      <= '0';
             else
                 case curr_state is
                     when IDLE_STATE =>
                         if (START = '1') then
-                            curr_state <= SIZE_STATE;
+                            next_state := SIZE_STATE;
                         else
-                            curr_state <= IDLE_STATE;
+                            next_state := IDLE_STATE;
                         end if;
                         curr_size  <= unsigned(SIZE);
                         if (unsigned(SIZE) = 0) then
@@ -275,25 +282,32 @@ begin
                         end if;
                     when SIZE_STATE =>
                         if    (outlet_ready = '0') then
-                            curr_state <= SIZE_STATE;
+                            next_state := SIZE_STATE;
                         elsif (outlet_last  = '1') then
-                            curr_state <= IDLE_STATE;
+                            next_state := IDLE_STATE;
                         else
-                            curr_state <= DATA_STATE;
+                            next_state := DATA_STATE;
                         end if;
                     when DATA_STATE =>
                         if (outlet_valid = '1' and outlet_ready = '1' and outlet_last = '1') then
-                            curr_state <= IDLE_STATE;
+                            next_state := IDLE_STATE;
                         else
-                            curr_state <= DATA_STATE;
+                            next_state := DATA_STATE;
                         end if;
                     when others =>
-                        curr_state <= IDLE_STATE;
+                            next_state := IDLE_STATE;
                 end case;
+                curr_state <= next_state;
+                if (next_state = IDLE_STATE) then
+                    READY <= '1';
+                    BUSY  <= '0';
+                else
+                    READY <= '0';
+                    BUSY  <= '1';
+                end if;
             end if;
         end if;
     end process;
-    BUSY          <= '1' when (curr_state /= IDLE_STATE) else '0';
     intake_enable <= '1' when (curr_state  = SIZE_STATE and size_zero  = '0') or
                               (curr_state  = DATA_STATE                     ) else '0';
     -------------------------------------------------------------------------------

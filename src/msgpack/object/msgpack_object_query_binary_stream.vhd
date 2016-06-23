@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_binary_stream.vhd
 --!     @brief   MessagePack Object Query to Binary/String Stream
 --!     @version 0.2.0
---!     @date    2016/6/11
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -148,6 +148,7 @@ begin
             START           => param_start     , -- In  :
             SIZE            => param_size      , -- In  :
             BUSY            => param_busy      , -- Out :
+            READY           => open            , -- Out :
             I_START         => START           , -- Out :
             I_BUSY          => BUSY            , -- Out :
             I_SIZE          => SIZE            , -- Out :
