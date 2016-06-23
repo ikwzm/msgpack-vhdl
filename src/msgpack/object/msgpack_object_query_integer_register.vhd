@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_integer_register.vhd
 --!     @brief   MessagePack Object Query Integer Register Module :
 --!     @version 0.2.0
---!     @date    2016/6/11
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -134,6 +134,7 @@ begin
             CLR             => CLR             , -- In  :
             START           => start           , -- In  :
             BUSY            => busy            , -- Out :
+            READY           => open            , -- Out :
             O_CODE          => O_CODE          , -- Out :
             O_LAST          => O_LAST          , -- Out :
             O_ERROR         => O_ERROR         , -- Out :

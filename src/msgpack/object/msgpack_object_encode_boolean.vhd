@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_encode_boolean.vhd
 --!     @brief   MessagePack Object Encode Boolean :
 --!     @version 0.2.0
---!     @date    2016/6/15
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -58,6 +58,7 @@ entity  MsgPack_Object_Encode_Boolean is
     -------------------------------------------------------------------------------
         START           : in  std_logic := '1';
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -96,8 +97,10 @@ architecture RTL of MsgPack_Object_Encode_Boolean is
     constant  o_shift           :  std_logic_vector(CODE_WIDTH-1 downto 0) := (others => '1');
     signal    q_ready           :  std_logic;
     signal    q_busy            :  std_logic;
-    type      STATE_TYPE        is (IDLE_STATE, RUN_STATE);
+    type      STATE_TYPE        is (RESET_STATE, IDLE_STATE, RUN_STATE);
     signal    curr_state        :  STATE_TYPE;
+    signal    state_busy        :  std_logic;
+    signal    state_ready       :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
@@ -153,10 +156,10 @@ begin
                          (curr_state = RUN_STATE                 ) else '0';
     process (CLK, RST) begin
         if (RST = '1') then
-                curr_state <= IDLE_STATE;
+               curr_state  <= RESET_STATE;
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
-                curr_state <= IDLE_STATE;
+               curr_state  <= RESET_STATE;
             else
                 case curr_state is
                     when IDLE_STATE =>
@@ -177,5 +180,6 @@ begin
             end if;
         end if;
     end process;
-    BUSY <= '1' when (curr_state = RUN_STATE or q_busy = '1') else '0';
+    BUSY  <= '1' when (curr_state = RUN_STATE  or  q_busy = '1') else '0';
+    READY <= '1' when (curr_state = IDLE_STATE and q_busy = '0') else '0';
 end RTL;
