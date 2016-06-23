@@ -190,6 +190,7 @@ architecture RTL of MsgPack_RPC_Server_KVMap_Get_Value is
     signal    curr_state        :  STATE_TYPE;
     signal    array_start       :  std_logic;
     signal    array_size        :  std_logic_vector(SIZE_BITS-1 downto 0);
+    signal    array_enable      :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
@@ -265,6 +266,9 @@ begin
             CLK             => CLK                     , -- In  :
             RST             => RST                     , -- In  :
             CLR             => CLR                     , -- In  :
+            ENABLE          => array_enable            , -- In  :
+            BUSY            => open                    , -- Out :
+            READY           => open                    , -- Out :
             I_CODE          => i_param_code            , -- In  :
             I_LAST          => i_param_last            , -- In  :
             I_VALID         => unpack_valid            , -- In  :
@@ -357,7 +361,7 @@ begin
             START           => array_start             , -- In  :
             SIZE            => array_size              , -- In  :
             BUSY            => open                    , -- Out :
-            READY           => open                    , -- Out :
+            READY           => array_enable            , -- Out :
             I_CODE          => ret_value_code          , -- In  :
             I_LAST          => ret_value_last          , -- In  :
             I_ERROR         => ret_value_error         , -- In  :

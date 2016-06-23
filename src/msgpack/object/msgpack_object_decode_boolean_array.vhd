@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_decode_boolean_array.vhd
 --!     @brief   MessagePack Object decode to boolean array
 --!     @version 0.2.0
---!     @date    2016/6/19
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -150,6 +150,9 @@ begin
             CLK             => CLK                 , -- In  :
             RST             => RST                 , -- In  :
             CLR             => CLR                 , -- In  :
+            ENABLE          => '1'                 , -- In  :
+            BUSY            => open                , -- Out :
+            READY           => open                , -- Out :
             I_CODE          => I_CODE              , -- In  :
             I_LAST          => I_LAST              , -- In  :
             I_VALID         => I_VALID             , -- In  :

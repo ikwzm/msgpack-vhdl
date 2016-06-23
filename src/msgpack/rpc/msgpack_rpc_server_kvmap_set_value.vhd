@@ -2,7 +2,7 @@
 --!     @file    msgpack_rpc_server_kvmap_set_value.vhd
 --!     @brief   MessagePack-RPC Server Key Value Map Set Value Module :
 --!     @version 0.2.0
---!     @date    2016/6/10
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -235,6 +235,9 @@ begin
             CLK             => CLK                     , -- In  :
             RST             => RST                     , -- In  :
             CLR             => CLR                     , -- In  :
+            ENABLE          => '1'                     , -- In  :
+            BUSY            => open                    , -- Out :
+            READY           => open                    , -- Out :
             I_CODE          => i_param_code            , -- In  :
             I_LAST          => i_param_last            , -- In  :
             I_VALID         => unpack_valid            , -- In  :
