@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_binary_array.vhd
 --!     @brief   MessagePack Object Query to Binary/String Array
 --!     @version 0.2.0
---!     @date    2016/6/11
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -126,7 +126,7 @@ architecture RTL of MsgPack_Object_Query_Binary_Array is
     -------------------------------------------------------------------------------
     signal    encode_addr   :  std_logic_vector          ( ADDR_BITS-1 downto 0);
     signal    encode_start  :  std_logic;
-    signal    encode_busy   :  std_logic;
+    signal    encode_enable :  std_logic;
     signal    encode_size   :  std_logic_vector          ( SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
@@ -185,9 +185,9 @@ begin
             I_ERROR         => param_error     , -- Out :
             I_DONE          => param_done      , -- Out :
             I_SHIFT         => param_shift     , -- Out :
+            ENABLE          => encode_enable   , -- In  :
             START           => encode_start    , -- Out :
-            SIZE            => encode_size     , -- Out :
-            BUSY            => encode_busy       -- In  :
+            SIZE            => encode_size       -- Out :
         );                                       -- 
     -------------------------------------------------------------------------------
     --
@@ -208,8 +208,8 @@ begin
             START           => encode_start    , -- In  :
             ADDR            => encode_addr     , -- In  :
             SIZE            => encode_size     , -- In  :
-            BUSY            => encode_busy     , -- Out :
-            READY           => open            , -- Out :
+            BUSY            => open            , -- Out :
+            READY           => encode_enable   , -- Out :
             O_CODE          => value_code      , -- Out :
             O_LAST          => value_last      , -- Out :
             O_ERROR         => value_error     , -- Out :

@@ -88,10 +88,10 @@ use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Boolean;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Stream_Parameter;
 architecture RTL of MsgPack_Object_Query_Boolean_Register is
-    signal    start        :  std_logic;
-    signal    busy         :  std_logic;
-    signal    size         :  std_logic_vector(0 downto 0);
-    constant  default_size :  std_logic_vector(0 downto 0) := (others => '1');
+    signal    encode_start  :  std_logic;
+    signal    encode_enable :  std_logic;
+    signal    encode_size   :  std_logic_vector(0 downto 0);
+    constant  default_size  :  std_logic_vector(0 downto 0) := (others => '1');
 begin
     -------------------------------------------------------------------------------
     --
@@ -112,9 +112,9 @@ begin
             I_ERROR         => I_ERROR         , -- Out :
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
-            START           => start           , -- Out :
-            SIZE            => size            , -- Out :
-            BUSY            => busy              -- In  :
+            ENABLE          => encode_enable   , -- In  :
+            START           => encode_start    , -- Out :
+            SIZE            => encode_size       -- Out :
         );                                       -- 
     -------------------------------------------------------------------------------
     --
@@ -128,9 +128,9 @@ begin
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            START           => start           , -- In  :
-            BUSY            => busy            , -- Out :
-            READY           => open            , -- Out :
+            START           => encode_start    , -- In  :
+            BUSY            => open            , -- Out :
+            READY           => encode_enable   , -- Out :
             O_CODE          => O_CODE          , -- Out :
             O_LAST          => O_LAST          , -- Out :
             O_ERROR         => O_ERROR         , -- Out :

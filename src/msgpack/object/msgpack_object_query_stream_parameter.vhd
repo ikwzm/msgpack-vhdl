@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_stream_parameter.vhd
 --!     @brief   MessagePack Object Query Stream Parameter Module :
 --!     @version 0.2.0
---!     @date    2016/6/11
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -69,9 +69,9 @@ entity  MsgPack_Object_Query_Stream_Parameter is
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
+        ENABLE          : in  std_logic;
         START           : out std_logic;
-        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
-        BUSY            : in  std_logic
+        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0)
     );
 end MsgPack_Object_Query_Stream_Parameter;
 -----------------------------------------------------------------------------------
@@ -121,9 +121,9 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (I_VALID, I_CODE, BUSY, DEFAULT_SIZE,
+    process (I_VALID, I_CODE, ENABLE, DEFAULT_SIZE,
              integer_i_error, integer_i_done, integer_i_shift, integer_value, integer_valid) begin
-        if (I_VALID = '1' and I_CODE(0).valid = '1' and BUSY = '0') then
+        if (I_VALID = '1' and I_CODE(0).valid = '1' and ENABLE = '1') then
             if    (I_CODE(0).class = MsgPack_Object.CLASS_NIL) then
                 SIZE      <= DEFAULT_SIZE;
                 START     <= '1';

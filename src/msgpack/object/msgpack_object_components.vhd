@@ -1721,9 +1721,9 @@ component MsgPack_Object_Query_Stream_Parameter
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
+        ENABLE          : in  std_logic;
         START           : out std_logic;
-        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0);
-        BUSY            : in  std_logic
+        SIZE            : out std_logic_vector(SIZE_BITS -1 downto 0)
     );
 end component;
 -----------------------------------------------------------------------------------

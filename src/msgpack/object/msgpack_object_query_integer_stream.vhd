@@ -98,9 +98,9 @@ use     MsgPack.MsgPack_Object;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Integer_Stream;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Query_Stream_Parameter;
 architecture RTL of MsgPack_Object_Query_Integer_Stream is
-    signal    param_start    :  std_logic;
-    signal    param_busy     :  std_logic;
-    signal    param_size     :  std_logic_vector(SIZE_BITS-1 downto 0);
+    signal    encode_start  :  std_logic;
+    signal    encode_enable :  std_logic;
+    signal    encode_size   :  std_logic_vector(SIZE_BITS-1 downto 0);
 begin
     -------------------------------------------------------------------------------
     --
@@ -121,9 +121,9 @@ begin
             I_ERROR         => I_ERROR         , -- Out :
             I_DONE          => I_DONE          , -- Out :
             I_SHIFT         => I_SHIFT         , -- Out :
-            START           => param_start     , -- Out :
-            SIZE            => param_size      , -- Out :
-            BUSY            => param_busy        -- In  :
+            ENABLE          => encode_enable   , -- In  :
+            START           => encode_start    , -- Out :
+            SIZE            => encode_size       -- Out :
         );                                       -- 
     -------------------------------------------------------------------------------
     --
@@ -140,10 +140,10 @@ begin
             CLK             => CLK             , -- In  :
             RST             => RST             , -- In  :
             CLR             => CLR             , -- In  :
-            START           => param_start     , -- In  :
-            SIZE            => param_size      , -- In  :
-            BUSY            => param_busy      , -- Out :
-            READY           => open            , -- Out :
+            START           => encode_start    , -- In  :
+            SIZE            => encode_size     , -- In  :
+            BUSY            => open            , -- Out :
+            READY           => encode_enable   , -- Out :
             I_START         => START           , -- Out :
             I_BUSY          => BUSY            , -- Out :
             I_SIZE          => SIZE            , -- Out :
