@@ -62,6 +62,7 @@ entity  MsgPack_Object_Encode_Boolean_Stream is
         START           : in  std_logic;
         SIZE            : in  std_logic_vector(SIZE_BITS  -1 downto 0);
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -225,8 +226,8 @@ begin
              CLR             => CLR             , -- In  :
              START           => START           , -- In  :
              SIZE            => SIZE            , -- In  :
-             BUSY            => open            , -- Out :
-             READY           => open            , -- Out :
+             BUSY            => BUSY            , -- Out :
+             READY           => READY           , -- Out :
              I_CODE          => value_code      , -- In  :
              I_LAST          => '1'             , -- In  :
              I_ERROR         => '0'             , -- In  :
@@ -329,7 +330,6 @@ begin
             end if;
         end if;
     end process;
-    BUSY    <= '1' when (curr_state = RUN_STATE    or intake_busy = '1') else '0';
     I_START <= '1' when (curr_state = START_STATE and to_01(curr_count) >  0 ) else '0';
     I_BUSY  <= '1' when (curr_state = RUN_STATE) else '0';
     I_SIZE  <= std_logic_vector(curr_count);

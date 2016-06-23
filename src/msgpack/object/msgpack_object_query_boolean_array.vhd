@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_boolean_array.vhd
 --!     @brief   MessagePack Object Queary Boolean Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/19
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -203,6 +203,7 @@ begin
             ADDR            => encode_addr     , -- In  :
             SIZE            => encode_size     , -- In  :
             BUSY            => encode_busy     , -- Out :
+            READY           => open            , -- Out :
             O_CODE          => value_code      , -- Out :
             O_LAST          => value_last      , -- Out :
             O_ERROR         => value_error     , -- Out :

@@ -998,6 +998,7 @@ component MsgPack_Object_Encode_Boolean_Array
         ADDR            : in  std_logic_vector(ADDR_BITS-1 downto 0);
         SIZE            : in  std_logic_vector(SIZE_BITS-1 downto 0);
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Boolean Value Input Interface
     -------------------------------------------------------------------------------
@@ -1047,6 +1048,7 @@ component MsgPack_Object_Encode_Boolean_Stream
         START           : in  std_logic;
         SIZE            : in  std_logic_vector(SIZE_BITS  -1 downto 0);
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
