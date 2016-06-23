@@ -432,6 +432,12 @@ component MsgPack_Object_Decode_Map
         RST             : in  std_logic;
         CLR             : in  std_logic;
     -------------------------------------------------------------------------------
+    -- Control/Status Signals
+    -------------------------------------------------------------------------------
+        ENABLE          : in  std_logic;
+        BUSY            : out std_logic;
+        READY           : out std_logic;
+    -------------------------------------------------------------------------------
     -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
         I_CODE          : in  MsgPack_Object.Code_Vector(CODE_WIDTH-1 downto 0);

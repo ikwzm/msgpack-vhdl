@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_store.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Store Module :
 --!     @version 0.2.0
---!     @date    2016/5/17
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -129,6 +129,12 @@ begin
             CLK             => CLK                 , -- In  :
             RST             => RST                 , -- In  :
             CLR             => CLR                 , -- In  :
+        ---------------------------------------------------------------------------
+        -- Control/Status Signals
+        ---------------------------------------------------------------------------
+            ENABLE          => '1'                 , -- In  :
+            BUSY            => open                , -- Out :
+            READY           => open                , -- Out :
         ---------------------------------------------------------------------------
         -- MessagePack Object Code Input Interface
         ---------------------------------------------------------------------------

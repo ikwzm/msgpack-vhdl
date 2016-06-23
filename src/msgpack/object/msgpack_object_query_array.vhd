@@ -2,7 +2,7 @@
 --!     @file    msgpack_object_query_array.vhd
 --!     @brief   MessagePack Object Query Array Module :
 --!     @version 0.2.0
---!     @date    2016/6/7
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -107,6 +107,7 @@ architecture RTL of MsgPack_Object_Query_Array is
     --
     -------------------------------------------------------------------------------
     constant  SIZE_BITS         :  integer := 32;
+    signal    map_enable        :  std_logic;
     signal    map_start         :  std_logic;
     signal    map_size          :  std_logic_vector          ( SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
@@ -151,6 +152,12 @@ begin
             CLK             => CLK                 , -- In  :
             RST             => RST                 , -- In  :
             CLR             => CLR                 , -- In  :
+        ---------------------------------------------------------------------------
+        -- Control/Status Signals
+        ---------------------------------------------------------------------------
+            ENABLE          => map_enable          , -- In  :
+            BUSY            => open                , -- Out :
+            READY           => open                , -- Out :
         ---------------------------------------------------------------------------
         -- MessagePack Object Code Input Interface
         ---------------------------------------------------------------------------
@@ -239,7 +246,7 @@ begin
             START           => map_start           , -- In  :
             SIZE            => map_size            , -- In  :
             BUSY            => open                , -- Out :
-            READY           => open                , -- Out :
+            READY           => map_enable          , -- Out :
         ---------------------------------------------------------------------------
         -- Key Object Encode Input Interface
         ---------------------------------------------------------------------------

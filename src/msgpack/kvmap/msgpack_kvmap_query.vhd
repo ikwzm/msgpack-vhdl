@@ -115,6 +115,7 @@ architecture RTL of MsgPack_KVMap_Query is
     --
     -------------------------------------------------------------------------------
     constant  SIZE_BITS         :  integer := 32;
+    signal    map_enable        :  std_logic;
     signal    map_start         :  std_logic;
     signal    map_size          :  std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
@@ -168,6 +169,12 @@ begin
             CLK             => CLK                 , -- In  :
             RST             => RST                 , -- In  :
             CLR             => CLR                 , -- In  :
+        ---------------------------------------------------------------------------
+        -- Control/Status Signals
+        ---------------------------------------------------------------------------
+            ENABLE          => map_enable          , -- In  :
+            BUSY            => open                , -- Out :
+            READY           => open                , -- Out :
         ---------------------------------------------------------------------------
         -- MessagePack Object Code Input Interface
         ---------------------------------------------------------------------------
@@ -304,7 +311,7 @@ begin
             START           => map_start           , -- In  :
             SIZE            => map_size            , -- In  :
             BUSY            => open                , -- Out :
-            READY           => open                , -- Out :
+            READY           => map_enable          , -- Out :
         ---------------------------------------------------------------------------
         -- Key Object Encode Input Interface
         ---------------------------------------------------------------------------
