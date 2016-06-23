@@ -2,7 +2,7 @@
 --!     @file    msgpack_kvmap_query.vhd
 --!     @brief   MessagePack-KVMap(Key Value Map) Query Module :
 --!     @version 0.2.0
---!     @date    2016/5/17
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -303,6 +303,8 @@ begin
         ---------------------------------------------------------------------------
             START           => map_start           , -- In  :
             SIZE            => map_size            , -- In  :
+            BUSY            => open                , -- Out :
+            READY           => open                , -- Out :
         ---------------------------------------------------------------------------
         -- Key Object Encode Input Interface
         ---------------------------------------------------------------------------
