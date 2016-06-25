@@ -76,13 +76,14 @@ module MsgPack_RPC_Interface
       end
       interface_regs["name"     ] = name
       interface_regs["full_name"] = full_name.clone.push(name)
+      interface_regs["port_name"] = varibale_regs["port_name"] if varibale_regs.key?("port_name")
       interface_regs["class"    ] = @type
       interface_regs["type"     ] = interface_type
       interface_regs["debug"    ] = debug
       interface_regs["kvmap"    ] = kvmap
       interface_regs["read"     ] = interface_regs.fetch("read" , varibale_regs.fetch("read"  , true))
       interface_regs["write"    ] = interface_regs.fetch("write", varibale_regs.fetch("write" , true))
-        
+      
       if Standard::Variable::Interface.const_defined?(interface_name) then
         return Standard::Variable::Interface.const_get(interface_name).new(interface_regs)
       else

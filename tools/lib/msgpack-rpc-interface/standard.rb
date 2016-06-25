@@ -534,7 +534,7 @@ module MsgPack_RPC_Interface::Standard
 
     class Method
 
-      attr_reader :name, :full_name, :arguments, :return, :req_name, :busy_name, :return_name, :blocks
+      attr_reader :name, :full_name, :arguments, :return, :req_name, :busy_name, :blocks
 
       def initialize(registory)
         @debug       = registory.fetch("debug", false)
@@ -544,12 +544,10 @@ module MsgPack_RPC_Interface::Standard
         @return      = registory["return"]
         @req_name    = @full_name.join("_") + "_REQ"
         @busy_name   = @full_name.join("_") + "_BUSY"
-        @return_name = (@return != nil) ? (@return.interface.port_name) : nil
         @blocks      = []
         if registory.key?("port") then
           @req_name    = registory["port"].fetch("request", @req_name   )
           @busy_name   = registory["port"].fetch("busy"   , @busy_name  )
-          @return_name = registory["port"].fetch("return" , @return_name)
         end
         puts to_s("") if @debug
       end
@@ -560,7 +558,6 @@ module MsgPack_RPC_Interface::Standard
                         }).update(registory)
         new_regs[:run_req    ] = @req_name
         new_regs[:run_busy   ] = @busy_name
-        new_regs[:return_name] = @return_name
         return MsgPack_RPC_Interface::VHDL::Procedure::Method.generate_body(indent, name, @arguments, @return, new_regs)
       end
 
@@ -584,7 +581,6 @@ module MsgPack_RPC_Interface::Standard
                 indent + sprintf("%-10s : %s" , "full_name"  , @full_name     ),
                 indent + sprintf("%-10s : %s" , "req_name"   , @req_name      ),
                 indent + sprintf("%-10s : %s" , "busy_name"  , @busy_name     ),
-                indent + sprintf("%-10s : %s" , "return_name", @return_name   ),
                 indent + sprintf("%-10s : \n" , "arguments"                   ),
                ].join("\n") +
                @arguments.map{|argument| argument.to_s(indent + "  ")}.join("\n") + "\n" +

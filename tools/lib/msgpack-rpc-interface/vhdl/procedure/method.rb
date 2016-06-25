@@ -168,7 +168,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     value_width = return_variable.interface.type.bits
     return_uint = (return_variable.type.sign) ? "FALSE" : "TRUE"
     return_int  = (return_variable.type.sign) ? "TRUE"  : "FALSE"
-    return_name = registory[:return_name]
+    return_name = return_variable.interface.registory[:query_data]
     return_stmt = return_variable.interface.type.generate_vhdl_convert_to_std_logic_vector(return_name, "proc_return_value")
     vhdl_lines  = string_to_lines(
       indent, <<"        EOT"
@@ -205,7 +205,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
   end
 
   def self.generate_stmt_method_return_boolean(indent, name, return_variable, registory)
-    return_name = registory[:return_name]
+    return_name = return_variable.interface.registory[:query_data]
     return_stmt = return_variable.interface.type.generate_vhdl_convert_to_std_logic_vector(return_name, "proc_return_value")
     vhdl_lines  = string_to_lines(
       indent, <<"        EOT"
