@@ -722,10 +722,12 @@ module MsgPack_RPC_Interface::Standard
         @methods   = registory["methods"]
         @variables = registory["variables"]
         @port_regs = DEFAULT_MODULE_REGISTORY.dup
-        @port_regs[:clock  ] = registory["port"]["clock"  ] if registory["port"].key?("clock"  )
-        @port_regs[:reset  ] = registory["port"]["reset"  ] if registory["port"].key?("reset"  )
-        @port_regs[:reset_n] = registory["port"]["reset_n"] if registory["port"].key?("reset_n")
-        @port_regs[:clear  ] = registory["port"]["clear"  ] if registory["port"].key?("clear"  )
+        if registory.key?("port") then
+          registory["port"].each_pair do |port, name|
+            @port_regs[port.to_sym] = name
+          end
+        end
+        @port_regs.delete_if{|key,val| val == nil}
       end
 
       def generate_vhdl_entity(indent, interface_registory)
