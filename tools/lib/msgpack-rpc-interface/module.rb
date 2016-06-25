@@ -44,14 +44,14 @@ module MsgPack_RPC_Interface
       @variables.each do |variable|
         read_variables.concat(variable.collect_readable_variables)
       end
-      if read_variables.size then
+      if read_variables.size > 0 then
         @methods << QueryVariables.new(Hash({"debug" => @debug, "variables" => read_variables}))
       end
       write_variables = Array.new
       @variables.each do |variable|
         write_variables.concat(variable.collect_writeable_variables)
       end
-      if write_variables.size then
+      if write_variables.size > 0 then
         @methods << StoreVariables.new(Hash({"debug" => @debug, "variables" => write_variables}))
       end
       interface_regs = Hash.new
