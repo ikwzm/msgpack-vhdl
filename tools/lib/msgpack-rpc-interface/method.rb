@@ -30,6 +30,13 @@ module MsgPack_RPC_Interface
         ret_regs["read"     ] = true
         ret_regs["kvmap"    ] = false
         ret_regs["interface"] = ret_regs.fetch("interface", "Signal")
+        if registory.key?("interface") then
+          if registory["interface"].key?("port") then
+            if registory["interface"]["port"].key?("return") then
+              ret_regs["port_name"] = registory["interface"]["port"]["return"]
+            end
+          end
+        end
         Variable.new(ret_regs)
       end
       met_regs = registory.fetch("interface" , Hash.new)

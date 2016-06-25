@@ -544,7 +544,7 @@ module MsgPack_RPC_Interface::Standard
         @return      = registory["return"]
         @req_name    = @full_name.join("_") + "_REQ"
         @busy_name   = @full_name.join("_") + "_BUSY"
-        @return_name = (@return != nil) ? (@full_name.join("_") + "_" + @return.name) : nil
+        @return_name = (@return != nil) ? (@return.interface.port_name) : nil
         @blocks      = []
         if registory.key?("port") then
           @req_name    = registory["port"].fetch("request", @req_name   )
