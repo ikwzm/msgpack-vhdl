@@ -5,7 +5,7 @@ require_relative 'standard'
 module MsgPack_RPC_Interface
 
   class Module
-    attr_reader :name, :variables, :methods, :aliases, :interface, :generate
+    attr_reader :name, :variables, :methods, :aliases, :interface, :generate, :port
 
     def initialize(registory)
       @debug     = registory.fetch("debug"   , false)
@@ -15,6 +15,7 @@ module MsgPack_RPC_Interface
       @methods   = Array.new
       @aliases   = registory.fetch("aliases" , {})
       @generate  = registory.fetch("generate", {})
+      @port      = registory.fetch("port"    , {})
       puts "Module.new(#{@name}) start." if @debug
       if registory.key?("methods") then
         registory["methods"].each do |m|
@@ -59,6 +60,7 @@ module MsgPack_RPC_Interface
       interface_regs["debug"    ] = @debug
       interface_regs["methods"  ] = @methods
       interface_regs["variables"] = @variables
+      interface_regs["port"     ] = @port
       @interface = Standard::Module::Interface.new(interface_regs)
       puts "Module.new(#{@name}) done." if @debug
     end

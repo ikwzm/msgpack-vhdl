@@ -671,7 +671,7 @@ module MsgPack_RPC_Interface::Standard
   end
 
   class Module::Interface
-      attr_reader :name, :full_name, :methods, :variables
+      attr_reader :name, :full_name, :methods, :variables, :port_regs
 
       DEFAULT_INTERFACE_REGISTORY = Hash({
         code_width:       CODE_WIDTH  ,
@@ -714,8 +714,9 @@ module MsgPack_RPC_Interface::Standard
       })
 
       DEFAULT_MODULE_REGISTORY = Hash({
-        clock:            "clk"       ,
-        reset:            "reset"     ,
+        clock:            "CLK"       ,
+        reset:            "RST"       ,
+        clear:            "CLR"       ,
       })
 
       def initialize(registory)
@@ -724,6 +725,11 @@ module MsgPack_RPC_Interface::Standard
         @full_name = registory["full_name"]
         @methods   = registory["methods"]
         @variables = registory["variables"]
+        @port_regs = DEFAULT_MODULE_REGISTORY.dup
+        @port_regs[:clock  ] = registory["port"]["clock"  ] if registory["port"].key?("clock"  )
+        @port_regs[:reset  ] = registory["port"]["reset"  ] if registory["port"].key?("reset"  )
+        @port_regs[:reset_n] = registory["port"]["reset_n"] if registory["port"].key?("reset_n")
+        @port_regs[:clear  ] = registory["port"]["clear"  ] if registory["port"].key?("clear"  )
       end
 
       def generate_vhdl_entity(indent, interface_registory)
@@ -775,8 +781,9 @@ module MsgPack_RPC_Interface::Standard
         sv_regs.update(server_registory)
         if_regs = DEFAULT_INTERFACE_REGISTORY.dup
         if_regs.update(interface_registory)
-        md_regs = DEFAULT_MODULE_REGISTORY.dup
+        md_regs = Hash.new
         md_regs[:name] = @name
+        md_regs.update(@port_regs)
         return MsgPack_RPC_Interface::VHDL::Server.generate_entity(indent, name, self, sv_regs, if_regs, md_regs) +
                MsgPack_RPC_Interface::VHDL::Server.generate_body(  indent, name, self, sv_regs, if_regs, md_regs)
       end        

@@ -3,7 +3,7 @@
 #---------------------------------------------------------------------------------
 #
 #       Version     :   0.2.0
-#       Created     :   2016/6/24
+#       Created     :   2016/6/25
 #       File name   :   msgpack-rpc-synthesijer-synthesijer-ifgen.rb
 #       Author      :   Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 #       Description :   MessagePack RPC Interface Generator for Synthesijer
@@ -188,6 +188,10 @@ class InterfaceGenerator
     module_info["variables"].concat(get_variable_mem_list(remain_port_list))
     # remain_port_list.each {|port| puts port;}
     module_info["debug"    ] = true if @debug
+    module_info["port"     ] = Hash.new
+    module_info["port"     ]["clock"] = "clk"
+    module_info["port"     ]["reset"] = "reset"
+    module_info["port"     ]["clear"] = nil
     module_info["generate" ] = Hash.new
     module_info["generate" ]["interface"] = Hash({"name" => entity_name + "_Interface",
                                                   "file" => entity_name + "_Interface.vhd"})
