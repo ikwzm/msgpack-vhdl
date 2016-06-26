@@ -204,6 +204,10 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     return vhdl_lines
   end
 
+  def self.generate_decl_method_return_boolean(indent, name, return_variable, registory)
+    return []
+  end
+        
   def self.generate_stmt_method_return_boolean(indent, name, return_variable, registory)
     return_name = return_variable.interface.registory[:query_data]
     return_stmt = return_variable.interface.type.generate_vhdl_convert_to_std_logic_vector(return_name, "proc_return_value")
@@ -249,8 +253,12 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     end
     if    return_variable == nil then
       decl_code.concat(generate_decl_method_return_nil(    indent, name, registory))
-    elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Integer then
+    elsif return_variable.type.generator_class == "Integer" then
       decl_code.concat(generate_decl_method_return_integer(indent, name, return_variable, registory))
+    elsif return_variable.type.generator_class == "Boolean" then
+      decl_code.concat(generate_decl_method_return_boolean(indent, name, return_variable, registory))
+    else
+      raise "Not Supported method return variable type (#{return_variable.type.class})"
     end
     return decl_code
   end
@@ -263,10 +271,12 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     end
     if    return_variable == nil then
       body_code.concat(generate_stmt_method_return_nil(    indent, name, registory))
-    elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Integer then
+    elsif return_variable.type.generator_class == "Integer" then
       body_code.concat(generate_stmt_method_return_integer(indent, name, return_variable, registory))
-    elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Boolean then
+    elsif return_variable.type.generator_class == "Boolean" then
       body_code.concat(generate_stmt_method_return_boolean(indent, name, return_variable, registory))
+    else
+      raise "Not Supported method return variable type (#{return_variable.type.class})"
     end
     return body_code
   end
@@ -314,9 +324,11 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     end
     if    return_variable == nil then
       list << "MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Return_Nil"
-    elsif return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Integer  or
-          return_variable.type.class == MsgPack_RPC_Interface::Standard::Type::Boolean  then
+    elsif return_variable.type.generator_class == "Integer" or
+          return_variable.type.generator_class == "Boolean" then
       list << "MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Return_Integer"
+    else
+      raise "Not Supported method return variable type (#{return_variable.type.class})"
     end
     return list
   end

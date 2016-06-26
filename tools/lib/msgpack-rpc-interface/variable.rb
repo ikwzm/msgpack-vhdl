@@ -25,9 +25,13 @@ module MsgPack_RPC_Interface
     def initialize(registory)
       super(registory)
       puts "Variable::Node.new(#{@name}) start." if @debug
+      aliases        = registory.fetch("aliases", {})
+      interface_regs = resolve_alias(registory["interface"], aliases)
+      type_regs      = resolve_alias(registory["type"     ], aliases)
+      type_regs      = make_type_regs(type_regs, interface_regs.fetch("type", Hash.new))
+      @type          = Standard::Type.new(type_regs)
+      @interface     = make_interface(registory, type_regs, interface_regs)
       @default_value = registory.fetch("default", nil)
-      @type          = make_type(registory)
-      @interface     = make_interface(registory)
       puts "Variable::Node.new(#{@name}, #{@type}) done." if @debug
     end
 
@@ -47,20 +51,22 @@ module MsgPack_RPC_Interface
       return (@interface.write)? [self] : []
     end
 
-    def make_type(varibale_regs)
-      aliases   = varibale_regs.fetch("aliases"   , {})
-      type_regs = resolve_alias(varibale_regs["type"     ], aliases)
-      return Standard::Type.new(type_regs)
+    def make_type_regs(variable_type, interface_type)
+      if variable_type.class == Hash then
+        variable_type_name  = variable_type["name"]
+        variable_type_regs  = variable_type.clone
+      else
+        variable_type_name  = variable_type
+        variable_type_regs  = Hash({"name" => variable_type_name})
+      end
+      if interface_type.class == Hash then
+        variable_type_regs.update(interface_type)
+        variable_type_regs["name"] = variable_type_name
+      end
+      return variable_type_regs
     end
 
-    def make_interface(varibale_regs)
-      name      = varibale_regs["name"]
-      debug     = varibale_regs.fetch("debug"     , false)
-      full_name = varibale_regs.fetch("full_name" , [])
-      aliases   = varibale_regs.fetch("aliases"   , {})
-      kvmap     = varibale_regs.fetch("kvmap"     , true )
-      interface = resolve_alias(varibale_regs["interface"], aliases)
-
+    def make_interface(varibale_regs, type_regs, interface)
       if interface.class == Hash then
         interface_name = interface["name"]
         interface_regs = interface.clone
@@ -70,17 +76,26 @@ module MsgPack_RPC_Interface
       end
 
       if interface_regs.key?("type") then
-        interface_type = Standard::Type.new(interface_regs["type"])
+        if interface_regs["type"].class == Hash then
+          interface_type_name = interface_regs["type"]["name"]
+        else
+          interface_type_name = interface_regs["type"]
+        end
+        interface_type_regs = type_regs.dup
+        interface_type_regs["name"] = interface_type_name
+        interface_type = Standard::Type.new(interface_type_regs)
       else
         interface_type = @type
       end
+
+      name = varibale_regs["name"]
       interface_regs["name"     ] = name
-      interface_regs["full_name"] = full_name.clone.push(name)
+      interface_regs["full_name"] = varibale_regs.fetch("full_name" , []).clone.push(name)
       interface_regs["port_name"] = varibale_regs["port_name"] if varibale_regs.key?("port_name")
       interface_regs["class"    ] = @type
       interface_regs["type"     ] = interface_type
-      interface_regs["debug"    ] = debug
-      interface_regs["kvmap"    ] = kvmap
+      interface_regs["debug"    ] = varibale_regs.fetch("debug"     , false)
+      interface_regs["kvmap"    ] = varibale_regs.fetch("kvmap"     , true )
       interface_regs["read"     ] = interface_regs.fetch("read" , varibale_regs.fetch("read"  , true))
       interface_regs["write"    ] = interface_regs.fetch("write", varibale_regs.fetch("write" , true))
       

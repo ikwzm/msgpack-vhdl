@@ -116,7 +116,7 @@ module MsgPack_RPC_Interface::Standard
         end
         @registory[:width] = 1
         @registory.delete_if{|key,val| val == nil}
-        @generator = MsgPack_RPC_Interface::VHDL::Register.const_get(@msg_class.class.to_s.split('::').last)
+        @generator = MsgPack_RPC_Interface::VHDL::Register.const_get(@msg_class.generator_class)
         puts to_s("") if @debug
       end
       
@@ -151,7 +151,7 @@ module MsgPack_RPC_Interface::Standard
         end
         @registory[:width] = 1
         @registory.delete_if{|key,val| val == nil}
-        @generator = MsgPack_RPC_Interface::VHDL::Signal.const_get(@msg_class.class.to_s.split('::').last)
+        @generator = MsgPack_RPC_Interface::VHDL::Signal.const_get(@msg_class.generator_class)
         puts to_s("") if @debug
       end
 
@@ -232,7 +232,7 @@ module MsgPack_RPC_Interface::Standard
             @registory[:default_size] = port_regs["default_size"]
           end
         end
-        @generator = MsgPack_RPC_Interface::VHDL::Memory.const_get(@msg_class.class.to_s.split('::').last)
+        @generator = MsgPack_RPC_Interface::VHDL::Memory.const_get(@msg_class.generator_class)
         if @registory[:query_addr] == @registory[:store_addr] then
           arb_regs = Hash.new
           arb_regs[:name       ] = @port_name
@@ -413,7 +413,7 @@ module MsgPack_RPC_Interface::Standard
         else
         end
         @registory.delete_if{|key,val| val == nil}
-        @generator = MsgPack_RPC_Interface::VHDL::Stream.const_get(@msg_class.class.to_s.split('::').last)
+        @generator = MsgPack_RPC_Interface::VHDL::Stream.const_get(@msg_class.generator_class)
         puts to_s("") if @debug
       end
 
@@ -441,6 +441,7 @@ module MsgPack_RPC_Interface::Standard
 
     class Base
       attr_reader :bits
+      attr_reader :generator_class
       def to_s
         return "#{self.class.name}"
       end
@@ -455,6 +456,7 @@ module MsgPack_RPC_Interface::Standard
         super(registory)
         @bits = registory.fetch("width", 32  )
         @sign = registory.fetch("sign" , true)
+        @generator_class = "Integer"
       end
     end
 
@@ -465,6 +467,7 @@ module MsgPack_RPC_Interface::Standard
         super(registory)
         @bits = registory.fetch("width", 32  )
         @sign = false
+        @generator_class = "Integer"
       end
       def to_s
         return "#{self.class.name}(#{@bits})"
@@ -478,6 +481,7 @@ module MsgPack_RPC_Interface::Standard
         super(registory)
         @bits = registory.fetch("width", 32  )
         @sign = true
+        @generator_class = "Integer"
       end
       def to_s
         return "#{self.class.name}(#{@bits})"
@@ -489,6 +493,7 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         @bits = 1
+        @generator_class = "Boolean"
       end
     end
 
@@ -497,6 +502,7 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         @bits = registory.fetch("width", 1)
+        @generator_class = "Integer"
       end
       def to_s
         return "#{self.class.name}(#{@bits})"
@@ -508,6 +514,7 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         @bits = 8
+        @generator_class = "Binary"
       end
     end
     
@@ -516,6 +523,7 @@ module MsgPack_RPC_Interface::Standard
       def initialize(registory)
         super(registory)
         @bits = 8
+        @generator_class = "String"
       end
     end
     
@@ -523,6 +531,7 @@ module MsgPack_RPC_Interface::Standard
       include MsgPack_RPC_Interface::VHDL::Type::Boolean
       def initialize(registory)
         @bits = 1
+        @generator_class = "Boolean"
       end
     end
 
