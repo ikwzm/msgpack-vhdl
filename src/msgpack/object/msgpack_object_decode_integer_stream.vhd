@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_decode_integer_stream.vhd
 --!     @brief   MessagePack Object decode to integer stream
---!     @version 0.1.0
---!     @date    2015/10/22
+--!     @version 0.2.0
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -44,6 +44,7 @@ entity  MsgPack_Object_Decode_Integer_Stream is
     -------------------------------------------------------------------------------
     generic (
         CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS;
         VALUE_BITS      :  integer range 1 to 64;
         VALUE_SIGN      :  boolean  := FALSE;
         QUEUE_SIZE      :  integer  := 0;
@@ -70,6 +71,8 @@ entity  MsgPack_Object_Decode_Integer_Stream is
     -- Integer Value Data and Address Output
     -------------------------------------------------------------------------------
         O_START         : out std_logic;
+        O_BUSY          : out std_logic;
+        O_SIZE          : out std_logic_vector( SIZE_BITS-1 downto 0);
         O_VALUE         : out std_logic_vector(VALUE_BITS-1 downto 0);
         O_SIGN          : out std_logic;
         O_LAST          : out std_logic;
@@ -101,20 +104,28 @@ begin
     -------------------------------------------------------------------------------
     DECODE_ARRAY:  MsgPack_Object_Decode_Array       -- 
         generic map (                                -- 
-            CODE_WIDTH      => CODE_WIDTH            --
+            CODE_WIDTH      => CODE_WIDTH          , --
+            SIZE_BITS       => SIZE_BITS             -- 
         )                                            -- 
         port map (                                   -- 
             CLK             => CLK                 , -- In  :
             RST             => RST                 , -- In  :
             CLR             => CLR                 , -- In  :
+            ENABLE          => '1'                 , -- In  :
+            BUSY            => open                , -- Out :
+            READY           => open                , -- Out :
             I_CODE          => I_CODE              , -- In  :
             I_LAST          => I_LAST              , -- In  :
             I_VALID         => I_VALID             , -- In  :
             I_ERROR         => I_ERROR             , -- Out :
             I_DONE          => I_DONE              , -- Out :
             I_SHIFT         => I_SHIFT             , -- Out :
-            ARRAY_START     => O_START             , -- Out :
+            ARRAY_START     => open                , -- Out :
             ARRAY_SIZE      => open                , -- Out :
+            ENTRY_START     => O_START             , -- Out :
+            ENTRY_BUSY      => O_BUSY              , -- Out :
+            ENTRY_LAST      => open                , -- Out :
+            ENTRY_SIZE      => O_SIZE              , -- Out :
             VALUE_START     => open                , -- Out :
             VALUE_VALID     => value_valid         , -- Out :
             VALUE_CODE      => value_code          , -- Out :

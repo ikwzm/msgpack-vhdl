@@ -1,0 +1,128 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+#---------------------------------------------------------------------------------
+#
+#       Version     :   0.2.0
+#       Created     :   2016/6/26
+#       File name   :   msgpack-rpc-ifgen.rb
+#       Author      :   Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
+#       Description :   MessagePack RPC Interface Generator
+#
+#---------------------------------------------------------------------------------
+#
+#       Copyright (C) 2016 Ichiro Kawazome
+#       All rights reserved.
+# 
+#       Redistribution and use in source and binary forms, with or without
+#       modification, are permitted provided that the following conditions
+#       are met:
+# 
+#         1. Redistributions of source code must retain the above copyright
+#            notice, this list of conditions and the following disclaimer.
+# 
+#         2. Redistributions in binary form must reproduce the above copyright
+#            notice, this list of conditions and the following disclaimer in
+#            the documentation and/or other materials provided with the
+#            distribution.
+# 
+#       THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#       "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#       LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+#       A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
+#       OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#       SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+#       LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#       DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+#       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+#---------------------------------------------------------------------------------
+require 'optparse'
+require 'find'
+require 'set'
+require 'yaml'
+require_relative 'lib/msgpack-rpc-interface/module'
+class InterfaceGenerator
+  #-------------------------------------------------------------------------------
+  # initialize    :
+  #-------------------------------------------------------------------------------
+  def initialize
+    @program_name      = "msgpack-rpc-ifgen"
+    @program_version   = "0.2.0"
+    @program_id        = @program_name + " " + @program_version
+    @verbose           = false
+    @debug             = false
+    @file_list         = Array.new
+    @modules           = Array.new
+    @opt               = OptionParser.new do |opt|
+      opt.program_name = @program_name
+      opt.version      = @program_version
+      opt.summary_width= 20
+      opt.banner       = "Usage: #{@program_name} file_name..."
+      opt.on('-v', '--verbose'){|val| @verbose = true}
+      opt.on('-d', '--debug'  ){|val| @debug   = true}
+    end
+  end
+  #-------------------------------------------------------------------------------
+  # parse_options
+  #-------------------------------------------------------------------------------
+  def parse_options(argv)
+    @opt.order(argv) do |file_name|
+      @file_list << file_name
+    end
+  end
+  #-------------------------------------------------------------------------------
+  # execute   : 
+  #-------------------------------------------------------------------------------
+  def execute
+    @file_list.each do |file_name|
+      puts "#{@program_id} : read file : #{file_name}" if @verbose or @debug
+      stream  = File.open(file_name)
+      modules = YAML.load_stream(stream)
+      modules.delete_if {|item| item == nil}
+      @modules.concat(
+        modules.map {|registory|
+          registory["debug"] = true if @debug
+          MsgPack_RPC_Interface::Module.new(registory)
+        }
+      )
+    end
+    @modules.each do |m|
+      if m.generate.key?("interface") then
+        if m.generate["interface"].class == Hash then
+          if_registory = Hash.new
+          m.generate["interface"].each_pair{|k,v| if_registory[k.to_sym] = v}
+          if_file_name = if_registory.fetch(:file,
+                                            if_registory.fetch(:name , m.name + "_Interface") + ".vhd")
+        else
+          if_registory = Hash({name: m.name + "_Interface"})
+          if_file_name = m.generate["interface"]
+        end
+        puts "#{@program_id} : generate interface file : #{if_file_name}" if @verbose or @debug
+        File.open(if_file_name, "w") do |file|
+          file.puts m.generate_interface(if_registory)
+        end
+        if m.generate.key?("server") then
+          if m.generate["server"].class == Hash then
+            sv_registory = Hash.new
+            m.generate["server"].each_pair{|k,v| sv_registory[k.to_sym] = v}
+            sv_file_name = sv_registory.fetch(:file,
+                                              sv_registory.fetch(:name , m.name + "_Server") + ".vhd")
+          else
+            sv_registory = Hash({name: m.name + "_Server"})
+            sv_file_name = m.generate["server"]
+          end
+          puts "#{@program_id} : generate server file : #{sv_file_name}" if @verbose or @debug
+          File.open(sv_file_name, "w") do |file|
+            file.puts m.generate_server(sv_registory, if_registory)
+          end
+        end
+      end
+    end
+  end
+end
+
+gen = InterfaceGenerator.new
+gen.parse_options(ARGV)
+gen.execute

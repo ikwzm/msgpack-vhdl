@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_encode_integer.vhd
 --!     @brief   MessagePack Object encode integer :
---!     @version 0.1.0
---!     @date    2015/10/19
+--!     @version 0.2.0
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2012-2015 Ichiro Kawazome
+--      Copyright (C) 2012-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -60,6 +60,7 @@ entity  MsgPack_Object_Encode_Integer is
     -------------------------------------------------------------------------------
         START           : in  std_logic := '1';
         BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- Object Code Output Interface
     -------------------------------------------------------------------------------
@@ -99,7 +100,7 @@ architecture RTL of MsgPack_Object_Encode_Integer is
     signal    queue_busy        :  std_logic;
     signal    i_enable          :  std_logic;
     signal    q_ready           :  std_logic;
-    type      STATE_TYPE        is (IDLE_STATE, RUN_STATE);
+    type      STATE_TYPE        is (RESET_STATE, IDLE_STATE, RUN_STATE);
     signal    curr_state        :  STATE_TYPE;
 begin
     -------------------------------------------------------------------------------
@@ -160,10 +161,10 @@ begin
                          (curr_state = RUN_STATE                 ) else '0';
     process (CLK, RST) begin
         if (RST = '1') then
-                curr_state <= IDLE_STATE;
+                curr_state <= RESET_STATE;
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
-                curr_state <= IDLE_STATE;
+                curr_state <= RESET_STATE;
             else
                 case curr_state is
                     when IDLE_STATE =>
@@ -184,5 +185,6 @@ begin
             end if;
         end if;
     end process;
-    BUSY <= '1' when (curr_state = RUN_STATE or queue_busy = '1') else '0';
+    BUSY  <= '1' when (curr_state = RUN_STATE  or  queue_busy = '1') else '0';
+    READY <= '1' when (curr_state = IDLE_STATE and queue_busy = '0') else '0';
 end RTL;

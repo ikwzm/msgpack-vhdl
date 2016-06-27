@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_decode_map.vhd
 --!     @brief   MessagePack Object decode to map
---!     @version 0.1.0
---!     @date    2015/10/19
+--!     @version 0.2.0
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,12 @@ entity  MsgPack_Object_Decode_Map is
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Control/Status Signals
+    -------------------------------------------------------------------------------
+        ENABLE          : in  std_logic := '1';
+        BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -123,7 +129,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (curr_state, I_VALID, I_CODE, I_LAST,
+    process (curr_state, I_VALID, I_CODE, I_LAST, ENABLE, 
              KEY_ERROR  , KEY_DONE  , KEY_SHIFT ,
              VALUE_ERROR, VALUE_DONE, VALUE_SHIFT, map_count_zero)
         variable  ii_valid      :  std_logic_vector(CODE_WIDTH-1 downto 0);
@@ -138,7 +144,7 @@ begin
         end loop;
         case curr_state is
             when IDLE_STATE =>
-                if (I_VALID = '1' and I_CODE(0).valid = '1') then
+                if (I_VALID = '1' and I_CODE(0).valid = '1' and ENABLE = '1') then
                     if    (I_CODE(0).class /= MsgPack_Object.CLASS_MAP) then
                         I_ERROR     <= '1';
                         I_DONE      <= '1';
@@ -287,11 +293,22 @@ begin
     process (CLK, RST) begin
         if (RST = '1') then
                 curr_state <= IDLE_STATE;
+                BUSY       <= '0';
+                READY      <= '0';
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
                 curr_state <= IDLE_STATE;
+                BUSY       <= '0';
+                READY      <= '0';
             else
                 curr_state <= next_state;
+                if (next_state = IDLE_STATE) then
+                    READY <= '1';
+                    BUSY  <= '0';
+                else
+                    READY <= '0';
+                    BUSY  <= '1';
+                end if;
             end if;
         end if;
     end process;

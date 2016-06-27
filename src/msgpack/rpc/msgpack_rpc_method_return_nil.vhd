@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc_method_return_nil.vhd
 --!     @brief   MessagePack-RPC Method Return Nil Module :
---!     @version 0.1.2
---!     @date    2016/3/16
+--!     @version 0.2.0
+--!     @date    2016/5/20
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -52,6 +52,7 @@ entity  MsgPack_RPC_Method_Return_Nil is
     -------------------------------------------------------------------------------
         RET_ERROR       : in  std_logic;
         RET_START       : in  std_logic;
+        RET_DONE        : in  std_logic;
         RET_BUSY        : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack-RPC Method Response Interface
@@ -83,12 +84,7 @@ architecture RTL of MsgPack_RPC_Method_Return_Nil is
                    1 => MsgPack_Object.New_Code_Nil
               );
     signal    return_code   :  MsgPack_Object.Code_Vector(1 downto 0);
-    signal    return_valid  :  std_logic;
 begin
-    -------------------------------------------------------------------------------
-    --
-    -------------------------------------------------------------------------------
-    return_valid <= '1' when (RET_START = '1' or RET_ERROR = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -113,7 +109,7 @@ begin
             I_ENABLE        => '1'                     , -- In  :
             I_CODE          => return_code             , -- In  :
             I_DONE          => '1'                     , -- In  :
-            I_VALID         => return_valid            , -- In  :
+            I_VALID         => RET_DONE                , -- In  :
             I_READY         => open                    , -- Out :
             O_ENABLE        => '1'                     , -- In  :
             O_CODE          => RES_CODE                , -- Out :

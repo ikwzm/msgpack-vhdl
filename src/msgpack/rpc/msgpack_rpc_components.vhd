@@ -1,13 +1,13 @@
 -----------------------------------------------------------------------------------
 --!     @file    rpc/msgpack_rpc_components.vhd                                  --
 --!     @brief   MessagaPack Component Library Description                       --
---!     @version 0.1.0                                                           --
---!     @date    2015/10/25                                                      --
+--!     @version 0.2.0                                                           --
+--!     @date    2016/06/23                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
 --                                                                               --
---      Copyright (C) 2015 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
+--      Copyright (C) 2016 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
 --      All rights reserved.                                                     --
 --                                                                               --
 --      Redistribution and use in source and binary forms, with or without       --
@@ -257,6 +257,7 @@ component MsgPack_RPC_Method_Main_with_Param
         RET_ID          : out MsgPack_RPC.MsgID_Type;
         RET_ERROR       : out std_logic;
         RET_START       : out std_logic;
+        RET_DONE        : out std_logic;
         RET_BUSY        : in  std_logic
     );
 end component;
@@ -292,6 +293,7 @@ component MsgPack_RPC_Method_Main_No_Param
         PROC_REQ_ID     : in  MsgPack_RPC.MsgID_Type;
         PROC_REQ        : in  std_logic;
         PROC_BUSY       : out std_logic;
+        PROC_START      : out std_logic;
         PARAM_CODE      : in  MsgPack_RPC.Code_Type;
         PARAM_VALID     : in  std_logic;
         PARAM_LAST      : in  std_logic;
@@ -307,6 +309,7 @@ component MsgPack_RPC_Method_Main_No_Param
         RET_ID          : out MsgPack_RPC.MsgID_Type;
         RET_ERROR       : out std_logic;
         RET_START       : out std_logic;
+        RET_DONE        : out std_logic;
         RET_BUSY        : in  std_logic
     );
 end component;
@@ -377,6 +380,7 @@ component MsgPack_RPC_Method_Return_Integer
     -------------------------------------------------------------------------------
         RET_ERROR       : in  std_logic;
         RET_START       : in  std_logic;
+        RET_DONE        : in  std_logic;
         RET_BUSY        : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack-RPC Method Response Interface
@@ -407,6 +411,7 @@ component MsgPack_RPC_Method_Return_Nil
     -------------------------------------------------------------------------------
         RET_ERROR       : in  std_logic;
         RET_START       : in  std_logic;
+        RET_DONE        : in  std_logic;
         RET_BUSY        : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack-RPC Method Response Interface
@@ -433,6 +438,7 @@ component MsgPack_RPC_Method_Return_Code
     -------------------------------------------------------------------------------
         RET_ERROR       : in  std_logic;
         RET_START       : in  std_logic;
+        RET_DONE        : in  std_logic;
         RET_BUSY        : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack-RPC Method Response Interface

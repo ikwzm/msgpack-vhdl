@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_decode_array.vhd
 --!     @brief   MessagePack Object decode to array
---!     @version 0.1.0
---!     @date    2015/10/19
+--!     @version 0.2.0
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,8 @@ entity  MsgPack_Object_Decode_Array is
     -- Generic Parameters
     -------------------------------------------------------------------------------
     generic (
-        CODE_WIDTH      :  positive := 1
+        CODE_WIDTH      :  positive := 1;
+        SIZE_BITS       :  integer  := MsgPack_Object.CODE_DATA_BITS
     );
     port (
     -------------------------------------------------------------------------------
@@ -52,6 +53,12 @@ entity  MsgPack_Object_Decode_Array is
         CLK             : in  std_logic; 
         RST             : in  std_logic;
         CLR             : in  std_logic;
+    -------------------------------------------------------------------------------
+    -- Control/Status Signals
+    -------------------------------------------------------------------------------
+        ENABLE          : in  std_logic := '1';
+        BUSY            : out std_logic;
+        READY           : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack Object Code Input Interface
     -------------------------------------------------------------------------------
@@ -65,8 +72,14 @@ entity  MsgPack_Object_Decode_Array is
     -- 
     -------------------------------------------------------------------------------
         ARRAY_START     : out std_logic;
-        ARRAY_SIZE      : out std_logic_vector(31 downto 0);
-        ARRAY_LAST      : out std_logic;
+        ARRAY_SIZE      : out std_logic_vector(SIZE_BITS-1 downto 0);
+    -------------------------------------------------------------------------------
+    -- 
+    -------------------------------------------------------------------------------
+        ENTRY_START     : out std_logic;
+        ENTRY_BUSY      : out std_logic;
+        ENTRY_LAST      : out std_logic;
+        ENTRY_SIZE      : out std_logic_vector(SIZE_BITS-1 downto 0);
     -------------------------------------------------------------------------------
     -- 
     -------------------------------------------------------------------------------
@@ -88,7 +101,7 @@ use     ieee.numeric_std.all;
 library MsgPack;
 use     MsgPack.MsgPack_Object;
 architecture RTL of MsgPack_Object_Decode_Array is
-    signal    array_count       :  std_logic_vector(31 downto 0);
+    signal    array_count       :  std_logic_vector(SIZE_BITS-1 downto 0);
     signal    array_count_zero  :  boolean;
     type      STATE_TYPE        is (IDLE_STATE, START_STATE, VALUE_STATE);
     signal    curr_state        :  STATE_TYPE;
@@ -108,11 +121,27 @@ architecture RTL of MsgPack_Object_Decode_Array is
         end loop;
         return shift;
     end function;
+    -------------------------------------------------------------------------------
+    -- resize
+    -------------------------------------------------------------------------------
+    function  resize(VEC: std_logic_vector; LEN: integer) return std_logic_vector is
+        variable r_vec :  std_logic_vector(       LEN-1 downto 0);
+        alias    i_vec :  std_logic_vector(VEC'length-1 downto 0) is VEC;
+    begin
+        for i in r_vec'range loop
+            if (i <= i_vec'high) then
+                r_vec(i) := i_vec(i);
+            else
+                r_vec(i) := '0';
+            end if;
+        end loop;
+        return r_vec;
+    end function;
 begin 
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    process (curr_state, I_VALID, I_CODE, I_LAST, VALUE_ERROR, VALUE_DONE, VALUE_SHIFT, array_count_zero)
+    process (curr_state, I_VALID, I_CODE, I_LAST, ENABLE, VALUE_ERROR, VALUE_DONE, VALUE_SHIFT, array_count_zero)
         variable  ii_valid      :  std_logic_vector(CODE_WIDTH-1 downto 0);
         constant  II_ALL_0      :  std_logic_vector(CODE_WIDTH-1 downto 0) := (others => '0');
         impure function  i_nomore(SHIFT:  std_logic_vector) return boolean is begin
@@ -125,12 +154,13 @@ begin
         end loop;
         case curr_state is
             when IDLE_STATE =>
-                if (I_VALID = '1' and I_CODE(0).valid = '1') then
+                if (I_VALID = '1' and I_CODE(0).valid = '1' and ENABLE = '1') then
                     if    (I_CODE(0).class /= MsgPack_Object.CLASS_ARRAY) then
                         I_ERROR     <= '1';
                         I_DONE      <= '1';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                     else
@@ -138,6 +168,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '1';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= START_STATE;
                     end if;
@@ -146,6 +177,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                 end if;
@@ -155,6 +187,7 @@ begin
                         I_DONE      <= '1';
                         I_SHIFT     <= to_shift(1);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                 elsif (i_nomore(to_shift(1))) then
@@ -162,6 +195,7 @@ begin
                         I_DONE      <= '1';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                 else
@@ -169,6 +203,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= to_shift(1);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '1';
                         VALUE_START <= '1';
                         next_state  <= VALUE_STATE;
                 end if;
@@ -180,12 +215,14 @@ begin
                         I_DONE      <= '1';
                         I_SHIFT     <= VALUE_SHIFT;
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
                     elsif (array_count_zero = TRUE) then
                         I_ERROR     <= '0';
                         I_DONE      <= '1';
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         I_SHIFT     <= VALUE_SHIFT;
                         next_state  <= IDLE_STATE;
@@ -193,6 +230,7 @@ begin
                         I_ERROR     <= '0';
                         I_DONE      <= '0';
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '1';
                         I_SHIFT     <= VALUE_SHIFT;
                         next_state  <= VALUE_STATE;
@@ -202,6 +240,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= VALUE_SHIFT;
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= VALUE_STATE;
                 end if;
@@ -210,6 +249,7 @@ begin
                         I_DONE      <= '0';
                         I_SHIFT     <= to_shift(0);
                         ARRAY_START <= '0';
+                        ENTRY_START <= '0';
                         VALUE_START <= '0';
                         next_state  <= IDLE_STATE;
         end case;
@@ -220,11 +260,22 @@ begin
     process (CLK, RST) begin
         if (RST = '1') then
                 curr_state <= IDLE_STATE;
+                BUSY       <= '0';
+                READY      <= '0';
         elsif (CLK'event and CLK = '1') then
             if (CLR = '1') then
                 curr_state <= IDLE_STATE;
+                BUSY       <= '0';
+                READY      <= '0';
             else
                 curr_state <= next_state;
+                if (next_state = IDLE_STATE) then
+                    READY <= '1';
+                    BUSY  <= '0';
+                else
+                    READY <= '0';
+                    BUSY  <= '1';
+                end if;
             end if;
         end if;
     end process;
@@ -243,9 +294,9 @@ begin
                 array_count_zero <= TRUE;
             else
                 if (curr_state = IDLE_STATE) then
-                    next_count := unsigned(I_CODE(0).data);
+                    next_count := unsigned(resize(I_CODE(0).data, SIZE_BITS));
                 else
-                    next_count := unsigned(array_count   );
+                    next_count := unsigned(array_count);
                 end if;
                 if (curr_state = START_STATE) or
                    (curr_state = VALUE_STATE and VALUE_DONE = '1') then
@@ -259,8 +310,13 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    ARRAY_SIZE  <= I_CODE(0).data;
-    ARRAY_LAST  <= '1' when (array_count_zero) else '0';
+    ARRAY_SIZE  <= resize(I_CODE(0).data, SIZE_BITS);
+    -------------------------------------------------------------------------------
+    --
+    -------------------------------------------------------------------------------
+    ENTRY_BUSY  <= '1' when (curr_state = VALUE_STATE) else '0';
+    ENTRY_LAST  <= '1' when (array_count_zero) else '0';
+    ENTRY_SIZE  <= array_count;
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------

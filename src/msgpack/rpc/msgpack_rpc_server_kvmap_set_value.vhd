@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc_server_kvmap_set_value.vhd
 --!     @brief   MessagePack-RPC Server Key Value Map Set Value Module :
---!     @version 0.1.0
---!     @date    2015/10/19
+--!     @version 0.2.0
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -114,7 +114,7 @@ use     MsgPack.MsgPack_RPC;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Code_Reducer;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Array;
 use     MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Return_Nil;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Set_Map_Value;
+use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Store;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_RPC_Server_KVMap_Set_Value is
     -------------------------------------------------------------------------------
@@ -153,6 +153,7 @@ architecture RTL of MsgPack_RPC_Server_KVMap_Set_Value is
     -------------------------------------------------------------------------------
     signal    return_error      :  std_logic;
     signal    return_start      :  std_logic;
+    signal    return_done       :  std_logic;
     signal    return_busy       :  std_logic;
     -------------------------------------------------------------------------------
     --
@@ -227,12 +228,16 @@ begin
     -------------------------------------------------------------------------------
     DECODE_ARRAY: MsgPack_Object_Decode_Array            -- 
         generic map (                                    -- 
-            CODE_WIDTH      => I_PARAM_WIDTH             -- 
+            CODE_WIDTH      => I_PARAM_WIDTH           , --
+            SIZE_BITS       => 32                        -- 
         )                                                -- 
         port map (                                       -- 
             CLK             => CLK                     , -- In  :
             RST             => RST                     , -- In  :
             CLR             => CLR                     , -- In  :
+            ENABLE          => '1'                     , -- In  :
+            BUSY            => open                    , -- Out :
+            READY           => open                    , -- Out :
             I_CODE          => i_param_code            , -- In  :
             I_LAST          => i_param_last            , -- In  :
             I_VALID         => unpack_valid            , -- In  :
@@ -241,6 +246,10 @@ begin
             I_SHIFT         => unpack_shift            , -- Out :
             ARRAY_START     => open                    , -- Out :
             ARRAY_SIZE      => open                    , -- Out :
+            ENTRY_START     => open                    , -- Out :
+            ENTRY_BUSY      => open                    , -- Out :
+            ENTRY_LAST      => open                    , -- Out :
+            ENTRY_SIZE      => open                    , -- Out :
             VALUE_START     => open                    , -- Out :
             VALUE_CODE      => set_kvmap_code          , -- Out :
             VALUE_LAST      => set_kvmap_last          , -- Out :
@@ -252,7 +261,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    SET_KVMap: MsgPack_KVMap_Set_Map_Value               -- 
+    STORE_MAP: MsgPack_KVMap_Store                       -- 
         generic map (                                    -- 
             CODE_WIDTH      => I_PARAM_WIDTH           , --
             STORE_SIZE      => STORE_SIZE              , --
@@ -300,6 +309,7 @@ begin
             CLR             => CLR                     , -- In  :
             RET_ERROR       => return_error            , -- In  :
             RET_START       => return_start            , -- In  :
+            RET_DONE        => return_done             , -- In  :
             RET_BUSY        => return_busy             , -- Out :
             RES_CODE        => RES_CODE                , -- Out :
             RES_VALID       => RES_VALID               , -- Out :
@@ -365,8 +375,9 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    return_start   <= '1' when (curr_state = RUN_STATE and unpack_done  = '1') else '0';
-    return_error   <= '1' when (curr_state = RUN_STATE and unpack_error = '1') else '0';
+    return_start   <= '1' when (curr_state  = IDLE_STATE and PROC_REQ    = '1') else '0';
+    return_done    <= '1' when (curr_state  = RUN_STATE  and unpack_done = '1') else '0';
+    return_error   <= '1' when (curr_state  = RUN_STATE  and unpack_done = '1' and unpack_error = '1') else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
@@ -393,4 +404,3 @@ begin
         end if;
     end process;
 end RTL;
-

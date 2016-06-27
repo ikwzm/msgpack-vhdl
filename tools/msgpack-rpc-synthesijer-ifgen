@@ -1,0 +1,634 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+#---------------------------------------------------------------------------------
+#
+#       Version     :   0.2.0
+#       Created     :   2016/6/26
+#       File name   :   msgpack-rpc-synthesijer-synthesijer-ifgen.rb
+#       Author      :   Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
+#       Description :   MessagePack RPC Interface Generator for Synthesijer
+#
+#---------------------------------------------------------------------------------
+#
+#       Copyright (C) 2016 Ichiro Kawazome
+#       All rights reserved.
+# 
+#       Redistribution and use in source and binary forms, with or without
+#       modification, are permitted provided that the following conditions
+#       are met:
+# 
+#         1. Redistributions of source code must retain the above copyright
+#            notice, this list of conditions and the following disclaimer.
+# 
+#         2. Redistributions in binary form must reproduce the above copyright
+#            notice, this list of conditions and the following disclaimer in
+#            the documentation and/or other materials provided with the
+#            distribution.
+# 
+#       THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#       "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#       LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+#       A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
+#       OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#       SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+#       LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#       DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#       THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+#       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#       OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+#---------------------------------------------------------------------------------
+require 'optparse'
+require 'find'
+require 'set'
+require 'yaml'
+require_relative 'lib/msgpack-rpc-interface/module'
+class InterfaceGenerator
+  #-------------------------------------------------------------------------------
+  # initialize    :
+  #-------------------------------------------------------------------------------
+  def initialize
+    @program_name      = "msgpack-rpc-synthesijer-ifgen"
+    @program_version   = "0.2.0"
+    @program_id        = @program_name + " " + @program_version
+    @verbose           = false
+    @debug             = false
+    @file_list         = Array.new
+    @modules           = Array.new
+    @server            = false
+    @opt               = OptionParser.new do |opt|
+      opt.program_name = @program_name
+      opt.version      = @program_version
+      opt.summary_width= 20
+      opt.banner       = "Usage: #{@program_name} file_name..."
+      opt.on('-s', '--server' , 'generate server vhdl file'){|val| @server  = true}
+      opt.on('-v', '--verbose'                             ){|val| @verbose = true}
+      opt.on('-d', '--debug'                               ){|val| @debug   = true}
+    end
+  end
+  #-------------------------------------------------------------------------------
+  # parse_options
+  #-------------------------------------------------------------------------------
+  def parse_options(argv)
+    @opt.order(argv) do |file_name|
+      @file_list << file_name
+    end
+  end
+  #-------------------------------------------------------------------------------
+  # read_entity_files : 
+  #-------------------------------------------------------------------------------
+  def read_entity_files
+    @file_list.each do |file_name|
+      read_entity_file(file_name)
+    end
+  end
+  #-------------------------------------------------------------------------------
+  # read_entity_file  : 
+  #-------------------------------------------------------------------------------
+  def read_entity_file(file_name)
+    File.open(file_name) do |file|
+      read_entity(file, file_name)
+    end
+  end
+  #-------------------------------------------------------------------------------
+  # read_entity  : エンティティ宣言部を含むファイル(ストリーム)を読み込んで、
+  #                エンティティ宣言部を抽出してレジストリに格納する.
+  #-------------------------------------------------------------------------------
+  def read_entity(file, file_name)
+    line_number = 0
+    entity_name = String.new
+    entity_line = Array.new
+    #-----------------------------------------------------------------------------
+    # ファイルから一行ずつ読み込む。
+    #-----------------------------------------------------------------------------
+    file.each_line {|o_line|
+      line = o_line.encode("UTF-8", "UTF-8", :invalid => :replace, :undef => :replace, :replace => '?')
+      #---------------------------------------------------------------------------
+      # 行番号の更新
+      #---------------------------------------------------------------------------
+      line_number += 1
+      #---------------------------------------------------------------------------
+      # コメント、行頭の空白部分、行末文字を削除する。
+      #---------------------------------------------------------------------------
+      parse_line = String.new(line)
+      parse_line.sub!(/--.*$/  ,'')
+      parse_line.sub!(/^[\s]+/ ,'')
+      parse_line.sub!(/[\n\r]$/,'')
+      #---------------------------------------------------------------------------
+      # entity 宣言の開始
+      #---------------------------------------------------------------------------
+      if (parse_line =~ /^entity[\s]+([\w]+)[\s]+is/i)
+        entity_name = $1
+        entity_line << parse_line
+        next;
+      end
+      #---------------------------------------------------------------------------
+      # library ライブラリ名; の解釈
+      #---------------------------------------------------------------------------
+      next if (parse_line =~ /^library[\s]+[\w\s,]+;/i);
+      #---------------------------------------------------------------------------
+      # use ライブラリ名.パッケージ名.アイテム名; の解釈
+      #---------------------------------------------------------------------------
+      next if (parse_line =~ /^use[\s]+[\w]+\.[\w]+\.[\w]+[\s]*;/i);
+      #---------------------------------------------------------------------------
+      # use ライブラリ名.パッケージ名; の解釈
+      #---------------------------------------------------------------------------
+      next if (parse_line =~ /^use[\s]+[\w]+\.[\w]+[\s]*;/i);
+      #---------------------------------------------------------------------------
+      # entity宣言処理中でない場合はスキップ
+      #---------------------------------------------------------------------------
+      next if (entity_name == nil);
+      #---------------------------------------------------------------------------
+      # entity宣言処理中の end 処理
+      #---------------------------------------------------------------------------
+      if (parse_line =~ /^end[\s]*(.*)[\s]*;/i)
+        labels = $1.downcase.split(/\s+/);
+        if (labels.length == 0                                      ) or   # end;
+           (labels.length == 1 and labels[0] == "entity"            ) or   # end entity;
+           (labels.length == 1 and labels[0] == entity_name.downcase) or   # end entity_name;
+           (labels.length == 2 and labels[0] == "entity" and
+                                   labels[1] == entity_name.downcase) then # end entity entity_name;
+          #-----------------------------------------------------------------------
+          # モジュールとして登録
+          #-----------------------------------------------------------------------
+          entity_line << parse_line
+          @modules.concat(parse_entity(entity_name, entity_line))
+          #-----------------------------------------------------------------------
+          # 使った後の変数はクリアしておき次のentityに備える
+          #-----------------------------------------------------------------------
+          entity_name = nil
+          entity_line.clear
+          next;
+        end
+        abort("#{@program_id} Error : #{file_name}(#{line_number}) end のコンポーネント名が一致しないよ!\n")
+      end
+      #---------------------------------------------------------------------------
+      # entity宣言処理中の end 以外は entity_line に行を追加
+      #---------------------------------------------------------------------------
+      entity_line << parse_line
+    }
+    #------------------------------------------------------------------------------
+    # ファイルを全て読み終っても end が無い場合はエラー
+    #---------------------------------------------------------------------------
+    if (entity_name != nil)
+      abort("#{@program_id} Error : #{file_name}(#{line_number}) ファイルの最後まで対応する end が無いよ!\n")
+    end
+  end
+  #-------------------------------------------------------------------------------
+  # parse_entity  : エンティティ宣言部を解釈して MsgPack_RPC_Interface::Module を
+  #                 生成する
+  #-------------------------------------------------------------------------------
+  def parse_entity(entity_name, entity_line)
+    port_list = parse_port_list(entity_name, entity_line)
+    remain_port_list = Array.new(port_list)
+    # remain_port_list.each {|port| puts port;}
+    module_info = Hash({"name" => entity_name})
+    module_info["methods"  ] =      get_method_list(remain_port_list)
+    module_info["variables"] =      get_variable_reg_list(remain_port_list)
+    module_info["variables"].concat(get_variable_mem_list(remain_port_list))
+    # remain_port_list.each {|port| puts port;}
+    module_info["debug"    ] = true if @debug
+    module_info["port"     ] = Hash.new
+    module_info["port"     ]["clock"] = "clk"
+    module_info["port"     ]["reset"] = "reset"
+    module_info["port"     ]["clear"] = nil
+    module_info["generate" ] = Hash.new
+    module_info["generate" ]["interface"] = Hash({"name" => entity_name + "_Interface",
+                                                  "file" => entity_name + "_Interface.vhd"})
+    if @server == true then
+      module_info["generate"]["server"  ] = Hash({"name" => entity_name + "_Server",
+                                                  "file" => entity_name + "_Server.vhd"})
+    end
+    return [MsgPack_RPC_Interface::Module.new(module_info)]
+  end
+  #-------------------------------------------------------------------------------
+  # get_method_list : port_list から メソッドを抽出
+  #-------------------------------------------------------------------------------
+  def get_method_list(remain_port_list)
+    method_list = Array.new
+    loop do
+      method_req_port = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /_req$/    ) and
+         (port[:direction]  == :in        ) and
+         (port[:type]       == "std_logic"))
+      }
+      break if method_req_port == nil
+      method_name      = method_req_port[:name].gsub(/_req$/,"")
+      method_busy_port = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /^#{method_name}_busy$/) and
+         (port[:direction]  == :out                   ) and
+         (port[:type]       == "std_logic"            ))
+      }
+      if method_busy_port == nil then
+        abort("#{@program_id} Error : #{entity_name} #{method_name}_busy が見つからない.")
+      end
+      method_info = Hash({"name" => method_name})
+      method_info["interface"] = Hash({"port" => Hash({"request" => method_req_port[:name],
+                                                       "busy"    => method_busy_port[:name]})})
+      remain_port_list.delete(method_req_port )
+      remain_port_list.delete(method_busy_port)
+      method_return_port = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /^#{method_name}_return$/) and
+         (port[:direction]  == :out                     ))
+      }
+      if method_return_port != nil then
+        method_return_info = Hash({"name" => "return"})
+        if method_return_port[:type] == "std_logic" then
+          method_return_info["type"] = "Boolean"
+          method_return_info["interface"] = Hash({"name" => "Signal",
+                                                  "type" => Hash({"name"  => "Logic"})})
+        else
+          method_return_info["type"] = "Integer"
+          method_return_info["interface"] = Hash({"name" => "Signal",
+                                                  "type" => Hash({"name"  => "Signed",
+                                                                  "width" => method_return_port[:width]})})
+        end
+        method_info["returns"] = [method_return_info]
+        remain_port_list.delete(method_return_port)
+      end
+      method_argment_port_list = remain_port_list.select {|port|
+        ((port[:name     ]  =~ /^#{method_name}_.*/) and
+         (port[:direction]  == :in                 ))
+      }
+      if method_argment_port_list.size > 0 then
+        method_argment_list = Array.new
+        method_argment_port_list.each do |method_argument_port|
+          method_argument_name = method_argument_port[:name].gsub(/^#{method_name}_/, "")
+          method_argument_info = Hash({"name" => method_argument_name})
+          if method_argument_port[:type] == "std_logic" then
+            method_argument_info["type"] = "Boolean"
+            method_argument_info["interface"] = Hash({"name" => "Signal",
+                                                      "type" => Hash({"name" => "Logic"})})
+          else
+            method_argument_info["type"] = "Integer"
+            method_argument_info["interface"] = Hash({"name" => "Signal",
+                                                      "type" => Hash({"name"  => "Signed",
+                                                                      "width" => method_argument_port[:width]})})
+          end
+          method_argment_list << method_argument_info
+          remain_port_list.delete(method_argument_port)
+        end
+        method_info["arguments"] = method_argment_list
+      end
+      method_list << method_info
+    end
+    return method_list
+  end
+  #-------------------------------------------------------------------------------
+  # get_variable_reg_list : port_list から 変数(Register Type)を抽出
+  #-------------------------------------------------------------------------------
+  def get_variable_reg_list(remain_port_list)
+    variable_list = Array.new
+    loop do
+      variable_out_port  = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /_out$/    ) and
+         (port[:direction]  == :out       ))
+      }
+      variable_in_port   = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /_in$/     ) and
+         (port[:direction]  == :in        ))
+      }
+      break if variable_in_port == nil and variable_out_port == nil
+      if variable_out_port != nil
+        remain_port_list.delete(variable_out_port)
+        variable_name     = variable_out_port[:name].gsub(/_out$/,"")
+        variable_type     = variable_out_port[:type]
+        variable_range    = variable_out_port[:range]
+        variable_width    = variable_out_port[:width]
+        variable_in_port  = remain_port_list.find {|port|
+          ((port[:name     ]  =~ /^#{variable_name}_in$/) and
+           (port[:direction]  == :in                   ))
+        }
+        variable_we_port  = remain_port_list.find {|port|
+          ((port[:name     ]  =~ /^#{variable_name}_we$/) and
+           (port[:direction]  == :in                   ))
+        }
+        if variable_in_port != nil and variable_we_port != nil then
+          remain_port_list.delete(variable_in_port)
+          remain_port_list.delete(variable_we_port)
+        end
+      else
+        remain_port_list.delete(variable_in_port)
+        variable_name     = variable_in_port[:name].gsub(/_in$/,"")
+        variable_type     = variable_in_port[:type]
+        variable_range    = variable_in_port[:range]
+        variable_width    = variable_in_port[:width]
+        variable_out_port = remain_port_list.find {|port|
+          ((port[:name     ]  =~ /^#{variable_name}_out$/) and
+           (port[:direction]  == :out                   ))
+        }
+        variable_we_port  = remain_port_list.find {|port|
+          ((port[:name     ]  =~ /^#{variable_name}_we$/ ) and
+           (port[:direction]  == :in                    ))
+        }
+        if variable_out_port != nil and variable_we_port != nil then
+          remain_port_list.delete(variable_out_port)
+          remain_port_list.delete(variable_we_port )
+        end
+      end
+      variable_info      = Hash({"name" => variable_name})
+      variable_interface = Hash({"name" => "Register"})
+      if variable_type == "std_logic" then
+        variable_info[     "type"] = "Boolean"
+        variable_interface["type"] = Hash({"name" => "Logic"})
+      else
+        variable_info[     "type"] = "Integer"
+        variable_interface["type"] = Hash({"name" => "Signed", "width" => variable_width})
+      end
+      variable_interface_port = Hash.new
+      if variable_in_port  != nil and variable_we_port  != nil then
+        variable_info["write"] = true
+        variable_interface_port["wdata"] = variable_in_port[:name]
+        variable_interface_port["we"   ] = variable_we_port[:name]
+      else
+        variable_info["write"] = false
+      end
+      if variable_out_port != nil then
+        variable_info["read"] = true
+        variable_interface_port["rdata"] = variable_out_port[:name]
+      else
+        variable_info["read"] = false
+      end
+      variable_interface["port"] = variable_interface_port
+      variable_info["interface"] = variable_interface
+      variable_list << variable_info
+    end
+    return variable_list
+  end
+  #-------------------------------------------------------------------------------
+  # get_variable_mem_list : port_list から 変数(Memrory Type)を抽出
+  #-------------------------------------------------------------------------------
+  def get_variable_mem_list(remain_port_list)
+    memory_list = Array.new
+    loop do
+      memory_addr_port = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /_address$/) and
+         (port[:direction]  == :in        ) and
+         (port[:type     ]  == "signed"))
+      }
+      break if memory_addr_port == nil
+      memory_name = memory_addr_port[:name].gsub(/_address$/,"")
+      memory_din_port  = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /^#{memory_name}_din$/ ) and
+         (port[:direction]  == :in))
+      }
+      memory_we_port   = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /^#{memory_name}_we$/) and
+         (port[:direction]  == :in) and
+         (port[:type     ]  == "std_logic"))
+      }
+      memory_dout_port = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /^#{memory_name}_dout$/) and
+         (port[:direction]  == :out))
+      }
+      memory_oe_port   = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /^#{memory_name}_oe$/) and
+         (port[:direction]  == :in) and
+         (port[:type     ]  == "std_logic"))
+      }
+      memory_len_port  = remain_port_list.find {|port|
+        ((port[:name     ]  =~ /^#{memory_name}_length$/) and
+         (port[:direction]  == :out) and
+         (port[:type     ]  == "signed"))
+      }
+      if memory_din_port  == nil then
+        warn("#{@program_id} Error : #{memory_name}_din が見つからない.")
+      end
+      if memory_we_port   == nil then
+        warn("#{@program_id} Error : #{memory_name}_we が見つからない.")
+      end
+      if memory_dout_port == nil then
+        warn("#{@program_id} Error : #{memory_name}_dout が見つからない.")
+      end
+      if memory_oe_port   == nil then
+        warn("#{@program_id} Error : #{memory_name}_oe が見つからない.")
+      end
+      if memory_len_port  == nil then
+        warn("#{@program_id} Error : #{memory_name}_length が見つからない.")
+      end
+      if    memory_dout_port != nil and memory_oe_port != nil then
+        memory_type  = memory_dout_port[:type ]
+        memory_range = memory_dout_port[:range]
+        memory_width = memory_dout_port[:width]
+      elsif memory_din_port  != nil and memory_we_port != nil then
+        memory_type  = memory_din_port[:type ]
+        memory_range = memory_din_port[:range]
+        memory_width = memory_din_port[:width]
+      else
+        abort("#{@program_id} Error : #{memory_name} memory port が見つからない.")
+      end
+      if memory_addr_port != nil then
+        remain_port_list.delete(memory_addr_port)
+      end
+      if memory_dout_port != nil then
+        remain_port_list.delete(memory_dout_port)
+      end
+      if memory_oe_port != nil then
+        remain_port_list.delete(memory_oe_port)
+      end
+      if memory_din_port != nil then
+        remain_port_list.delete(memory_din_port)
+      end
+      if memory_we_port != nil then
+        remain_port_list.delete(memory_we_port)
+      end
+      if memory_len_port != nil then
+        remain_port_list.delete(memory_len_port)
+      end
+      memory_info = Hash({"name" => memory_name})
+      memory_interface = Hash({"name" => "Memory"})
+      if memory_type == "std_logic" then
+        memory_info["type"] = "Boolean"
+        memory_interface["type"] = Hash({"name" => "Logic"})
+      else
+        memory_info["type"] = "Integer"
+        memory_interface["type"] = Hash({"name" => "Signed", "width" => memory_width})
+      end
+      memory_interface["addr_type"] = Hash({"name" => "Signed", "width" => memory_addr_port[:width]})
+      if memory_len_port != nil then
+        memory_interface["size_type"] = Hash({"name" => "Signed", "width" => memory_len_port[:width]})
+      end
+      memory_interface_port = Hash({"addr" => memory_addr_port[:name]})
+      if memory_din_port  != nil and memory_we_port != nil then
+        memory_info["write"] = true
+        memory_interface_port["wdata"] = memory_din_port[:name]
+        memory_interface_port["we"   ] = memory_we_port[:name]
+      else
+        memory_info["write"] = false
+      end
+      if memory_dout_port != nil and memory_oe_port != nil then
+        memory_info["read"] = true
+        memory_interface_port["rdata"] = memory_dout_port[:name]
+        memory_interface_port["oe"   ] = memory_oe_port[:name]
+      else
+        memory_info["read"] = false
+      end
+      if memory_len_port != nil then
+        memory_interface_port["default_size"] = memory_len_port[:name]
+      end
+      memory_interface["port"] = memory_interface_port
+      memory_info["interface"] = memory_interface
+      memory_list << memory_info
+    end
+    return memory_list
+  end
+  #-------------------------------------------------------------------------------
+  # parse_port_list : エンティティ宣言部のポート宣言部を解釈して port_list を作成する
+  #-------------------------------------------------------------------------------
+  def parse_port_list(entity_name, entity_line)
+    port_list   = Array.new
+    entity_word = Array.new
+    entity_line.each do |line|
+      entity_word.concat(line.gsub(/([\(\);:,])/, ' \1 ').split(/\s+/))
+    end
+    entity_word.delete_if{|word| word == ""}
+    port_index = entity_word.index {|word| word.downcase == "port"}
+    if port_index == nil then
+      warn("#{@program_id} Warning : #{entity_name} port 宣言が見つからない\n")
+      return []
+    end
+    entity_word.shift(port_index+1)
+    if entity_word.first != "(" then
+      abort("#{@program_id} Error : #{entity_name} port 宣言の後が '(' じゃなかった, #{entity_word.slice(0,6)}\n")
+    end
+    entity_word.shift
+    state = :port_name
+    while (state != :end) do
+      if state == :port_name then
+        port_name_list = [entity_word.shift]
+        while (entity_word.first == ",") do
+          entity_word.shift
+          port_name_list << entity_word.shift
+        end
+        if entity_word.first == ":" then
+          entity_word.shift
+          state = :direction
+        end
+        next
+      end
+      if state == :direction then
+        if    entity_word.first.downcase == "in"  then
+          direction = :in
+          entity_word.shift
+          state = :type
+        elsif entity_word.first.downcase == "out" then
+          direction = :out
+          entity_word.shift
+          state = :type
+        else
+          abort("#{@program_id} Error : #{entity_name} 文法エラー #{state} #{entity_word.slice(0,6)}\n")
+        end
+        next
+      end
+      if state == :type then
+        port_type = entity_word.shift.downcase
+        port_type_range = []
+        if    entity_word.first == ";" then
+          state = :port_end
+        elsif entity_word.first == ")" then
+          state = :port_end
+        elsif entity_word.first == "(" then
+          entity_word.shift
+          state = :array_left
+        else
+          abort("#{@program_id} Error : #{entity_name} 文法エラー #{state} #{entity_word.slice(0,6)}\n")
+        end
+        next
+      end
+      if state == :array_left then
+        if entity_word.first =~ /^\d+/ then
+          port_type_range[0] = eval(entity_word.shift)
+          if entity_word.first.downcase == "to"     or
+             entity_word.first.downcase == "downto" then
+            state = :array_right
+            entity_word.shift
+          else
+            abort("#{@program_id} Error : #{entity_name} 文法エラー #{state} #{entity_word.slice(0,6)}\n")
+          end
+        else
+            abort("#{@program_id} Error : #{entity_name} 文法エラー #{state} #{entity_word.slice(0,6)}\n")
+        end
+        next
+      end
+      if state == :array_right then
+        if entity_word.first =~ /^\d+/ then
+          port_type_range[1] = eval(entity_word.shift)
+          if entity_word.first == ")" then
+            state = :port_end
+            entity_word.shift
+          else
+            abort("#{@program_id} Error : #{entity_name} 文法エラー #{state} #{entity_word.slice(0,6)}\n")
+          end
+        else
+            abort("#{@program_id} Error : #{entity_name} 文法エラー #{state} #{entity_word.slice(0,6)}\n")
+        end
+        next
+      end
+      if state == :port_end then
+        port_name_list.each do |name|
+          if port_type_range.size == 2 then
+            if port_type_range[0] > port_type_range[1] then
+              width = port_type_range[0] - port_type_range[1] + 1
+            else
+              width = port_type_range[1] - port_type_range[0] + 1
+            end
+          else
+              width = 1
+          end
+          port_list << Hash({name: name, direction: direction, type: port_type, range: port_type_range, width: width})
+        end
+        if    entity_word.first == ";" then
+          state = :port_name
+        elsif entity_word.first == ")" then
+          state = :end
+        else
+            abort("#{@program_id} Error : #{entity_name} 文法エラー #{state} #{entity_word.slice(0,6)}\n")
+        end
+        next
+      end
+    end
+    return port_list
+  end
+  #-------------------------------------------------------------------------------
+  # execute   : 
+  #-------------------------------------------------------------------------------
+  def execute
+    read_entity_files()
+    @modules.each do |m|
+      if m.generate.key?("interface") then
+        if m.generate["interface"].class == Hash then
+          if_registory = Hash.new
+          m.generate["interface"].each_pair{|k,v| if_registory[k.to_sym] = v}
+          if_file_name = if_registory.fetch(:file,
+                                            if_registory.fetch(:name , m.name + "_Interface") + ".vhd")
+        else
+          if_registory = Hash({name: m.name + "_Interface"})
+          if_file_name = m.generate["interface"]
+        end
+        puts "#{@program_id} : generate interface file : #{if_file_name}" if @verbose or @debug
+        File.open(if_file_name, "w") do |file|
+          file.puts m.generate_interface(if_registory)
+        end
+        if m.generate.key?("server") then
+          if m.generate["server"].class == Hash then
+            sv_registory = Hash.new
+            m.generate["server"].each_pair{|k,v| sv_registory[k.to_sym] = v}
+            sv_file_name = sv_registory.fetch(:file,
+                                              sv_registory.fetch(:name , m.name + "_Server") + ".vhd")
+          else
+            sv_registory = Hash({name: m.name + "_Server"})
+            sv_file_name = m.generate["server"]
+          end
+          puts "#{@program_id} : generate server file : #{sv_file_name}" if @verbose or @debug
+          File.open(sv_file_name, "w") do |file|
+            file.puts m.generate_server(sv_registory, if_registory)
+          end
+        end
+      end
+    end
+  end
+end
+
+gen = InterfaceGenerator.new
+gen.parse_options(ARGV)
+gen.execute

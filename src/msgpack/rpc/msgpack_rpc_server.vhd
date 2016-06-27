@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc_server.vhd
 --!     @brief   MessagePack-RPC Server Module :
---!     @version 0.1.0
---!     @date    2015/10/19
+--!     @version 0.2.0
+--!     @date    2016/5/20
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -177,11 +177,11 @@ begin
             RES_LAST        => res_last        , -- In  :
             RES_READY       => res_ready         -- Out :
         );
-    RES_GEN: for i in 1 to PROC_NUM generate
-        res_id   (i) <= PROC_RES_ID   (i-1);
-        res_code (i) <= PROC_RES_CODE (i-1);
-        res_valid(i) <= PROC_RES_VALID(i-1);
-        res_last (i) <= PROC_RES_LAST (i-1);
-        PROC_RES_READY(i-1) <= res_ready(i);
+    RES_GEN: for i in 0 to PROC_NUM-1 generate
+        res_id   (i+1) <= PROC_RES_ID   (i);
+        res_code (i+1) <= PROC_RES_CODE (i);
+        res_valid(i+1) <= PROC_RES_VALID(i);
+        res_last (i+1) <= PROC_RES_LAST (i);
+        PROC_RES_READY(i) <= res_ready(i+1);
     end generate;
 end RTL;

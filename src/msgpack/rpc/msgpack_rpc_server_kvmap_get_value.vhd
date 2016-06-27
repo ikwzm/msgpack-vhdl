@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc_server_kvmap_get_value.vhd
 --!     @brief   MessagePack-RPC Server Key Value Map Get Value Module :
---!     @version 0.1.0
---!     @date    2015/10/19
+--!     @version 0.2.0
+--!     @date    2016/6/23
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015 Ichiro Kawazome
+--      Copyright (C) 2015-2016 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -124,7 +124,7 @@ use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Code_Reducer;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Decode_Array;
 use     MsgPack.MsgPack_Object_Components.MsgPack_Object_Encode_Array;
 use     MsgPack.MsgPack_RPC_Components.MsgPack_RPC_Method_Return_Code;
-use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Get_Map_Value;
+use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Query;
 use     MsgPack.MsgPack_KVMap_Components.MsgPack_KVMap_Key_Compare;
 architecture RTL of MsgPack_RPC_Server_KVMap_Get_Value is
     -------------------------------------------------------------------------------
@@ -180,6 +180,7 @@ architecture RTL of MsgPack_RPC_Server_KVMap_Get_Value is
     -------------------------------------------------------------------------------
     signal    return_error      :  std_logic;
     signal    return_start      :  std_logic;
+    signal    return_done       :  std_logic;
     signal    return_busy       :  std_logic;
     -------------------------------------------------------------------------------
     --
@@ -189,6 +190,7 @@ architecture RTL of MsgPack_RPC_Server_KVMap_Get_Value is
     signal    curr_state        :  STATE_TYPE;
     signal    array_start       :  std_logic;
     signal    array_size        :  std_logic_vector(SIZE_BITS-1 downto 0);
+    signal    array_enable      :  std_logic;
 begin
     -------------------------------------------------------------------------------
     --
@@ -257,12 +259,16 @@ begin
     -------------------------------------------------------------------------------
     DECODE_ARRAY: MsgPack_Object_Decode_Array            -- 
         generic map (                                    -- 
-            CODE_WIDTH      => I_PARAM_WIDTH             -- 
+            CODE_WIDTH      => I_PARAM_WIDTH           , -- 
+            SIZE_BITS       => SIZE_BITS                 -- 
         )                                                -- 
         port map (                                       -- 
             CLK             => CLK                     , -- In  :
             RST             => RST                     , -- In  :
             CLR             => CLR                     , -- In  :
+            ENABLE          => array_enable            , -- In  :
+            BUSY            => open                    , -- Out :
+            READY           => open                    , -- Out :
             I_CODE          => i_param_code            , -- In  :
             I_LAST          => i_param_last            , -- In  :
             I_VALID         => unpack_valid            , -- In  :
@@ -271,6 +277,10 @@ begin
             I_SHIFT         => unpack_shift            , -- Out :
             ARRAY_START     => array_start             , -- Out :
             ARRAY_SIZE      => array_size              , -- Out :
+            ENTRY_START     => open                    , -- Out :
+            ENTRY_BUSY      => open                    , -- Out :
+            ENTRY_LAST      => open                    , -- Out :
+            ENTRY_SIZE      => open                    , -- Out :
             VALUE_START     => open                    , -- Out :
             VALUE_CODE      => get_kvmap_code          , -- Out :
             VALUE_LAST      => get_kvmap_last          , -- Out :
@@ -282,7 +292,7 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    GET_KVMAP: MsgPack_KVMap_Get_Map_Value               -- 
+    QUERY_MAP: MsgPack_KVMap_Query                       -- 
         generic map (                                    -- 
             CODE_WIDTH      => I_PARAM_WIDTH           , -- 
             STORE_SIZE      => STORE_SIZE              , --
@@ -350,6 +360,8 @@ begin
             CLR             => CLR                     , -- In  :
             START           => array_start             , -- In  :
             SIZE            => array_size              , -- In  :
+            BUSY            => open                    , -- Out :
+            READY           => array_enable            , -- Out :
             I_CODE          => ret_value_code          , -- In  :
             I_LAST          => ret_value_last          , -- In  :
             I_ERROR         => ret_value_error         , -- In  :
@@ -371,6 +383,7 @@ begin
             CLR             => CLR                     , -- In  :
             RET_ERROR       => return_error            , -- In  :
             RET_START       => return_start            , -- In  :
+            RET_DONE        => return_done             , -- In  :
             RET_BUSY        => return_busy             , -- Out :
             RES_CODE        => RES_CODE                , -- Out :
             RES_VALID       => RES_VALID               , -- Out :
@@ -440,7 +453,8 @@ begin
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
-    return_start   <= '1' when (curr_state  = IDLE_STATE and PROC_REQ = '1') else '0';
+    return_start   <= '1' when (curr_state  = IDLE_STATE and PROC_REQ    = '1') else '0';
+    return_done    <= '1' when (curr_state  = RUN_STATE  and unpack_done = '1') else '0';
     return_error   <= '0';
     -------------------------------------------------------------------------------
     --

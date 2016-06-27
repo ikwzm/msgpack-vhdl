@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_unpacker.vhd
 --!     @brief   MessagePack Object Code Unpack from Byte Stream Module :
---!     @version 0.1.1
+--!     @version 0.2.0
 --!     @date    2016/2/4
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------

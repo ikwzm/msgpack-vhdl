@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object.vhd
 --!     @brief   MessagePack Object Code Package :
---!     @version 0.1.2
---!     @date    2016/3/16
+--!     @version 0.2.0
+--!     @date    2016/6/26
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -759,19 +759,25 @@ package body MsgPack_Object is
     begin
         i_data := std_logic_vector(DATA);
         if (i_data'length > CODE_DATA_BITS) then
-            use_long := FALSE;
-            for pos in i_data'high downto CODE_DATA_BITS loop
-                if (i_data(pos) /= i_data(CODE_DATA_BITS-1)) then
-                    use_long := TRUE;
-                end if;
-            end loop;
             if (i_data(i_data'high) = '1') then
+                use_long := FALSE;
+                for pos in i_data'high downto CODE_DATA_BITS-1 loop
+                    if (i_data(pos) /= '1') then
+                        use_long := TRUE;
+                    end if;
+                end loop;
                 if (use_long) then
                     return New_Code_Vector_Signed(  LENGTH, i_data);
                 else
                     return New_Code_Vector_Signed(  LENGTH, i_data(CODE_DATA_BITS-1 downto 0));
                 end if;
             else
+                use_long := FALSE;
+                for pos in i_data'high downto CODE_DATA_BITS loop
+                    if (i_data(pos) /= '0') then
+                        use_long := TRUE;
+                    end if;
+                end loop;
                 if (use_long) then
                     return New_Code_Vector_Unsigned(LENGTH, i_data);
                 else
