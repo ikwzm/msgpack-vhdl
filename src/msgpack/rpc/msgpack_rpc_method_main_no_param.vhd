@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_rpc_method_no_param.vhd
 --!     @brief   MessagePack-RPC Method Main Module without Parameter :
---!     @version 0.2.0
---!     @date    2016/6/22
+--!     @version 0.2.1
+--!     @date    2016/7/26
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
@@ -74,10 +74,11 @@ entity  MsgPack_RPC_Method_Main_No_Param is
         PARAM_LAST      : in  std_logic;
         PARAM_SHIFT     : out MsgPack_RPC.Shift_Type;
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Method Start/Busy
+    -- MessagePack-RPC Method Start/Busy/Done
     -------------------------------------------------------------------------------
         RUN_REQ         : out std_logic;
-        RUN_BUSY        : in  std_logic;
+        RUN_BUSY        : in  std_logic := '1';
+        RUN_DONE        : in  std_logic := '0';
     -------------------------------------------------------------------------------
     -- MessagePack-RPC Method Return Interface
     -------------------------------------------------------------------------------
@@ -216,13 +217,16 @@ begin
                             curr_state <= ERROR_END_STATE;
                         end if;
                     when PROC_BEGIN_STATE =>
-                        if (RUN_BUSY = '1') then
+                        if    (RUN_DONE = '1') then
+                            curr_state <= PROC_END_STATE;
+                        elsif (RUN_BUSY = '1') then
                             curr_state <= PROC_BUSY_STATE;
                         else
                             curr_state <= PROC_BEGIN_STATE;
                         end if;
                     when PROC_BUSY_STATE  =>
-                        if (RUN_BUSY = '0') then
+                        if    (RUN_DONE = '1') or
+                              (RUN_BUSY = '0') then
                             curr_state <= PROC_END_STATE;
                         else
                             curr_state <= PROC_BUSY_STATE;
@@ -251,8 +255,11 @@ begin
     RUN_REQ   <= '1' when (curr_state  = PROC_BEGIN_STATE  ) else '0';
     RET_ERROR <= '1' when (curr_state  = ERROR_RETURN_STATE) else '0';
     RET_START <= '1' when (curr_state  = ERROR_RETURN_STATE) or
+                          (curr_state  = PROC_BEGIN_STATE and RUN_DONE = '1') or
                           (curr_state  = PROC_BEGIN_STATE and RUN_BUSY = '1') else '0';
     RET_DONE  <= '1' when (curr_state  = ERROR_RETURN_STATE) or
+                          (curr_state  = PROC_BEGIN_STATE and RUN_DONE = '1') or
+                          (curr_state  = PROC_BUSY_STATE  and RUN_DONE = '1') or
                           (curr_state  = PROC_BUSY_STATE  and RUN_BUSY = '0') else '0';
     -------------------------------------------------------------------------------
     --

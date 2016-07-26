@@ -543,7 +543,7 @@ module MsgPack_RPC_Interface::Standard
 
     class Method
 
-      attr_reader :name, :full_name, :arguments, :return, :req_name, :busy_name, :blocks
+      attr_reader :name, :full_name, :arguments, :return, :port, :blocks
 
       def initialize(registory)
         @debug       = registory.fetch("debug", false)
@@ -554,9 +554,24 @@ module MsgPack_RPC_Interface::Standard
         @req_name    = @full_name.join("_") + "_REQ"
         @busy_name   = @full_name.join("_") + "_BUSY"
         @blocks      = []
+        @port        = Hash.new
         if registory.key?("port") then
-          @req_name    = registory["port"].fetch("request", @req_name   )
-          @busy_name   = registory["port"].fetch("busy"   , @busy_name  )
+          port_regs = registory["port"]
+          @port[:run_req ] = port_regs["request"] if port_regs.key?("request")
+          @port[:run_busy] = port_regs["busy"   ] if port_regs.key?("busy"   )
+          @port[:run_idle] = port_regs["idle"   ] if port_regs.key?("idle"   )
+          @port[:run_done] = port_regs["done"   ] if port_regs.key?("done"   )
+          if (@port.key?(:run_req ) == false) then
+            abort "Illegal method port(#{@name}) not found request port ::#{port_regs}"
+          end
+          if (@port.key?(:run_busy) == false and
+              @port.key?(:run_idle) == false and
+              @port.key?(:run_done) == false) then
+            abort "Illegal method port(#{@name}) not found busy/idle/done port::#{port_regs}"
+          end
+        else
+          @port[:run_req ] = @full_name.join("_") + "_REQ"
+          @port[:run_busy] = @full_name.join("_") + "_BUSY"
         end
         puts to_s("") if @debug
       end
@@ -564,18 +579,15 @@ module MsgPack_RPC_Interface::Standard
       def generate_vhdl_body(indent, registory)
         new_regs = Hash({code_width:  CODE_WIDTH ,
                          match_phase: MATCH_PHASE,
-                        }).update(registory)
-        new_regs[:run_req    ] = @req_name
-        new_regs[:run_busy   ] = @busy_name
+                        }).update(@port).update(registory)
         return MsgPack_RPC_Interface::VHDL::Procedure::Method.generate_body(indent, name, @arguments, @return, new_regs)
       end
 
       def generate_vhdl_port_list(master)
         new_regs = Hash.new
-        new_regs[:run_req    ] = @req_name
-        new_regs[:run_busy   ] = @busy_name
         new_regs[:arguments  ] = @arguments
         new_regs[:return     ] = @return
+        new_regs.update(@port)
         return MsgPack_RPC_Interface::VHDL::Procedure::Method.generate_port_list(master, new_regs)
       end
       
@@ -586,10 +598,8 @@ module MsgPack_RPC_Interface::Standard
       def to_s(indent)
         return [indent + sprintf("%-10s : %s" , "name"       , @name          ),
                 indent + sprintf("%-10s : %s" , "class"      , self.class.name),
-                indent + sprintf("%-10s : %s" , "port_name"  , @port_name     ),
                 indent + sprintf("%-10s : %s" , "full_name"  , @full_name     ),
-                indent + sprintf("%-10s : %s" , "req_name"   , @req_name      ),
-                indent + sprintf("%-10s : %s" , "busy_name"  , @busy_name     ),
+                indent + sprintf("%-10s : %s" , "port"       , @port          ),
                 indent + sprintf("%-10s : \n" , "arguments"                   ),
                ].join("\n") +
                @arguments.map{|argument| argument.to_s(indent + "  ")}.join("\n") + "\n" +
