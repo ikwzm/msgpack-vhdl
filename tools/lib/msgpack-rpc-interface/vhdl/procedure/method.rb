@@ -1,23 +1,75 @@
 module MsgPack_RPC_Interface::VHDL::Procedure::Method
   extend MsgPack_RPC_Interface::VHDL::Util
 
+
+  def self.generate_decl_method_standard(indent, name, registory)
+    return []
+  end
+
+  def self.generate_run_signals_standard(registory)
+    run_signals = Hash.new
+    run_signals[:req    ] = registory.fetch(:run_req , "open")
+    run_signals[:ack    ] = registory.fetch(:run_busy, "'1'" )
+    run_signals[:running] = "open"
+    run_signals[:done   ] = registory.fetch(:run_done, "'0'" )
+    run_signals[:busy   ] = registory.fetch(:run_busy, "'0'" )
+    return run_signals
+  end
+
+  def self.generate_stmt_method_standard(indent, name, run_signals, registory)
+    return []
+  end
+  
+  def self.generate_decl_method_ap_ctrl_hs(indent, name, registory)
+    return string_to_lines(
+      indent, <<"      EOT"
+          signal    proc_run_busy         :  std_logic;
+      EOT
+    )
+  end
+
+  def self.generate_run_signals_ap_ctrl_hs(registory)
+    run_signals = Hash.new
+    run_signals[:req    ] = registory[:ap_start]
+    run_signals[:ack    ] = "proc_run_busy"
+    run_signals[:running] = "open"
+    run_signals[:done   ] = registory[:ap_done]
+    run_signals[:busy   ] = "proc_run_busy"
+    return run_signals
+  end
+
+  def self.generate_stmt_method_ap_ctrl_hs(indent, name, run_signals, registory)
+    return string_to_lines(
+      indent, <<"      EOT"
+          #{run_signals[:busy]} <= '1' when (#{registory[:ap_idle]} = '0') else '0';
+      EOT
+    )
+  end
+  
   def self.generate_decl_method_no_param(indent, name, registory)
     vhdl_lines = string_to_lines(
-      indent, <<"        EOT"
+      indent, <<"      EOT"
           signal    proc_return_start     :  std_logic;
           signal    proc_return_done      :  std_logic;
           signal    proc_return_error     :  std_logic;
           signal    proc_return_busy      :  std_logic;
           signal    proc_start            :  std_logic;
-        EOT
+      EOT
     )
+    if registory[:type] == :ap_ctrl_hs then
+      vhdl_lines.concat(generate_decl_method_ap_ctrl_hs(indent, name, registory))
+    else
+      vhdl_lines.concat(generate_decl_method_standard(  indent, name, registory))
+    end
     return vhdl_lines
   end
 
   def self.generate_stmt_method_no_param(indent, name, registory)
-    key_string = "STRING'(\"" + name + "\")"
-    vhdl_lines = string_to_lines(
-      indent, <<"        EOT"
+    key_string  = "STRING'(\"" + name + "\")"
+    run_signals = (registory[:type] == :ap_ctrl_hs) ?  generate_run_signals_ap_ctrl_hs(registory) :
+                                                       generate_run_signals_standard(  registory)
+    vhdl_lines  = string_to_lines(
+      indent, <<"      EOT"
           PROC_MAIN: MsgPack_RPC_Method_Main_No_Param         -- 
               generic map (                  #{sprintf("%-28s", ""                     )}   -- 
                   NAME                    => #{sprintf("%-28s", key_string             )} , --
@@ -40,16 +92,25 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
                   PARAM_VALID             => #{sprintf("%-28s", registory[:param_valid])} , -- In  :
                   PARAM_LAST              => #{sprintf("%-28s", registory[:param_last ])} , -- In  :
                   PARAM_SHIFT             => #{sprintf("%-28s", registory[:param_shift])} , -- Out :
-                  RUN_REQ                 => #{sprintf("%-28s", registory[:run_req    ])} , -- Out :
-                  RUN_BUSY                => #{sprintf("%-28s", registory[:run_busy   ])} , -- In  :
+                  RUN_REQ                 => #{sprintf("%-28s", run_signals[:req      ])} , -- Out :
+                  RUN_ACK                 => #{sprintf("%-28s", run_signals[:ack      ])} , -- In  :
+                  RUN_BUSY                => #{sprintf("%-28s", run_signals[:busy     ])} , -- In  :
+                  RUN_DONE                => #{sprintf("%-28s", run_signals[:done     ])} , -- In  :
+                  RUNNING                 => #{sprintf("%-28s", run_signals[:running  ])} , -- Out :
                   RET_ID                  => #{sprintf("%-28s", registory[:proc_res_id])} , -- Out :
                   RET_START               => #{sprintf("%-28s", "proc_return_start"    )} , -- Out :
                   RET_ERROR               => #{sprintf("%-28s", "proc_return_error"    )} , -- Out :
                   RET_DONE                => #{sprintf("%-28s", "proc_return_done"     )} , -- Out :
                   RET_BUSY                => #{sprintf("%-28s", "proc_return_busy"     )}   -- In  :
               );                             #{sprintf("%-28s", ""                     )}   -- 
-        EOT
-      )
+      EOT
+    )
+    if registory[:type] == :ap_ctrl_hs then
+      vhdl_lines.concat(generate_stmt_method_ap_ctrl_hs(indent, name, run_signals, registory))
+    else
+      vhdl_lines.concat(generate_stmt_method_standard(  indent, name, run_signals, registory))
+    end
+    return vhdl_lines
   end
 
   def self.generate_decl_method_with_param(indent, name, arguments, registory)
@@ -69,13 +130,20 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
           signal    proc_start            :  std_logic;
       EOT
     )
+    if registory[:type] == :ap_ctrl_hs then
+      vhdl_lines.concat(generate_decl_method_ap_ctrl_hs(indent, name, registory))
+    else
+      vhdl_lines.concat(generate_decl_method_standard(  indent, name, registory))
+    end
     return vhdl_lines
   end
 
   def self.generate_stmt_method_with_param(indent, name, arguments, registory)
-    key_string = "STRING'(\"" + name + "\")"
-    vhdl_lines = string_to_lines(
-      indent, <<"        EOT"
+    key_string  = "STRING'(\"" + name + "\")"
+    run_signals = (registory[:type] == :ap_ctrl_hs) ?  generate_run_signals_ap_ctrl_hs(registory) :
+                                                       generate_run_signals_standard(  registory)
+    vhdl_lines  = string_to_lines(
+      indent, <<"      EOT"
           PROC_MAIN: MsgPack_RPC_Method_Main_with_Param         -- 
               generic map (                  #{sprintf("%-28s", ""                     )}   -- 
                   NAME                    => #{sprintf("%-28s", key_string             )} , --
@@ -105,16 +173,24 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
                   SET_PARAM_ERROR         => #{sprintf("%-28s", "proc_set_param_error" )} , -- In  :
                   SET_PARAM_DONE          => #{sprintf("%-28s", "proc_set_param_done"  )} , -- In  :
                   SET_PARAM_SHIFT         => #{sprintf("%-28s", "proc_set_param_shift" )} , -- In  :
-                  RUN_REQ                 => #{sprintf("%-28s", registory[:run_req    ])} , -- Out :
-                  RUN_BUSY                => #{sprintf("%-28s", registory[:run_busy   ])} , -- In  :
+                  RUN_REQ                 => #{sprintf("%-28s", run_signals[:req      ])} , -- Out :
+                  RUN_ACK                 => #{sprintf("%-28s", run_signals[:ack      ])} , -- In  :
+                  RUN_BUSY                => #{sprintf("%-28s", run_signals[:busy     ])} , -- In  :
+                  RUN_DONE                => #{sprintf("%-28s", run_signals[:done     ])} , -- In  :
+                  RUNNING                 => #{sprintf("%-28s", run_signals[:running  ])} , -- Out :
                   RET_ID                  => #{sprintf("%-28s", registory[:proc_res_id])} , -- Out :
                   RET_START               => #{sprintf("%-28s", "proc_return_start"    )} , -- Out :
                   RET_DONE                => #{sprintf("%-28s", "proc_return_done"     )} , -- Out :
                   RET_ERROR               => #{sprintf("%-28s", "proc_return_error"    )} , -- Out :
                   RET_BUSY                => #{sprintf("%-28s", "proc_return_busy"     )}   -- In  :
               );                             #{sprintf("%-28s", ""                     )}   -- 
-        EOT
+      EOT
     )
+    if registory[:type] == :ap_ctrl_hs then
+      vhdl_lines.concat(generate_stmt_method_ap_ctrl_hs(indent, name, run_signals, registory))
+    else
+      vhdl_lines.concat(generate_stmt_method_standard(  indent, name, run_signals, registory))
+    end
     arguments.each_with_index do |argument, num|
       args_regs = Hash.new
       args_regs[:num         ] = num
@@ -301,8 +377,16 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     vhdl_lines = Array.new
     req_out = (master) ? "out" : "in"
     req_in  = (master) ? "in"  : "out"
-    add_port_line(vhdl_lines, registory, :run_req , req_out,  "std_logic")
-    add_port_line(vhdl_lines, registory, :run_busy, req_in ,  "std_logic")
+    if registory[:type] == :ap_ctrl_hs then
+      add_port_line(vhdl_lines, registory, :ap_start, req_out,  "std_logic")
+      add_port_line(vhdl_lines, registory, :ap_idle , req_in ,  "std_logic")
+      add_port_line(vhdl_lines, registory, :ap_ready, req_in ,  "std_logic")
+      add_port_line(vhdl_lines, registory, :ap_done , req_in ,  "std_logic")
+    else
+      add_port_line(vhdl_lines, registory, :run_req , req_out,  "std_logic")
+      add_port_line(vhdl_lines, registory, :run_busy, req_in ,  "std_logic")
+      add_port_line(vhdl_lines, registory, :run_done, req_in ,  "std_logic")
+    end
     registory[:arguments].each do |argument|
       vhdl_lines.concat(argument.interface.generate_vhdl_port_list(master))
     end

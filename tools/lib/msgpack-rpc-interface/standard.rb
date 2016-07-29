@@ -543,20 +543,73 @@ module MsgPack_RPC_Interface::Standard
 
     class Method
 
-      attr_reader :name, :full_name, :arguments, :return, :req_name, :busy_name, :blocks
+      attr_reader :name, :full_name, :arguments, :return, :type, :port, :blocks
 
       def initialize(registory)
-        @debug       = registory.fetch("debug", false)
-        @name        = registory["name"]
-        @full_name   = registory["full_name"]
-        @arguments   = registory["arguments"]
-        @return      = registory["return"]
-        @req_name    = @full_name.join("_") + "_REQ"
-        @busy_name   = @full_name.join("_") + "_BUSY"
-        @blocks      = []
-        if registory.key?("port") then
-          @req_name    = registory["port"].fetch("request", @req_name   )
-          @busy_name   = registory["port"].fetch("busy"   , @busy_name  )
+        @debug     = registory.fetch("debug", false)
+        @name      = registory["name"]
+        @full_name = registory["full_name"]
+        @arguments = registory["arguments"]
+        @return    = registory["return"]
+        @blocks    = []
+        @port      = Hash.new
+        if registory.key?("type") then
+          if    registory["type"] == "ap_ctrl_hs"  then
+            @type = :ap_ctrl_hs
+          elsif registory["type"] == "synthesijer" then
+            @type = :synthesijer
+          else
+            abort "Illegal method interface type #{registory["type"]}"
+          end
+        else
+          @type = :standard
+        end
+        if   @type == :ap_ctrl_hs then
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @port[:ap_start] = port_regs.fetch("ap_start", "ap_start")
+            @port[:ap_idle ] = port_regs.fetch("ap_idle" , "ap_idle" )
+            @port[:ap_ready] = port_regs.fetch("ap_ready", "ap_ready")
+            @port[:ap_done ] = port_regs.fetch("ap_done" , "ap_done" )
+          else
+            @port[:ap_start] = "ap_start"
+            @port[:ap_idle ] = "ap_idle"
+            @port[:ap_ready] = "ap_ready"
+            @port[:ap_done ] = "ap_done"
+          end
+        elsif @type == :synthesijer then
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @port[:run_req ] = port_regs["request"] if port_regs.key?("request")
+            @port[:run_busy] = port_regs["busy"   ] if port_regs.key?("busy"   )
+            if (@port.key?(:run_req ) == false) then
+              abort "Illegal method port(#{@name}) not found request port ::#{port_regs}"
+            end
+            if (@port.key?(:run_busy) == false) then
+              abort "Illegal method port(#{@name}) not found busy port::#{port_regs}"
+            end
+          else
+            @port[:run_req ] = @full_name.join("_") + "_REQ"
+            @port[:run_busy] = @full_name.join("_") + "_BUSY"
+          end
+        else
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @port[:run_req ] = port_regs["request"] if port_regs.key?("request")
+            @port[:run_busy] = port_regs["busy"   ] if port_regs.key?("busy"   )
+            @port[:run_done] = port_regs["done"   ] if port_regs.key?("done"   )
+            if (@port.key?(:run_req ) == false) then
+              abort "Illegal method port(#{@name}) not found request port ::#{port_regs}"
+            end
+            if (@port.key?(:run_busy) == false and
+                @port.key?(:run_done) == false) then
+              abort "Illegal method port(#{@name}) not found busy/done port::#{port_regs}"
+            end
+          else
+            @port[:run_req ] = @full_name.join("_") + "_REQ"
+            @port[:run_busy] = @full_name.join("_") + "_BUSY"
+            @port[:run_done] = @full_name.join("_") + "_DONE"
+          end
         end
         puts to_s("") if @debug
       end
@@ -564,18 +617,17 @@ module MsgPack_RPC_Interface::Standard
       def generate_vhdl_body(indent, registory)
         new_regs = Hash({code_width:  CODE_WIDTH ,
                          match_phase: MATCH_PHASE,
-                        }).update(registory)
-        new_regs[:run_req    ] = @req_name
-        new_regs[:run_busy   ] = @busy_name
+                         type:        @type      ,
+                        }).update(@port).update(registory)
         return MsgPack_RPC_Interface::VHDL::Procedure::Method.generate_body(indent, name, @arguments, @return, new_regs)
       end
 
       def generate_vhdl_port_list(master)
         new_regs = Hash.new
-        new_regs[:run_req    ] = @req_name
-        new_regs[:run_busy   ] = @busy_name
-        new_regs[:arguments  ] = @arguments
-        new_regs[:return     ] = @return
+        new_regs[:arguments] = @arguments
+        new_regs[:return   ] = @return
+        new_regs[:type     ] = @type
+        new_regs.update(@port)
         return MsgPack_RPC_Interface::VHDL::Procedure::Method.generate_port_list(master, new_regs)
       end
       
@@ -586,10 +638,8 @@ module MsgPack_RPC_Interface::Standard
       def to_s(indent)
         return [indent + sprintf("%-10s : %s" , "name"       , @name          ),
                 indent + sprintf("%-10s : %s" , "class"      , self.class.name),
-                indent + sprintf("%-10s : %s" , "port_name"  , @port_name     ),
                 indent + sprintf("%-10s : %s" , "full_name"  , @full_name     ),
-                indent + sprintf("%-10s : %s" , "req_name"   , @req_name      ),
-                indent + sprintf("%-10s : %s" , "busy_name"  , @busy_name     ),
+                indent + sprintf("%-10s : %s" , "port"       , @port          ),
                 indent + sprintf("%-10s : \n" , "arguments"                   ),
                ].join("\n") +
                @arguments.map{|argument| argument.to_s(indent + "  ")}.join("\n") + "\n" +

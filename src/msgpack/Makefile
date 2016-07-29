@@ -161,7 +161,7 @@ $(OBJECT_COMP_FILE)   : $(OBJECT_ENTITY_FILES)
 $(RPC_COMP_FILE)      : $(RPC_ENTITY_FILES)
 	$(PIPEWORK_DIR)/tools/MakeComponentPackage.rb --verbose \
             --brief   'MessagaPack Component Library Description' \
-            --version 0.2.0 \
+            --version 0.2.2 \
             --author  'Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>' \
             --library MsgPack \
             --package MsgPack_RPC_Components \
