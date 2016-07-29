@@ -23,8 +23,6 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
   def self.generate_decl_method_ap_ctrl_hs(indent, name, registory)
     return string_to_lines(
       indent, <<"      EOT"
-          signal    proc_run_req          :  std_logic;
-          signal    proc_run_ack          :  std_logic;
           signal    proc_run_busy         :  std_logic;
       EOT
     )
@@ -32,8 +30,8 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
 
   def self.generate_run_signals_ap_ctrl_hs(registory)
     run_signals = Hash.new
-    run_signals[:req    ] = "proc_run_req"
-    run_signals[:ack    ] = "proc_run_ack"
+    run_signals[:req    ] = registory[:ap_start]
+    run_signals[:ack    ] = "proc_run_busy"
     run_signals[:running] = "open"
     run_signals[:done   ] = registory[:ap_done]
     run_signals[:busy   ] = "proc_run_busy"
@@ -43,8 +41,6 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
   def self.generate_stmt_method_ap_ctrl_hs(indent, name, run_signals, registory)
     return string_to_lines(
       indent, <<"      EOT"
-          #{registory[:ap_start]} <= '1' when (#{run_signals[:req]} = '1' and #{registory[:ap_ready]} = '0') else '0';
-          #{run_signals[:ack ]} <= #{registory[:ap_ready]};
           #{run_signals[:busy]} <= '1' when (#{registory[:ap_idle]} = '0') else '0';
       EOT
     )
