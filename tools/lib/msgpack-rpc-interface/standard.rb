@@ -554,17 +554,17 @@ module MsgPack_RPC_Interface::Standard
         @blocks    = []
         @port      = Hash.new
         if registory.key?("type") then
-          if    registory["type"] == "ap_ctrl_hs"  then
-            @type = :ap_ctrl_hs
-          elsif registory["type"] == "synthesijer" then
-            @type = :synthesijer
+          if    registory["type"].downcase == "ap_ctrl_hs"  then
+            @type = :AP_CTRL_HS
+          elsif registory["type"].downcase == "synthesijer" then
+            @type = :Synthesijer
           else
             abort "Illegal method interface type #{registory["type"]}"
           end
         else
-          @type = :standard
+          @type = :Standard
         end
-        if   @type == :ap_ctrl_hs then
+        if   @type == :AP_CTRL_HS then
           if registory.key?("port") then
             port_regs = registory["port"]
             @port[:ap_start] = port_regs.fetch("ap_start", "ap_start")
@@ -577,7 +577,7 @@ module MsgPack_RPC_Interface::Standard
             @port[:ap_ready] = "ap_ready"
             @port[:ap_done ] = "ap_done"
           end
-        elsif @type == :synthesijer then
+        elsif @type == :Synthesijer then
           if registory.key?("port") then
             port_regs = registory["port"]
             @port[:run_req ] = port_regs["request"] if port_regs.key?("request")

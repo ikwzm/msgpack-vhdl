@@ -1,52 +1,10 @@
 module MsgPack_RPC_Interface::VHDL::Procedure::Method
   extend MsgPack_RPC_Interface::VHDL::Util
-
-
-  def self.generate_decl_method_standard(indent, name, registory)
-    return []
-  end
-
-  def self.generate_run_signals_standard(registory)
-    run_signals = Hash.new
-    run_signals[:req    ] = registory.fetch(:run_req , "open")
-    run_signals[:ack    ] = registory.fetch(:run_busy, "'1'" )
-    run_signals[:running] = "open"
-    run_signals[:done   ] = registory.fetch(:run_done, "'0'" )
-    run_signals[:busy   ] = registory.fetch(:run_busy, "'0'" )
-    return run_signals
-  end
-
-  def self.generate_stmt_method_standard(indent, name, run_signals, registory)
-    return []
-  end
+  require_relative 'method/standard'
+  require_relative 'method/synthesijer'
+  require_relative 'method/ap_ctrl_hs'
   
-  def self.generate_decl_method_ap_ctrl_hs(indent, name, registory)
-    return string_to_lines(
-      indent, <<"      EOT"
-          signal    proc_run_busy         :  std_logic;
-      EOT
-    )
-  end
-
-  def self.generate_run_signals_ap_ctrl_hs(registory)
-    run_signals = Hash.new
-    run_signals[:req    ] = registory[:ap_start]
-    run_signals[:ack    ] = "proc_run_busy"
-    run_signals[:running] = "open"
-    run_signals[:done   ] = registory[:ap_done]
-    run_signals[:busy   ] = "proc_run_busy"
-    return run_signals
-  end
-
-  def self.generate_stmt_method_ap_ctrl_hs(indent, name, run_signals, registory)
-    return string_to_lines(
-      indent, <<"      EOT"
-          #{run_signals[:busy]} <= '1' when (#{registory[:ap_idle]} = '0') else '0';
-      EOT
-    )
-  end
-  
-  def self.generate_decl_method_no_param(indent, name, registory)
+  def self.generate_method_decl_no_param(indent, name, registory)
     vhdl_lines = string_to_lines(
       indent, <<"      EOT"
           signal    proc_return_start     :  std_logic;
@@ -56,18 +14,15 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
           signal    proc_start            :  std_logic;
       EOT
     )
-    if registory[:type] == :ap_ctrl_hs then
-      vhdl_lines.concat(generate_decl_method_ap_ctrl_hs(indent, name, registory))
-    else
-      vhdl_lines.concat(generate_decl_method_standard(  indent, name, registory))
-    end
+    method_type = MsgPack_RPC_Interface::VHDL::Procedure::Method.const_get(registory[:type])
+    vhdl_lines.concat(method_type::generate_method_decl(indent, name, registory))
     return vhdl_lines
   end
 
-  def self.generate_stmt_method_no_param(indent, name, registory)
+  def self.generate_method_stmt_no_param(indent, name, registory)
     key_string  = "STRING'(\"" + name + "\")"
-    run_signals = (registory[:type] == :ap_ctrl_hs) ?  generate_run_signals_ap_ctrl_hs(registory) :
-                                                       generate_run_signals_standard(  registory)
+    method_type = MsgPack_RPC_Interface::VHDL::Procedure::Method.const_get(registory[:type])
+    run_signals = method_type::generate_method_signals(registory)
     vhdl_lines  = string_to_lines(
       indent, <<"      EOT"
           PROC_MAIN: MsgPack_RPC_Method_Main_No_Param         -- 
@@ -105,15 +60,11 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
               );                             #{sprintf("%-28s", ""                     )}   -- 
       EOT
     )
-    if registory[:type] == :ap_ctrl_hs then
-      vhdl_lines.concat(generate_stmt_method_ap_ctrl_hs(indent, name, run_signals, registory))
-    else
-      vhdl_lines.concat(generate_stmt_method_standard(  indent, name, run_signals, registory))
-    end
+    vhdl_lines.concat(method_type::generate_method_stmt(indent, name, run_signals, registory))
     return vhdl_lines
   end
 
-  def self.generate_decl_method_with_param(indent, name, arguments, registory)
+  def self.generate_method_decl_with_param(indent, name, arguments, registory)
     vhdl_lines = string_to_lines(
       indent, <<"      EOT"
           constant  PROC_PARAM_NUM        :  integer := #{arguments.size};
@@ -130,18 +81,15 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
           signal    proc_start            :  std_logic;
       EOT
     )
-    if registory[:type] == :ap_ctrl_hs then
-      vhdl_lines.concat(generate_decl_method_ap_ctrl_hs(indent, name, registory))
-    else
-      vhdl_lines.concat(generate_decl_method_standard(  indent, name, registory))
-    end
+    method_type = MsgPack_RPC_Interface::VHDL::Procedure::Method.const_get(registory[:type])
+    vhdl_lines.concat(method_type::generate_method_decl(indent, name, registory))
     return vhdl_lines
   end
 
-  def self.generate_stmt_method_with_param(indent, name, arguments, registory)
+  def self.generate_method_stmt_with_param(indent, name, arguments, registory)
     key_string  = "STRING'(\"" + name + "\")"
-    run_signals = (registory[:type] == :ap_ctrl_hs) ?  generate_run_signals_ap_ctrl_hs(registory) :
-                                                       generate_run_signals_standard(  registory)
+    method_type = MsgPack_RPC_Interface::VHDL::Procedure::Method.const_get(registory[:type])
+    run_signals = method_type::generate_method_signals(registory)
     vhdl_lines  = string_to_lines(
       indent, <<"      EOT"
           PROC_MAIN: MsgPack_RPC_Method_Main_with_Param         -- 
@@ -186,11 +134,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
               );                             #{sprintf("%-28s", ""                     )}   -- 
       EOT
     )
-    if registory[:type] == :ap_ctrl_hs then
-      vhdl_lines.concat(generate_stmt_method_ap_ctrl_hs(indent, name, run_signals, registory))
-    else
-      vhdl_lines.concat(generate_stmt_method_standard(  indent, name, run_signals, registory))
-    end
+    vhdl_lines.concat(method_type::generate_method_stmt(indent, name, run_signals, registory))
     arguments.each_with_index do |argument, num|
       args_regs = Hash.new
       args_regs[:num         ] = num
@@ -210,11 +154,11 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     return vhdl_lines
   end
 
-  def self.generate_decl_method_return_nil(indent, name, registory)
+  def self.generate_method_decl_return_nil(indent, name, registory)
     return []
   end
         
-  def self.generate_stmt_method_return_nil(indent, name, registory)
+  def self.generate_method_stmt_return_nil(indent, name, registory)
     vhdl_lines = string_to_lines(
       indent, <<"        EOT"
           PROC_RETURN : MsgPack_RPC_Method_Return_Nil              -- 
@@ -236,11 +180,11 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     return vhdl_lines
   end
       
-  def self.generate_decl_method_return_integer(indent, name, return_variable, registory)
+  def self.generate_method_decl_return_integer(indent, name, return_variable, registory)
     return []
   end
         
-  def self.generate_stmt_method_return_integer(indent, name, return_variable, registory)
+  def self.generate_method_stmt_return_integer(indent, name, return_variable, registory)
     value_width = return_variable.interface.type.bits
     return_uint = (return_variable.type.sign) ? "FALSE" : "TRUE"
     return_int  = (return_variable.type.sign) ? "TRUE"  : "FALSE"
@@ -280,11 +224,11 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
     return vhdl_lines
   end
 
-  def self.generate_decl_method_return_boolean(indent, name, return_variable, registory)
+  def self.generate_method_decl_return_boolean(indent, name, return_variable, registory)
     return []
   end
         
-  def self.generate_stmt_method_return_boolean(indent, name, return_variable, registory)
+  def self.generate_method_stmt_return_boolean(indent, name, return_variable, registory)
     return_name = return_variable.interface.registory[:query_data]
     return_stmt = return_variable.interface.type.generate_vhdl_convert_to_std_logic_vector(return_name, "proc_return_value")
     vhdl_lines  = string_to_lines(
@@ -323,16 +267,16 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
 
   def generate_decl(indent, name, arguments, return_variable, registory)
     if (arguments.size > 0) then
-      decl_code = generate_decl_method_with_param(indent, name, arguments, registory)
+      decl_code = generate_method_decl_with_param(indent, name, arguments, registory)
     else
-      decl_code = generate_decl_method_no_param(  indent, name, registory)
+      decl_code = generate_method_decl_no_param(  indent, name, registory)
     end
     if    return_variable == nil then
-      decl_code.concat(generate_decl_method_return_nil(    indent, name, registory))
+      decl_code.concat(generate_method_decl_return_nil(    indent, name, registory))
     elsif return_variable.type.generator_class == "Integer" then
-      decl_code.concat(generate_decl_method_return_integer(indent, name, return_variable, registory))
+      decl_code.concat(generate_method_decl_return_integer(indent, name, return_variable, registory))
     elsif return_variable.type.generator_class == "Boolean" then
-      decl_code.concat(generate_decl_method_return_boolean(indent, name, return_variable, registory))
+      decl_code.concat(generate_method_decl_return_boolean(indent, name, return_variable, registory))
     else
       raise "Not Supported method return variable type (#{return_variable.type.class})"
     end
@@ -341,16 +285,16 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
 
   def generate_stmt(indent, name, arguments, return_variable, registory)
     if (arguments.size > 0) then
-      body_code = generate_stmt_method_with_param(indent, name, arguments, registory)
+      body_code = generate_method_stmt_with_param(indent, name, arguments, registory)
     else
-      body_code = generate_stmt_method_no_param(  indent, name, registory)
+      body_code = generate_method_stmt_no_param(  indent, name, registory)
     end
     if    return_variable == nil then
-      body_code.concat(generate_stmt_method_return_nil(    indent, name, registory))
+      body_code.concat(generate_method_stmt_return_nil(    indent, name, registory))
     elsif return_variable.type.generator_class == "Integer" then
-      body_code.concat(generate_stmt_method_return_integer(indent, name, return_variable, registory))
+      body_code.concat(generate_method_stmt_return_integer(indent, name, return_variable, registory))
     elsif return_variable.type.generator_class == "Boolean" then
-      body_code.concat(generate_stmt_method_return_boolean(indent, name, return_variable, registory))
+      body_code.concat(generate_method_stmt_return_boolean(indent, name, return_variable, registory))
     else
       raise "Not Supported method return variable type (#{return_variable.type.class})"
     end
@@ -374,19 +318,9 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
   end
 
   def generate_port_list(master, registory)
-    vhdl_lines = Array.new
-    req_out = (master) ? "out" : "in"
-    req_in  = (master) ? "in"  : "out"
-    if registory[:type] == :ap_ctrl_hs then
-      add_port_line(vhdl_lines, registory, :ap_start, req_out,  "std_logic")
-      add_port_line(vhdl_lines, registory, :ap_idle , req_in ,  "std_logic")
-      add_port_line(vhdl_lines, registory, :ap_ready, req_in ,  "std_logic")
-      add_port_line(vhdl_lines, registory, :ap_done , req_in ,  "std_logic")
-    else
-      add_port_line(vhdl_lines, registory, :run_req , req_out,  "std_logic")
-      add_port_line(vhdl_lines, registory, :run_busy, req_in ,  "std_logic")
-      add_port_line(vhdl_lines, registory, :run_done, req_in ,  "std_logic")
-    end
+    vhdl_lines  = Array.new
+    method_type = MsgPack_RPC_Interface::VHDL::Procedure::Method.const_get(registory[:type])
+    vhdl_lines.concat(method_type::generate_method_port_list(master, registory))
     registory[:arguments].each do |argument|
       vhdl_lines.concat(argument.interface.generate_vhdl_port_list(master))
     end
