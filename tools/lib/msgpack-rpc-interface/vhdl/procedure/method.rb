@@ -3,6 +3,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method
   require_relative 'method/standard'
   require_relative 'method/synthesijer'
   require_relative 'method/ap_ctrl_hs'
+  require_relative 'method/polyphony'
   
   def self.generate_method_decl_no_param(indent, name, registory)
     vhdl_lines = string_to_lines(
