@@ -23,7 +23,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method::AP_CTRL_HS
   def generate_method_signals(registory)
     method_signals = Hash.new
     method_signals[:req    ] = registory[:ap_start]
-    method_signals[:ack    ] = "proc_run_busy"
+    method_signals[:ack    ] = registory[:ap_ready]
     method_signals[:running] = "open"
     method_signals[:done   ] = registory[:ap_done]
     method_signals[:busy   ] = "proc_run_busy"
