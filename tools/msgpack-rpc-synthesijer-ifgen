@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 #---------------------------------------------------------------------------------
 #
-#       Version     :   0.2.3
-#       Created     :   2017/2/13
-#       File name   :   msgpack-rpc-synthesijer-synthesijer-ifgen.rb
+#       Version     :   0.2.4
+#       Created     :   2017/3/7
+#       File name   :   msgpack-rpc-synthesijer-ifgen.rb
 #       Author      :   Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 #       Description :   MessagePack RPC Interface Generator for Synthesijer
 #
@@ -49,7 +49,7 @@ class InterfaceGenerator
   #-------------------------------------------------------------------------------
   def initialize
     @program_name      = "msgpack-rpc-synthesijer-ifgen"
-    @program_version   = "0.2.3"
+    @program_version   = "0.2.4"
     @program_id        = @program_name + " " + @program_version
     @verbose           = false
     @debug             = false
