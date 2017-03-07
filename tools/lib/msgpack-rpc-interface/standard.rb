@@ -554,17 +554,19 @@ module MsgPack_RPC_Interface::Standard
         @blocks    = []
         @port      = Hash.new
         if registory.key?("type") then
-          if    registory["type"] == "ap_ctrl_hs"  then
-            @type = :ap_ctrl_hs
-          elsif registory["type"] == "synthesijer" then
-            @type = :synthesijer
+          if    registory["type"].downcase == "ap_ctrl_hs"  then
+            @type = :AP_CTRL_HS
+          elsif registory["type"].downcase == "synthesijer" then
+            @type = :Synthesijer
+          elsif registory["type"].downcase == "polyphony" then
+            @type = :Polyphony
           else
             abort "Illegal method interface type #{registory["type"]}"
           end
         else
-          @type = :standard
+          @type = :Standard
         end
-        if   @type == :ap_ctrl_hs then
+        if   @type == :AP_CTRL_HS then
           if registory.key?("port") then
             port_regs = registory["port"]
             @port[:ap_start] = port_regs.fetch("ap_start", "ap_start")
@@ -577,7 +579,7 @@ module MsgPack_RPC_Interface::Standard
             @port[:ap_ready] = "ap_ready"
             @port[:ap_done ] = "ap_done"
           end
-        elsif @type == :synthesijer then
+        elsif @type == :Synthesijer then
           if registory.key?("port") then
             port_regs = registory["port"]
             @port[:run_req ] = port_regs["request"] if port_regs.key?("request")
@@ -591,6 +593,17 @@ module MsgPack_RPC_Interface::Standard
           else
             @port[:run_req ] = @full_name.join("_") + "_REQ"
             @port[:run_busy] = @full_name.join("_") + "_BUSY"
+          end
+        elsif @type == :Polyphony then
+          if registory.key?("port") then
+            port_regs = registory["port"]
+            @port[:run_ready ] = port_regs["ready" ] if port_regs.key?("ready" )
+            @port[:run_accept] = port_regs["accept"] if port_regs.key?("accept")
+            @port[:run_valid ] = port_regs["valid" ] if port_regs.key?("valid" )
+          else
+            @port[:run_ready ] = @full_name.join("_") + "_ready"
+            @port[:run_accept] = @full_name.join("_") + "_accept"
+            @port[:run_valid ] = @full_name.join("_") + "_valid"
           end
         else
           if registory.key?("port") then
