@@ -608,20 +608,27 @@ module MsgPack_RPC_Interface::Standard
         else
           if registory.key?("port") then
             port_regs = registory["port"]
-            @port[:run_req ] = port_regs["request"] if port_regs.key?("request")
-            @port[:run_busy] = port_regs["busy"   ] if port_regs.key?("busy"   )
-            @port[:run_done] = port_regs["done"   ] if port_regs.key?("done"   )
-            if (@port.key?(:run_req ) == false) then
-              abort "Illegal method port(#{@name}) not found request port ::#{port_regs}"
+            @port[:run_req_valid] = port_regs["req_valid"] if port_regs.key?("req_valid")
+            @port[:run_req_ready] = port_regs["req_ready"] if port_regs.key?("req_ready")
+            @port[:run_res_valid] = port_regs["res_valid"] if port_regs.key?("res_valid")
+            @port[:run_res_ready] = port_regs["res_ready"] if port_regs.key?("res_ready")
+            if (@port.key?(:run_req_valid ) == false) then
+              abort "Illegal method port(#{@name}) not found req_valid port ::#{port_regs}"
             end
-            if (@port.key?(:run_busy) == false and
-                @port.key?(:run_done) == false) then
-              abort "Illegal method port(#{@name}) not found busy/done port::#{port_regs}"
+            if (@port.key?(:run_req_ready ) == false) then
+              abort "Illegal method port(#{@name}) not found req_ready port ::#{port_regs}"
+            end
+            if (@port.key?(:run_res_valid ) == false) then
+              abort "Illegal method port(#{@name}) not found res_valid port ::#{port_regs}"
+            end
+            if (@port.key?(:run_res_ready ) == false) then
+              abort "Illegal method port(#{@name}) not found res_ready port ::#{port_regs}"
             end
           else
-            @port[:run_req ] = @full_name.join("_") + "_REQ"
-            @port[:run_busy] = @full_name.join("_") + "_BUSY"
-            @port[:run_done] = @full_name.join("_") + "_DONE"
+            @port[:run_req_valid] = @full_name.join("_") + "_REQ_VAL"
+            @port[:run_req_ready] = @full_name.join("_") + "_REQ_RDY"
+            @port[:run_res_valid] = @full_name.join("_") + "_RES_VAL"
+            @port[:run_res_ready] = @full_name.join("_") + "_RES_RDY"
           end
         end
         puts to_s("") if @debug

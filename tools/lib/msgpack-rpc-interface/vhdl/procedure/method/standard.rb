@@ -5,9 +5,10 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method::Standard
     vhdl_lines = Array.new
     req_out = (master) ? "out" : "in"
     req_in  = (master) ? "in"  : "out"
-    add_port_line(vhdl_lines, registory, :run_req , req_out,  "std_logic")
-    add_port_line(vhdl_lines, registory, :run_busy, req_in ,  "std_logic")
-    add_port_line(vhdl_lines, registory, :run_done, req_in ,  "std_logic")
+    add_port_line(vhdl_lines, registory, :run_req_valid , req_out,  "std_logic")
+    add_port_line(vhdl_lines, registory, :run_req_ready , req_in ,  "std_logic")
+    add_port_line(vhdl_lines, registory, :run_res_valid , req_in ,  "std_logic")
+    add_port_line(vhdl_lines, registory, :run_res_ready , req_out,  "std_logic")
     return vhdl_lines
   end
     
@@ -17,11 +18,11 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method::Standard
 
   def generate_method_signals(registory)
     method_signals = Hash.new
-    method_signals[:req    ] = registory.fetch(:run_req , "open")
-    method_signals[:ack    ] = registory.fetch(:run_busy, "'1'" )
-    method_signals[:running] = "open"
-    method_signals[:done   ] = registory.fetch(:run_done, "'0'" )
-    method_signals[:busy   ] = registory.fetch(:run_busy, "'0'" )
+    method_signals[:req_valid] = registory.fetch(:run_req_valid, "open")
+    method_signals[:req_ready] = registory.fetch(:run_req_ready, "'1'" )
+    method_signals[:res_valid] = registory.fetch(:run_res_valid, "'1'" )
+    method_signals[:res_ready] = registory.fetch(:run_res_ready, "open")
+    method_signals[:running  ] = "open"
     return method_signals
   end
 
