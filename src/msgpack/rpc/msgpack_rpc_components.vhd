@@ -1,13 +1,13 @@
 -----------------------------------------------------------------------------------
 --!     @file    rpc/msgpack_rpc_components.vhd                                  --
 --!     @brief   MessagaPack Component Library Description                       --
---!     @version 0.2.2                                                           --
---!     @date    2016/07/28                                                      --
+--!     @version 0.2.5                                                           --
+--!     @date    2017/03/14                                                      --
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>                     --
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
 --                                                                               --
---      Copyright (C) 2016 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
+--      Copyright (C) 2017 Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>           --
 --      All rights reserved.                                                     --
 --                                                                               --
 --      Redistribution and use in source and binary forms, with or without       --
@@ -247,12 +247,12 @@ component MsgPack_RPC_Method_Main_with_Param
         SET_PARAM_DONE  : in  std_logic_vector        (PARAM_NUM-1 downto 0);
         SET_PARAM_SHIFT : in  MsgPack_RPC.Shift_Vector(PARAM_NUM-1 downto 0);
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Method Request/Acknowledge/Busy/Done/Running
+    -- MessagePack-RPC Method Request/Response/Running
     -------------------------------------------------------------------------------
-        RUN_REQ         : out std_logic;
-        RUN_ACK         : in  std_logic := '1';
-        RUN_BUSY        : in  std_logic := '1';
-        RUN_DONE        : in  std_logic := '0';
+        RUN_REQ_VAL     : out std_logic;
+        RUN_REQ_RDY     : in  std_logic := '1';
+        RUN_RES_VAL     : in  std_logic;
+        RUN_RES_RDY     : out std_logic;
         RUNNING         : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack-RPC Method Return Interface
@@ -302,12 +302,12 @@ component MsgPack_RPC_Method_Main_No_Param
         PARAM_LAST      : in  std_logic;
         PARAM_SHIFT     : out MsgPack_RPC.Shift_Type;
     -------------------------------------------------------------------------------
-    -- MessagePack-RPC Method Request/Acknowledge/Busy/Done/Running
+    -- MessagePack-RPC Method Request/Response/Running
     -------------------------------------------------------------------------------
-        RUN_REQ         : out std_logic;
-        RUN_ACK         : in  std_logic := '1';
-        RUN_BUSY        : in  std_logic := '1';
-        RUN_DONE        : in  std_logic := '0';
+        RUN_REQ_VAL     : out std_logic;
+        RUN_REQ_RDY     : in  std_logic := '1';
+        RUN_RES_VAL     : in  std_logic;
+        RUN_RES_RDY     : out std_logic;
         RUNNING         : out std_logic;
     -------------------------------------------------------------------------------
     -- MessagePack-RPC Method Return Interface
