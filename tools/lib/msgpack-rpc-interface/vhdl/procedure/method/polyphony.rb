@@ -16,7 +16,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method::Polyphony
       indent, <<"      EOT"
           signal    proc_run_req_valid    :  std_logic;
           signal    proc_run_res_valid    :  std_logic;
-          signal    proc_run_res_ready    :  std_logic;
+          signal    proc_run_busy         :  std_logic;
       EOT
     )
   end
@@ -26,7 +26,7 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method::Polyphony
     method_signals[:req_valid] = "proc_run_req_valid"
     method_signals[:req_ready] = "'1'"
     method_signals[:res_valid] = "proc_run_res_valid"
-    method_signals[:res_ready] = "proc_run_res_ready"
+    method_signals[:res_ready] = "open"
     method_signals[:running  ] = "open"
     return method_signals
   end
@@ -34,9 +34,23 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method::Polyphony
   def generate_method_stmt(indent, name, method_signals, registory)
     return string_to_lines(
       indent, <<"      EOT"
+          process(#{registory[:clock]}, #{registory[:reset]}) begin
+              if (#{registory[:reset]} = '1') then
+                      proc_run_busy <= '0';
+              elsif (#{registory[:clock]}'event and #{registory[:clock]} = '1') then
+                  if    (#{registory[:clear]} = '1') then
+                      proc_run_busy <= '0';
+                  elsif (proc_run_busy = '0' and proc_run_req_valid = '1') or
+                        (proc_run_busy = '1' and #{registory[:run_valid]} = '0') then
+                      proc_run_busy <= '1';
+                  else
+                      proc_run_busy <= '0';
+                  end if;
+              end if;
+          end process;
           #{registory[:run_ready ]} <= proc_run_req_valid;
-          #{registory[:run_accept]} <= proc_run_res_ready;
-          proc_run_res_valid <= '1' when (proc_run_res_ready = '1' and #{registory[:run_valid]} = '1') else '0';
+          #{registory[:run_accept]} <= proc_run_busy;
+          proc_run_res_valid <= '1' when (proc_run_busy = '1' and #{registory[:run_valid]} = '1') else '0';
       EOT
     )
   end
