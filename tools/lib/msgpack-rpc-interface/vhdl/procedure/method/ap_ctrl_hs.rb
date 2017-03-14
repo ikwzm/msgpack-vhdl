@@ -13,30 +13,23 @@ module MsgPack_RPC_Interface::VHDL::Procedure::Method::AP_CTRL_HS
   end
     
   def generate_method_decl(indent, name, registory)
-    return string_to_lines(
-      indent, <<"      EOT"
-          signal    proc_run_busy         :  std_logic;
-      EOT
-    )
+    return []
   end
 
   def generate_method_signals(registory)
     method_signals = Hash.new
-    method_signals[:req    ] = registory[:ap_start]
-    method_signals[:ack    ] = registory[:ap_ready]
-    method_signals[:running] = "open"
-    method_signals[:done   ] = registory[:ap_done]
-    method_signals[:busy   ] = "proc_run_busy"
+    method_signals[:req_valid] = registory[:ap_start]
+    method_signals[:req_ready] = registory[:ap_ready]
+    method_signals[:res_valid] = registory[:ap_done ]
+    method_signals[:res_ready] = "open"
+    method_signals[:running  ] = "open"
     return method_signals
   end
 
   def generate_method_stmt(indent, name, method_signals, registory)
-    return string_to_lines(
-      indent, <<"      EOT"
-          #{method_signals[:busy]} <= '1' when (#{registory[:ap_idle]} = '0') else '0';
-      EOT
-    )
+    return []
   end
+
   module_function :generate_method_port_list
   module_function :generate_method_decl
   module_function :generate_method_stmt
