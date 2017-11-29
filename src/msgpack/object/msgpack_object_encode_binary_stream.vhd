@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------
 --!     @file    msgpack_object_encode_binary_stream.vhd
 --!     @brief   MessagePack Object Encode to Binary/String Stream
---!     @version 0.2.0
---!     @date    2016/6/23
+--!     @version 0.2.1
+--!     @date    2017/11/30
 --!     @author  Ichiro Kawazome <ichiro_k@ca2.so-net.ne.jp>
 -----------------------------------------------------------------------------------
 --
---      Copyright (C) 2015-2016 Ichiro Kawazome
+--      Copyright (C) 2015-2017 Ichiro Kawazome
 --      All rights reserved.
 --
 --      Redistribution and use in source and binary forms, with or without
@@ -246,7 +246,7 @@ begin
                 outlet_last  <= intake_last;
         end case;
     end process;
-    intake_ready <= outlet_ready;
+    intake_ready <= outlet_ready when (curr_state = DATA_STATE) else '0';
     -------------------------------------------------------------------------------
     --
     -------------------------------------------------------------------------------
